@@ -18,6 +18,7 @@ const app = createApp({
     return id;
   },
   freePlaysPerDay: Number(process.env.FREE_PLAYS_PER_DAY) || 5,
+  dailySecret: process.env.DAILY_SECRET ?? '',
   allowedOrigins: '*',
 });
 

@@ -74,6 +74,8 @@ Without `.env.local` the site runs in the browser alone. `npm run e2e` covers bo
 
 This stops forged scores and looking for a lucky seed, but not a player who uses a bot or looks answers up. Anonymous players can reset their free plays by clearing browser data, as there's no real account to tie them to yet.
 
+The daily challenge works the same way, with one session per player, game and day. Its seed is a hash of the date, the game and the project's secret key, so nobody can work out a coming day's run. Leaving and coming back resumes the run from moves kept in the browser; clearing browser data gets a new anonymous player and so a new try, until real accounts exist.
+
 Frontend and API must be on the same game data. Sessions are stamped with `DATASET_VERSION`, and a client on other data is asked to reload. A game in progress during a deploy that changes data loses its score.
 
 ## Limits on the free plans

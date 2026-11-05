@@ -1,3 +1,23 @@
+/** Chips with a line describing the current choice. */
+export function DescribedChips<T extends string>({
+  options,
+  value,
+  onChange,
+  label,
+}: {
+  options: readonly { id: T; label: string; description: string }[];
+  value: T;
+  onChange(value: T): void;
+  label: string;
+}) {
+  return (
+    <div className="difficulty">
+      <ChoiceChips options={options} value={value} onChange={onChange} label={label} />
+      <p className="muted small">{options.find((o) => o.id === value)!.description}</p>
+    </div>
+  );
+}
+
 /** A row of mutually exclusive chips (radio group). */
 export function ChoiceChips<T extends string | number>({
   options,

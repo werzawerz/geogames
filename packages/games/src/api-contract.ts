@@ -50,6 +50,20 @@ export interface FinishSessionResponse {
   personalBest: number;
 }
 
+/** POST /daily/:gameId/start: opens or reopens the player's run. Spends no free play. */
+export interface StartDailyRequest {
+  datasetVersion: string;
+}
+
+export interface StartDailyResponse {
+  /** Leaderboards are at the variant `dailyVariant(date)`. */
+  date: string;
+  sessionId: string;
+  seed: number;
+  /** Set when today's one try has been played. */
+  finishedScore: number | null;
+}
+
 export interface LeaderboardEntryDto {
   id: string;
   playerName: string;

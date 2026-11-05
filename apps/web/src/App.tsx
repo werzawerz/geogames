@@ -1,7 +1,8 @@
-import { getGame } from '@geogames/games';
+import { DAILY_GAMES, getGame } from '@geogames/games';
 import { usePlatform } from './platform/PlatformProvider.tsx';
 import { href, useRoute, type Route } from './router.ts';
 import { Home } from './pages/Home.tsx';
+import { DailyPage } from './pages/DailyPage.tsx';
 import { GamePage } from './pages/GamePage.tsx';
 import { ScoresPage } from './pages/ScoresPage.tsx';
 import { PremiumPage } from './pages/PremiumPage.tsx';
@@ -27,6 +28,7 @@ function Page({ route }: { route: Route }) {
   if (route.page === 'home') return <Home />;
   const game = getGame(route.gameId);
   if (!game || game.status !== 'live') return <Home />;
+  if (route.page === 'daily') return DAILY_GAMES.includes(game.id) ? <DailyPage key={game.id} game={game} /> : <Home />;
   return route.page === 'play' ? <GamePage key={game.id} game={game} /> : <ScoresPage key={`${game.id}/${route.variant}`} game={game} variant={route.variant} />;
 }
 

@@ -1,7 +1,9 @@
-import { countries } from '@geogames/geodata';
+import { countries, getCountry, queryCountries } from '@geogames/geodata';
+import { loadGreatCircles } from '@geogames/geodata/cities';
 import {
   DEFAULT_SETTINGS,
   GAMES,
+  HARD_MODE_GUESSES,
   arcadePools,
   citySizeStops,
   createCircleArcade,
@@ -10,7 +12,12 @@ import {
   createCircleGame,
   createHigherLowerGame,
   loadPool,
+  createGreatCircle,
+  createMysteryCountry,
+  createPinDrop,
   createRouteGame,
+  dailyDate,
+  dailySeed,
   getGame,
   hintText,
   quizItems,
@@ -79,9 +86,9 @@ test('settings are remembered per game', async ({ page }) => {
   await expect(page.getByRole('radio', { name: /South America/ })).toHaveAttribute('aria-checked', 'true');
 });
 
-test('border route: a perfect game scores 50', async ({ page }) => {
-  // Plays a whole game; allow for a busy machine running both test servers.
-  test.slow();
+test('border route: a perfect run clears all 20 levels', async ({ page }) => {
+  // Plays all 20 levels: about 25 s alone, far longer beside every other test.
+  test.setTimeout(300_000);
   const engine = createRouteGame({ countries: routeCountries(), rounds: 5 });
   const idByName = new Map(countries.map((c) => [c.name, c.id]));
   const nameById = new Map(countries.map((c) => [c.id, c.name]));
@@ -90,7 +97,8 @@ test('border route: a perfect game scores 50', async ({ page }) => {
   await page.getByRole('button', { name: 'Start game' }).click();
   await expect(page.locator('.world-map')).toBeVisible({ timeout: 15_000 });
 
-  for (let round = 1; round <= 5; round++) {
+  for (let round = 1; round <= 20; round++) {
+    await expect(page.locator('.route-status')).toContainText(`Level ${round} of 20`);
     const [start, end] = await page.locator('.route-end').allTextContents();
     const minimal = Number(await page.locator('.route-hint strong').textContent());
     const route = engine.shortestRoute({ start: idByName.get(start!)!, end: idByName.get(end!)!, minimal });
@@ -98,11 +106,12 @@ test('border route: a perfect game scores 50', async ({ page }) => {
       await page.getByRole('combobox').fill(nameById.get(id)!);
       await page.getByRole('combobox').press('Enter');
     }
-    await expect(page.locator('.route-summary.solved')).toContainText('Connected! +10');
-    await page.getByRole('button', { name: round < 5 ? 'Next route' : 'See final score' }).click();
+    await expect(page.locator('.route-summary.solved')).toContainText(`Connected! +${10 * round}`);
+    await page.getByRole('button', { name: round < 20 ? 'Next level' : 'See final score' }).click();
   }
 
-  await expect(page.locator('.big-score')).toHaveText('50');
+  await expect(page.locator('.big-score')).toHaveText('2100');
+  await expect(page.getByText('You connected all 20 routes!')).toBeVisible();
 });
 
 test('border route: shows borders, moves country by country, rejects the rest', async ({ page }) => {
@@ -138,6 +147,67 @@ test('border route: shows borders, moves country by country, rejects the rest', 
   await input.press('Enter');
   await expect(page.locator('.guess')).toHaveCount(1);
   await expect(page.locator('.map-highlight.tone-optimal, .map-highlight.tone-near, .map-highlight.tone-far')).toHaveCount(1);
+});
+
+test('border route, hard: only your countries have borders, and the route length stays secret until the end', async ({ page }) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  const engine = createRouteGame({ countries: routeCountries(), rounds: 20, hard: true });
+  const nameById = new Map(countries.map((c) => [c.id, c.name]));
+  const { puzzle } = engine.current(engine.start(2 ** 31));
+
+  await openGame(page, 'border-route');
+  const difficulty = page.getByRole('radiogroup', { name: 'Difficulty' });
+  await expect(difficulty.getByRole('radio', { name: 'Easy' })).toHaveAttribute('aria-checked', 'true');
+  await difficulty.getByRole('radio', { name: 'Hard' }).click();
+  await page.getByRole('button', { name: 'Start game' }).click();
+  const input = page.getByRole('combobox');
+  await expect(input).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('.region-tag')).toHaveText('Arcade · Hard');
+
+  // Other countries' borders aren't even in the page.
+  await expect(page.locator('.map-country')).toHaveCount(2);
+  await expect(page.locator('.map-country[data-id]')).toHaveCount(0);
+
+  // Nothing gives the length away: same count for any route, and no number of steps.
+  const hint = page.locator('.route-hint');
+  await expect(hint).toHaveText(`${HARD_MODE_GUESSES} guesses left`);
+  await expect(page.locator('.route-message')).not.toContainText(/\d/);
+  await expect(page.locator('.route-summary')).toHaveCount(0);
+
+  // A country off the route costs a guess, and stays off the map.
+  const route = engine.shortestRoute(puzzle);
+  const borderingStart = engine.frontier(engine.current(engine.start(2 ** 31)));
+  const off = countries.find((c) => engine.graph.has(c.id) && !borderingStart.has(c.id) && !route.includes(c.id))!;
+  await input.fill(off.name);
+  await input.press('Enter');
+  await expect(page.locator('.route-message')).toHaveText(`${off.name} doesn't border your route. That cost you a guess.`);
+  await expect(hint).toHaveText(`${HARD_MODE_GUESSES - 1} guesses left`);
+  await expect(page.locator('.map-country')).toHaveCount(2);
+  await expect(page.locator('.guess-miss')).toContainText(off.name);
+  // The same one again is free.
+  await input.fill(off.name);
+  await input.press('Enter');
+  await expect(page.locator('.route-message')).toHaveText('Already guessed.');
+  await expect(hint).toHaveText(`${HARD_MODE_GUESSES - 1} guesses left`);
+
+  // A guess adds its own borders and nothing else.
+  const steps = route.slice(1, -1);
+  await input.fill(nameById.get(steps[0]!)!);
+  await input.press('Enter');
+  await expect(page.locator('.map-country')).toHaveCount(3);
+  if (steps.length > 1) await expect(hint).toHaveText(`${HARD_MODE_GUESSES - 2} guesses left`);
+
+  // At the end, the shortest route is told.
+  for (const id of steps.slice(1)) {
+    await input.fill(nameById.get(id)!);
+    await input.press('Enter');
+  }
+  // One miss: 2 points off.
+  await expect(page.locator('.route-summary.solved')).toContainText('Connected! +8');
+  await expect(page.locator('.route-summary.solved')).toContainText(`Shortest route: ${route.map((id) => nameById.get(id)).join(' → ')}`);
+  await expect(hint).toContainText(`Shortest route: ${puzzle.minimal}`);
 });
 
 test('capitals: right answers score, three wrong ones end the game', async ({ page }) => {
@@ -393,23 +463,120 @@ test('higher or lower: never repeats, and a perfect run ends when every country 
   expect(shown.size).toBe(12);
 });
 
-test('border route: Western Sahara is typeable and only dimmed outside its region', async ({ page }) => {
-  for (const [region, tone] of [
-    ['Africa', 'tone-base'],
-    ['Europe', 'tone-outside'],
-  ] as const) {
-    await page.goto('/'); // leave the running game so the setup screen opens again
-    await openGame(page, 'border-route');
-    await page.getByRole('radio', { name: new RegExp(region) }).click();
-    await page.getByRole('button', { name: 'Start game' }).click();
-    const input = page.getByRole('combobox');
-    await expect(input).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator('.map-country[data-id="ESH"]')).toHaveClass(new RegExp(tone));
-    if (region === 'Africa') {
-      await input.fill('Western Sah');
-      await expect(page.locator('.suggestions li').filter({ hasText: 'Western Sahara' })).toHaveCount(1);
-    }
+test('daily challenge: one try, resumes after a reload, and the result can be shared', async ({ page, context }) => {
+  test.slow();
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const game = getGame('border-route')!;
+  const seed = await dailySeed(game.id, dailyDate());
+  const engine = createRouteGame({ countries: routeCountries(), rounds: 20 });
+  const nameById = new Map(countries.map((c) => [c.id, c.name]));
+  let state = engine.start(seed);
+
+  await page.goto('/#/');
+  await page.locator('.daily').getByRole('link', { name: 'Border Route' }).click();
+  const input = page.getByRole('combobox');
+  await expect(input).toBeVisible({ timeout: 15_000 });
+  // No setup: everyone has the same settings, and this is today's run.
+  const { puzzle } = engine.current(state);
+  await expect(page.locator('.route-end')).toHaveText([nameById.get(puzzle.start)!, nameById.get(puzzle.end)!]);
+
+  // Clear level 1.
+  for (const id of engine.shortestRoute(puzzle).slice(1, -1)) {
+    await input.fill(nameById.get(id)!);
+    await input.press('Enter');
+    state = engine.guess(state, id).state;
   }
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextRound(state);
+
+  // On level 2, guess a detour, then reload: the run carries on rather than restarting.
+  const level2 = engine.current(state).puzzle;
+  const detour = [...engine.frontier(engine.current(state))].find((id) => engine.classify(level2, id) !== 'optimal')!;
+  await input.fill(nameById.get(detour)!);
+  await input.press('Enter');
+  state = engine.guess(state, detour).state;
+  await page.reload();
+  await expect(page.locator('.route-status')).toContainText('Level 2 of 20', { timeout: 15_000 });
+  await expect(page.locator('.guess')).toHaveCount(1);
+
+  // Run out of guesses.
+  while (state.status === 'playing') {
+    const puzzleNow = engine.current(state).puzzle;
+    const next = [...engine.frontier(engine.current(state))].sort(
+      (a, b) => Number(engine.classify(puzzleNow, a) === 'far') - Number(engine.classify(puzzleNow, b) === 'far'),
+    );
+    const wrong = next.reverse().find((id) => {
+      const after = engine.guess(state, id).state;
+      return engine.current(after).status !== 'solved';
+    });
+    if (!wrong) throw new Error('no way to avoid solving this route');
+    await input.fill(nameById.get(wrong)!);
+    await input.press('Enter');
+    state = engine.guess(state, wrong).state;
+  }
+  await page.getByRole('button', { name: 'See final score' }).click();
+  await expect(page.locator('.big-score')).toHaveText('10');
+  await expect(page.getByText('You reached level 2 of 20.')).toBeVisible();
+  await expect(page.locator('.daily-share-line')).toHaveText('🟩🟥');
+
+  // A shareable result, without naming a single country.
+  await page.getByRole('button', { name: 'Copy result' }).click();
+  await expect(page.getByRole('button', { name: 'Copied!' })).toBeVisible();
+  const shared = await page.evaluate(() => navigator.clipboard.readText());
+  expect(shared).toContain(`GeoGames daily ${dailyDate()}`);
+  expect(shared).toContain('Border Route: 10 points');
+  expect(shared).toContain('🟩🟥');
+  expect(shared).not.toContain(nameById.get(puzzle.start)!);
+
+  // One try: coming back shows the result, and the home page says so.
+  await page.reload();
+  await expect(page.locator('.big-score')).toHaveText('10');
+  await expect(page.getByRole('combobox')).toHaveCount(0);
+  await page.goto('/#/');
+  await expect(page.locator('.daily').getByRole('link', { name: 'Border Route' })).toContainText('today: 10');
+});
+
+test('border route: Western Sahara is typeable, and a run has no region to pick', async ({ page }) => {
+  await openGame(page, 'border-route');
+  await expect(page.getByRole('radio', { name: /Europe/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Start game' }).click();
+  const input = page.getByRole('combobox');
+  await expect(input).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('.map-country[data-id="ESH"]')).toHaveClass(/tone-base/);
+  await input.fill('Western Sah');
+  await expect(page.locator('.suggestions li').filter({ hasText: 'Western Sahara' })).toHaveCount(1);
+});
+
+test('border route: running out of guesses ends the run at once', async ({ page }) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  const engine = createRouteGame({ countries: routeCountries(), rounds: 20, hard: true });
+  let state = engine.start(2 ** 31);
+  const nameById = new Map(countries.map((c) => [c.id, c.name]));
+
+  await openGame(page, 'border-route');
+  await page.getByRole('radiogroup', { name: 'Difficulty' }).getByRole('radio', { name: 'Hard' }).click();
+  await page.getByRole('button', { name: 'Start game' }).click();
+  const input = page.getByRole('combobox');
+  await expect(input).toBeVisible({ timeout: 15_000 });
+
+  // Twelve different countries off the route.
+  const start = engine.current(state).puzzle;
+  const frontier = engine.frontier(engine.current(state));
+  const wrong = countries
+    .filter((c) => engine.graph.has(c.id) && !frontier.has(c.id) && c.id !== start.start && c.id !== start.end)
+    .slice(0, HARD_MODE_GUESSES);
+  for (const c of wrong) {
+    await input.fill(nameById.get(c.id)!);
+    await input.press('Enter');
+    state = engine.guess(state, c.id).state;
+  }
+  await expect(page.locator('.route-summary.failed')).toContainText('Out of guesses');
+  await page.getByRole('button', { name: 'See final score' }).click();
+  await expect(page.locator('.big-score')).toHaveText('0');
+  await expect(page.getByText('You reached level 1 of 20.')).toBeVisible();
+  expect(state.status).toBe('over');
 });
 
 test('city circle arcade: perfect level earns a life, misses are free, skips cost lives, game ends at zero', async ({ page }) => {
@@ -503,6 +670,289 @@ test('city circle arcade: choosing the city data sets the search and the rules, 
   await page.goto('/#/');
   await openGame(page, 'city-circle-arcade');
   await expect(page.getByRole('radiogroup', { name: 'City data' }).getByRole('radio', { name: 'City proper' })).toHaveAttribute('aria-checked', 'true');
+});
+
+test('pin drop: clicking places a pin, shows how far off, and the budget ends the run', async ({ page }) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  await openGame(page, 'pin-drop');
+  await page.getByRole('button', { name: 'Start game' }).click();
+  const map = page.locator('.world-map.pickable');
+  await expect(map).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('.pin-prompt')).toContainText('Where is');
+  const box = (await map.boundingBox())!;
+
+  // No labels to read the answer from.
+  await expect(page.locator('.map-label')).toHaveCount(0);
+
+  let cities = 0;
+  for (; cities < 30; cities++) {
+    // The middle of the Pacific edge of the map: wrong by a lot, every time.
+    await page.mouse.click(box.x + 8, box.y + box.height * 0.5);
+    const final = page.getByRole('button', { name: 'See final score' });
+    const next = page.getByRole('button', { name: 'Next city' });
+    await expect(final.or(next)).toBeVisible();
+    await expect(page.locator('.route-summary-title')).toContainText('km off');
+    await expect(page.locator('.pin-guess')).toHaveCount(1);
+    await expect(page.locator('.pin-line')).toHaveCount(1);
+    await expect(page.locator('.marker-found text')).not.toHaveText('');
+    if (await final.isVisible()) {
+      await final.click();
+      break;
+    }
+    await next.click();
+    await expect(page.locator('.pin-guess')).toHaveCount(0);
+  }
+  expect(cities).toBeLessThan(10);
+  await expect(page.locator('.big-score')).toBeVisible();
+  await expect(page.getByText(/You reached city \d+\./)).toBeVisible();
+});
+
+test('pin drop: zooms in far enough for a precise pin, and the pin lands where clicked', async ({ page }) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  await openGame(page, 'pin-drop');
+  await page.getByRole('button', { name: 'Start game' }).click();
+  const map = page.locator('.world-map.pickable');
+  await expect(map).toBeVisible({ timeout: 20_000 });
+  const box = (await map.boundingBox())!;
+  const layer = map.locator(':scope > g').first();
+  const scale = async () => Number(/scale\(([\d.e-]+)\)/.exec((await layer.getAttribute('transform'))!)![1]);
+
+  // Beyond the 20x other maps stop at: keep zooming until the button gives up.
+  const zoomIn = page.getByRole('button', { name: 'Zoom in' });
+  let last = 0;
+  for (let i = 0; i < 14 && (await scale()) !== last; i++) {
+    last = await scale();
+    await zoomIn.click();
+    await page.waitForTimeout(30);
+  }
+  expect(await scale()).toBeGreaterThan(50);
+  expect(await scale()).toBeLessThanOrEqual(60);
+
+  // Zoomed all the way in, the pin still lands where the click was: the middle of the map.
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(page.locator('.route-summary-title')).toContainText('km off');
+  expect(Math.abs(Number(await page.locator('.pin-guess').getAttribute('cx')) - 480)).toBeLessThan(2);
+});
+
+test('daily challenge: pin drop resumes after a reload and shares its marks', async ({ page, context }) => {
+  test.slow();
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const engine = createPinDrop(await arcadePools());
+  const seed = await dailySeed('pin-drop', dailyDate());
+  const first = engine.cities.get(engine.start(seed).city)!;
+
+  await page.goto('/#/');
+  await page.locator('.daily').getByRole('link', { name: 'Pin Drop' }).click();
+  const map = page.locator('.world-map');
+  await expect(map).toBeVisible({ timeout: 20_000 });
+  // Today's city for everyone, with no setup screen.
+  await expect(page.locator('.pin-prompt')).toContainText(first.name);
+  const box = (await map.boundingBox())!;
+
+  await page.mouse.click(box.x + 8, box.y + box.height * 0.5);
+  const result = page.locator('.route-summary-title');
+  await expect(result).toContainText('km off');
+  const before = await result.innerText();
+  await page.reload();
+  // The pin from before the reload still counts: same result, not a fresh start.
+  await expect(result).toHaveText(before, { timeout: 20_000 });
+
+  for (let i = 0; i < 20; i++) {
+    const final = page.getByRole('button', { name: 'See final score' });
+    if (await final.isVisible()) {
+      await final.click();
+      break;
+    }
+    const next = page.getByRole('button', { name: 'Next city' });
+    if (await next.isVisible()) await next.click();
+    await page.mouse.click(box.x + 8, box.y + box.height * 0.5);
+    await expect(final.or(next)).toBeVisible();
+  }
+  await expect(page.locator('.daily-share-line')).toHaveText(/^[🎯🟩🟧🟥]+$/u);
+
+  await page.getByRole('button', { name: 'Copy result' }).click();
+  await expect(page.getByRole('button', { name: 'Copied!' })).toBeVisible();
+  const shared = await page.evaluate(() => navigator.clipboard.readText());
+  expect(shared).toContain('Pin Drop:');
+  expect(shared).not.toContain(first.name);
+
+  await page.reload();
+  await expect(page.locator('.big-score')).toBeVisible();
+  await expect(page.locator('.world-map')).toHaveCount(0);
+});
+
+test('great circle: name the countries on the line, in any order, until the lives run out', async ({ page }) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  const { puzzles } = await loadGreatCircles();
+  const engine = createGreatCircle({ puzzles, countries: queryCountries(), rounds: 20 });
+  const nameOf = (id: string) => countries.find((c) => c.id === id)!.name;
+  let state = engine.start(Math.floor(0.5 * 2 ** 32));
+  const { puzzle } = state;
+
+  await openGame(page, 'great-circle');
+  await expect(page.getByRole('radio', { name: /Europe/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Start game' }).click();
+  const input = page.getByRole('combobox');
+  await expect(input).toBeVisible({ timeout: 20_000 });
+
+  // The line, its two ends and one blank per country; no names given away.
+  await expect(page.locator('.route-end')).toHaveText([puzzle.from.name, puzzle.to.name]);
+  await expect(page.locator('.gc-line')).toHaveAttribute('d', /.{10}/);
+  await expect(page.locator('.gc-slots li')).toHaveCount(puzzle.via.length);
+  await expect(page.locator('.gc-slots')).not.toContainText(nameOf(puzzle.via[0]!));
+  // Only the two end countries are drawn: no other border is in the page at all.
+  await expect(page.locator('.world-map .map-country')).toHaveCount(2);
+  await expect(page.locator('.map-label')).toHaveCount(0);
+
+  // A wrong country costs a life, and the same one again doesn't.
+  const wrong = countries.find(
+    (c) => queryCountries().includes(c) && !puzzle.via.includes(c.id) && c.id !== puzzle.from.countryId && c.id !== puzzle.to.countryId,
+  )!;
+  await input.fill(wrong.name);
+  await input.press('Enter');
+  state = engine.guess(state, wrong.id).state;
+  await expect(page.locator('.route-message')).toContainText(`doesn't cross ${wrong.name}`);
+  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(4);
+
+  // Last country first: the order doesn't matter, and each lands in its place along the line.
+  for (const id of [...puzzle.via].reverse()) {
+    await input.fill(nameOf(id));
+    await input.press('Enter');
+    state = engine.guess(state, id).state;
+  }
+  await expect(page.locator('.gc-slots li').first()).toContainText(nameOf(puzzle.via[0]!));
+  await expect(page.locator('.route-summary.solved')).toContainText('Level 1 cleared!');
+  await expect(page.locator('.bonus-life')).toHaveCount(0);
+  await expect(page.locator('.route-status')).toContainText(`Score ${state.score}`);
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextLevel(state);
+  await expect(page.locator('.route-status')).toContainText('Level 2 of 20');
+
+  // Skips use up the lives, and the run ends.
+  while (state.status !== 'over') {
+    if (state.status === 'level-clear') {
+      await page.getByRole('button', { name: 'Next level' }).click();
+      state = engine.nextLevel(state);
+    }
+    await page.getByRole('button', { name: /Skip country/ }).click();
+    state = engine.skip(state);
+  }
+  await expect(page.locator('.route-summary.failed')).toContainText('Out of lives');
+  await page.getByRole('button', { name: 'See final score' }).click();
+  await expect(page.locator('.big-score')).toHaveText(String(state.score));
+  await expect(page.getByText(`You reached level ${state.level} of 20.`)).toBeVisible();
+});
+
+test('mystery country: wrong guesses give clues, and running out ends the run', async ({ page }) => {
+  test.slow();
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  const pool = queryCountries();
+  const engine = createMysteryCountry({ countries: pool, rounds: 20 });
+  let state = engine.start(Math.floor(0.5 * 2 ** 32));
+
+  await openGame(page, 'mystery-country');
+  await expect(page.getByRole('radio', { name: /Europe/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Start game' }).click();
+  const input = page.getByRole('combobox');
+  await expect(input).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('.route-status')).toContainText('Level 1 of 20');
+  await expect(page.locator('.mystery-left')).toHaveText('6');
+  // Nothing is drawn before the first guess: no borders, and no sign of the answer.
+  await expect(page.locator('.world-map .map-country')).toHaveCount(0);
+  await expect(page.locator('.mystery-clues')).toHaveCount(0);
+
+  const guess = async (name: string) => {
+    await input.fill(name);
+    await input.press('Enter');
+  };
+  const wrongs = pool.filter((c) => c.id !== state.target && c.subregion !== getCountry(state.target)!.subregion).slice(0, 5);
+  await guess(wrongs[0]!.name);
+  await expect(page.locator('.mystery-row:not(.mystery-head)')).toHaveCount(1);
+  await expect(page.locator('.mystery-row:not(.mystery-head)')).toContainText(wrongs[0]!.name);
+  await expect(page.locator('.mystery-left')).toHaveText('5');
+  await expect(page.locator('.world-map .map-country')).toHaveCount(1);
+  await expect(page.locator('.mystery-clues')).toHaveCount(0);
+
+  // More clues as the guesses go, without naming the answer.
+  await guess(wrongs[1]!.name);
+  const target = getCountry(state.target)!;
+  await expect(page.locator('.mystery-clues')).toContainText(target.landlocked ? 'Landlocked' : 'Has a coast');
+  await guess(wrongs[2]!.name);
+  await expect(page.locator('.mystery-clues')).toContainText(target.subregion!);
+  await expect(page.locator('.mystery-clues')).not.toContainText('Capital');
+  await guess(wrongs[3]!.name);
+  await guess(wrongs[4]!.name);
+  await expect(page.locator('.mystery-clues')).toContainText(`Capital: ${target.capitals[0]}`);
+  await expect(page.locator('.mystery-left')).toHaveText('1');
+
+  // Right on the last guess: the fewest points, and on to the next level.
+  await guess(target.name);
+  await expect(page.locator('.route-summary.solved')).toContainText(`It's ${target.name}!`);
+  for (const w of wrongs) state = engine.guess(state, w.id).state;
+  state = engine.guess(state, target.id).state;
+  await expect(page.locator('.route-status')).toContainText(`Score ${state.score}`);
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextLevel(state);
+  await expect(page.locator('.route-status')).toContainText('Level 2 of 20');
+  await expect(page.locator('.mystery-row')).toHaveCount(0);
+
+  // Six wrong guesses end the run and reveal the country.
+  const next = getCountry(state.target)!;
+  const misses = pool.filter((c) => c.id !== next.id).slice(0, 6);
+  for (const w of misses) await guess(w.name);
+  await expect(page.locator('.route-summary.failed')).toContainText(`It was ${next.name}.`);
+  await page.getByRole('button', { name: 'See final score' }).click();
+  await expect(page.locator('.big-score')).toHaveText(String(state.score));
+  await expect(page.getByText('You reached level 2 of 20.')).toBeVisible();
+});
+
+test('daily challenge: mystery country resumes after a reload and shares without spoilers', async ({ page, context }) => {
+  test.slow();
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const pool = queryCountries();
+  const engine = createMysteryCountry({ countries: pool, rounds: 20 });
+  const seed = await dailySeed('mystery-country', dailyDate());
+  const first = getCountry(engine.start(seed).target)!;
+
+  await page.goto('/#/');
+  await page.locator('.daily').getByRole('link', { name: 'Mystery Country' }).click();
+  const input = page.getByRole('combobox');
+  await expect(input).toBeVisible({ timeout: 20_000 });
+
+  const wrong = pool.filter((c) => c.id !== first.id).slice(0, 6);
+  await input.fill(wrong[0]!.name);
+  await input.press('Enter');
+  await expect(page.locator('.mystery-left')).toHaveText('5');
+  await page.reload();
+  // The guess from before the reload still counts.
+  await expect(page.locator('.mystery-left')).toHaveText('5', { timeout: 20_000 });
+  await expect(page.locator('.mystery-row:not(.mystery-head)')).toContainText(wrong[0]!.name);
+
+  // Solve it in two, then lose the next level.
+  await input.fill(first.name);
+  await input.press('Enter');
+  await page.getByRole('button', { name: 'Next level' }).click();
+  const second = getCountry(engine.nextLevel(engine.guess(engine.guess(engine.start(seed), wrong[0]!.id).state, first.id).state).target)!;
+  for (const w of pool.filter((c) => c.id !== second.id).slice(0, 6)) {
+    await input.fill(w.name);
+    await input.press('Enter');
+  }
+  await page.getByRole('button', { name: 'See final score' }).click();
+  await expect(page.locator('.daily-share-line')).toHaveText('2️⃣🟥');
+
+  await page.getByRole('button', { name: 'Copy result' }).click();
+  await expect(page.getByRole('button', { name: 'Copied!' })).toBeVisible();
+  const shared = await page.evaluate(() => navigator.clipboard.readText());
+  expect(shared).toContain('Mystery Country:');
+  expect(shared).not.toContain(first.name);
 });
 
 test('maps zoom out past the starting view to show the whole world, and reset back', async ({ page }) => {

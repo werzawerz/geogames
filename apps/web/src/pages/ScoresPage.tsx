@@ -5,6 +5,9 @@ import {
   variantKey,
   usesCircleOptions,
   usesCityData,
+  usesRouteMode,
+  CITY_DATA,
+  ROUTE_MODES,
   usesCitySize,
   usesDifficulty,
   usesRegion,
@@ -15,7 +18,7 @@ import { usePlatform } from '../platform/PlatformProvider.tsx';
 import type { LeaderboardScope, RankedScore } from '../platform/scores.ts';
 import { RegionPicker } from '../components/RegionPicker.tsx';
 import { CitySizeSlider } from '../components/CitySizeSlider.tsx';
-import { CityDataPicker } from '../components/CityDataPicker.tsx';
+import { DescribedChips } from '../components/ChoiceChips.tsx';
 import { DifficultyPicker } from '../components/DifficultyPicker.tsx';
 import { CircleOptions } from '../components/CircleOptions.tsx';
 import { href } from '../router.ts';
@@ -60,7 +63,8 @@ export function ScoresPage({ game, variant = 'world' }: { game: GameDefinition; 
           <CircleOptions settings={settings} onChange={choose} mode="leaderboard" />
         </div>
       )}
-      {usesCityData(game) && <CityDataPicker value={settings.cityData} onChange={(cityData) => choose({ ...settings, cityData })} />}
+      {usesCityData(game) && <DescribedChips options={CITY_DATA} label="City data" value={settings.cityData} onChange={(cityData) => choose({ ...settings, cityData })} />}
+      {usesRouteMode(game) && <DescribedChips options={ROUTE_MODES} label="Difficulty" value={settings.routeMode} onChange={(routeMode) => choose({ ...settings, routeMode })} />}
       {usesCitySize(game) && (
         <CitySizeSlider
           region={settings.region}

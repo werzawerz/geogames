@@ -24,7 +24,7 @@ export interface HigherLowerDefinition extends BaseDefinition {
 export interface RouteDefinition extends BaseDefinition {
   kind: 'route';
   subject: 'country';
-  /** Puzzles per game. */
+  /** Levels in a run; failing one ends it sooner. */
   rounds: number;
 }
 
@@ -52,8 +52,35 @@ export interface CircleArcadeDefinition extends BaseDefinition {
   subject: 'city';
 }
 
+export interface PinDropDefinition extends BaseDefinition {
+  kind: 'pin-drop';
+  subject: 'city';
+}
+
+export interface GreatCircleDefinition extends BaseDefinition {
+  kind: 'great-circle';
+  subject: 'country';
+  /** Levels in a run. */
+  rounds: number;
+}
+
+export interface MysteryCountryDefinition extends BaseDefinition {
+  kind: 'mystery-country';
+  subject: 'country';
+  /** Levels in a run. */
+  rounds: number;
+}
+
 /** Static description of a game mode; the web app maps `kind` to a UI component. */
-export type GameDefinition = HigherLowerDefinition | RouteDefinition | QuizDefinition | CircleDefinition | CircleArcadeDefinition;
+export type GameDefinition =
+  | HigherLowerDefinition
+  | RouteDefinition
+  | QuizDefinition
+  | CircleDefinition
+  | CircleArcadeDefinition
+  | PinDropDefinition
+  | GreatCircleDefinition
+  | MysteryCountryDefinition;
 
 export const GAMES: readonly GameDefinition[] = [
   {
@@ -98,9 +125,9 @@ export const GAMES: readonly GameDefinition[] = [
     kind: 'route',
     subject: 'country',
     title: 'Border Route',
-    tagline: 'Connect two countries through as few neighbours as possible.',
+    tagline: 'Connect two countries through as few neighbours as possible. How far can you get?',
     status: 'live',
-    rounds: 5,
+    rounds: 20,
   },
   {
     id: 'capitals',
@@ -128,6 +155,32 @@ export const GAMES: readonly GameDefinition[] = [
     subject: 'city',
     title: 'City Circle Arcade',
     tagline: 'Endless circles, getting smaller and harder. How far can you get?',
+    status: 'live',
+  },
+  {
+    id: 'mystery-country',
+    kind: 'mystery-country',
+    subject: 'country',
+    title: 'Mystery Country',
+    tagline: 'Every wrong guess gives a clue: how far, which way, how big. Work out the country.',
+    status: 'live',
+    rounds: 20,
+  },
+  {
+    id: 'great-circle',
+    kind: 'great-circle',
+    subject: 'country',
+    title: 'Great Circle',
+    tagline: 'A straight line runs between two cities. Which countries does it cross?',
+    status: 'live',
+    rounds: 20,
+  },
+  {
+    id: 'pin-drop',
+    kind: 'pin-drop',
+    subject: 'city',
+    title: 'Pin Drop',
+    tagline: 'Click where the city is. Every kilometre off eats into your budget.',
     status: 'live',
   },
   {

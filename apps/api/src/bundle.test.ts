@@ -9,6 +9,7 @@ import {
   arcadePools,
   createChoiceQuiz,
   createCircleArcade,
+  createMysteryCountry,
   createRouteGame,
   normalizeSettings,
   quizItems,
@@ -19,6 +20,7 @@ import {
   type QuizDefinition,
   type RouteDefinition,
 } from '@geogames/games';
+import { queryCountries } from '@geogames/geodata';
 import { bundle } from '../scripts/bundle.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -90,6 +92,43 @@ describe('the server bundle', () => {
     while (q.status !== 'over') q = quiz.next(quiz.answer(q, 0));
     const moves = q.moves.map(String);
     expect(await server.replayGame(definition, quizSettings, 9, moves)).toEqual(await replayGame(definition, quizSettings, 9, moves));
+  });
+
+  it('scores Mystery Country the same, without country positions', async () => {
+    const definition = GAMES.find((g) => g.kind === 'mystery-country')!;
+    const settings = normalizeSettings({}, definition);
+    const engine = createMysteryCountry({ countries: queryCountries(), rounds: 20 });
+    let state = engine.start(31);
+    for (let i = 0; i < 12; i++) state = engine.nextLevel(engine.guess(state, state.target).state);
+    while (state.status === 'playing') state = engine.guess(state, queryCountries().find((c) => c.id !== state.target && !state.guesses.includes(c.id))!.id).state;
+    const full = await replayGame(definition, settings, 31, state.moves);
+    expect(full).toEqual({ score: state.score, finished: true });
+    expect(await server.replayGame(definition, settings, 31, state.moves)).toEqual(full);
+  });
+
+  it('replays hard Border Route with its fixed guesses', async () => {
+    const route = GAMES.find((g) => g.kind === 'route') as RouteDefinition;
+    const settings = normalizeSettings({ routeMode: 'hard' }, route);
+    const engine = createRouteGame({ countries: routeCountries(settings), rounds: route.rounds, hard: true });
+    let state = engine.start(21);
+    while (state.status !== 'over') {
+      if (state.status === 'round-over') state = engine.nextRound(state);
+      const round = engine.current(state);
+      // Wastes guesses on detours first: more than easy mode's limit would allow on short routes.
+      const route = engine.shortestRoute(round.puzzle);
+      for (let i = 0; i < 2 && state.status === 'playing'; i++) {
+        const detour = [...engine.frontier(engine.current(state))].find((id) => !route.includes(id));
+        if (detour) state = engine.guess(state, detour).state;
+      }
+      // And a miss, which counts though it's not on the route.
+      const borders = engine.frontier(engine.current(state));
+      const miss = [...engine.graph.keys()].find((id) => !borders.has(id) && !route.includes(id) && !engine.current(state).guesses.includes(id));
+      if (miss && state.status === 'playing') state = engine.guess(state, miss).state;
+      for (const id of route.slice(1, -1)) if (state.status === 'playing') state = engine.guess(state, id).state;
+    }
+    const full = await replayGame(route, settings, 21, state.moves);
+    expect(full).toEqual({ score: state.score, finished: true });
+    expect(await server.replayGame(route, settings, 21, state.moves)).toEqual(full);
   });
 
   it('builds every live game without the fields it strips', async () => {

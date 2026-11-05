@@ -151,6 +151,29 @@ export interface CityProperData {
   cities: SmallCity[];
 }
 
+export interface GreatCircleCity {
+  id: CityId;
+  name: string;
+  countryId: CountryId;
+  /** [lat, lng] */
+  latlng: readonly [number, number];
+}
+
+/** A straight line between two cities, and the countries it crosses on the way. */
+export interface GreatCirclePuzzle {
+  from: GreatCircleCity;
+  to: GreatCircleCity;
+  /** In order along the line, without the two end countries. */
+  via: CountryId[];
+  /** Both ends are cities most players could place. */
+  easy: boolean;
+}
+
+/** data/great-circles.json */
+export interface GreatCircleData {
+  puzzles: GreatCirclePuzzle[];
+}
+
 /** data/cities/index.json: metadata for the split city files. */
 export interface CityIndex {
   schemaVersion: number;

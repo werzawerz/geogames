@@ -143,6 +143,11 @@ export function poolSizes(game: GameDefinition, settings: GameSettings = DEFAULT
     for (const r of REGIONS) sizes[r.id] = quizItems(game, { ...settings, region: r.id }).length;
     return sizes;
   }
+  if (game.kind === 'pin-drop' || game.kind === 'great-circle' || game.kind === 'mystery-country') {
+    // No region to choose, and the setup screen doesn't show a count.
+    sizes.world = MIN_POOL_SIZE;
+    return sizes;
+  }
   if (game.kind === 'route') {
     for (const r of REGIONS) {
       const routable = routableCountries(buildBorderGraph(routeCountries({ ...settings, region: r.id })));

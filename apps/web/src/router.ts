@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 export type Route =
   | { page: 'home' }
   | { page: 'play'; gameId: string }
+  | { page: 'daily'; gameId: string }
   | { page: 'scores'; gameId: string; variant?: string }
   | { page: 'premium' };
 
@@ -10,6 +11,7 @@ export type Route =
 export function parseRoute(hash: string): Route {
   const [, page, arg, variant] = hash.replace(/^#/, '').split('/');
   if (page === 'play' && arg) return { page: 'play', gameId: arg };
+  if (page === 'daily' && arg) return { page: 'daily', gameId: arg };
   if (page === 'scores' && arg) return { page: 'scores', gameId: arg, variant };
   if (page === 'premium') return { page: 'premium' };
   return { page: 'home' };

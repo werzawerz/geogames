@@ -1,4 +1,4 @@
-import { randomSeed, type GameDefinition, type GameSettings } from '@geogames/games';
+import { dailyDate, dailySeed, dailyVariant, randomSeed, type GameDefinition, type GameSettings } from '@geogames/games';
 import { createLocalEntitlements, type Allowance, type Plan } from './entitlements.ts';
 import { loadPlayer, savePlayer, type Player } from './player.ts';
 import { createLocalScores, type ScoreService, type SubmitResult } from './scores.ts';
@@ -14,6 +14,12 @@ export type StartResult =
   | { status: 'out-of-plays'; allowance: Allowance }
   /** This page is on older game data than the server: it has to reload. */
   | { status: 'update-required' };
+
+export type DailyStart =
+  | { status: 'ok'; date: string; play: Play; finishedScore: number | null }
+  | { status: 'update-required' }
+  /** The same run for everyone comes from the server, so it can't be played without it. */
+  | { status: 'unavailable' };
 
 export interface FinishedGame {
   gameId: string;
@@ -41,6 +47,8 @@ export interface Backend {
   rename(player: Player): Promise<void>;
   scores: ScoreService;
   startPlay(game: GameDefinition, settings: GameSettings): Promise<StartResult>;
+  /** Opens or reopens today's run of a game; spends no free play. */
+  startDaily(game: GameDefinition): Promise<DailyStart>;
   finishPlay(play: Play, game: FinishedGame, player: Player): Promise<FinishResult>;
   /** Stand-in for a checkout while there's no server to hold subscriptions. */
   simulatePlan?(plan: Plan): Allowance;
@@ -59,6 +67,16 @@ export function createLocalBackend(): Backend {
     async startPlay() {
       if (!entitlements.consumePlay()) return { status: 'out-of-plays', allowance: entitlements.getAllowance() };
       return { status: 'ok', play: { seed: randomSeed(), sessionId: null }, allowance: entitlements.getAllowance() };
+    },
+    async startDaily(game) {
+      const date = dailyDate();
+      const [played] = (await scores.top(game.id, dailyVariant(date), 'personal', 1)) ?? [];
+      return {
+        status: 'ok',
+        date,
+        play: { seed: await dailySeed(game.id, date), sessionId: null },
+        finishedScore: played ? played.score : null,
+      };
     },
     async finishPlay(_play, game, player) {
       const result = await scores.submit({ ...game, playerId: player.id, playerName: player.name });

@@ -10,6 +10,14 @@ export function load<T>(key: string, fallback: T): T {
   }
 }
 
+export function remove(key: string): void {
+  try {
+    localStorage.removeItem(PREFIX + key);
+  } catch {
+    // Storage can be unavailable (private windows); nothing to remove then.
+  }
+}
+
 export function save(key: string, value: unknown): void {
   try {
     localStorage.setItem(PREFIX + key, JSON.stringify(value));

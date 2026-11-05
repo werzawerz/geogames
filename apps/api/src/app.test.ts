@@ -4,6 +4,9 @@ import {
   arcadePools,
   createCircleArcade,
   createHigherLowerGame,
+  dailyDate,
+  dailySeed,
+  dailyVariant,
   getGame,
   loadPool,
   normalizeSettings,
@@ -27,6 +30,7 @@ beforeAll(async () => {
     rpc: local.rpc,
     verifyToken: async (token) => (token === 'alice' ? ALICE : token === 'bob' ? BOB : null),
     freePlaysPerDay: FREE_PLAYS,
+    dailySecret: 'test-secret',
     allowedOrigins: '*',
   });
 });
@@ -183,6 +187,73 @@ describe('game sessions', () => {
     const res = await call('POST', `/sessions/${session.sessionId}/finish`, 'alice', { moves: state.guesses });
     expect(res.json.score).toBe(state.score);
     expect(state.score).toBeGreaterThan(0);
+  });
+});
+
+describe('daily challenge', () => {
+  const startDaily = (token: string, gameId = 'city-circle-arcade', datasetVersion = DATASET_VERSION) =>
+    call('POST', `/daily/${gameId}/start`, token, { datasetVersion });
+
+  it('gives everyone the same run, different per game and with a seed nobody can work out', async () => {
+    const a = await startDaily('alice');
+    const b = await startDaily('bob');
+    expect(a.status).toBe(200);
+    expect(a.json.date).toBe(dailyDate());
+    expect(a.json.seed).toBe(b.json.seed);
+    expect(a.json.sessionId).not.toBe(b.json.sessionId);
+    expect((await startDaily('alice', 'border-route')).json.seed).not.toBe(a.json.seed);
+    expect(a.json.seed).toBe(await dailySeed('city-circle-arcade', dailyDate(), 'test-secret'));
+    expect(a.json.seed).not.toBe(await dailySeed('city-circle-arcade', dailyDate()));
+  });
+
+  it("doesn't spend a free play, and works when they're used up", async () => {
+    await startDaily('alice');
+    expect((await call('GET', '/me', 'alice')).json.allowance.used).toBe(0);
+    for (let i = 0; i < FREE_PLAYS; i++) await start('alice');
+    expect((await start('alice')).status).toBe(402);
+    expect((await startDaily('alice', 'border-route')).status).toBe(200);
+  });
+
+  it('allows one try: reopening returns the same run, and a finished one its score', async () => {
+    const first = await startDaily('alice');
+    const again = await startDaily('alice');
+    expect(again.json).toEqual(first.json);
+    expect(first.json.finishedScore).toBeNull();
+
+    const played = await playArcade(first.json.seed, 2);
+    const finished = await call('POST', `/sessions/${first.json.sessionId}/finish`, 'alice', { moves: played.moves });
+    expect(finished.json.score).toBe(played.score);
+
+    const after = await startDaily('alice');
+    expect(after.json).toMatchObject({ sessionId: first.json.sessionId, finishedScore: played.score });
+    // Simultaneous first calls can't open two runs either.
+    const both = await Promise.all([startDaily('bob'), startDaily('bob')]);
+    expect(both[0]!.json.sessionId).toBe(both[1]!.json.sessionId);
+  });
+
+  it('has a leaderboard of its own for the day', async () => {
+    const { json: session } = await startDaily('alice');
+    const played = await playArcade(session.seed, 1);
+    await call('POST', `/sessions/${session.sessionId}/finish`, 'alice', { moves: played.moves });
+    const board = await call('GET', `/leaderboards/city-circle-arcade/${dailyVariant(dailyDate())}`);
+    expect(board.json.entries.map((e: any) => e.score)).toEqual([played.score]);
+    expect((await call('GET', '/leaderboards/city-circle-arcade/world')).json.entries).toEqual([]);
+    expect((await call('GET', '/me', 'alice')).json.bests['city-circle-arcade']).toEqual({ [dailyVariant(dailyDate())]: played.score });
+  });
+
+  it('refuses other games and clients on other data', async () => {
+    expect((await startDaily('alice', 'capitals')).status).toBe(404);
+    expect((await startDaily('alice', 'city-circle-arcade', 'old')).status).toBe(409);
+    expect((await call('POST', '/daily/border-route/start')).status).toBe(401);
+  });
+
+  it('starts over a run left on data that has been replaced since', async () => {
+    const first = await startDaily('alice');
+    await local.db.exec(`update public.game_sessions set dataset_version = 'old', seed = 1`);
+    const reopened = await startDaily('alice');
+    expect(reopened.json.seed).toBe(first.json.seed);
+    const { rows } = await local.db.query<{ dataset_version: string }>('select dataset_version from public.game_sessions');
+    expect(rows).toEqual([{ dataset_version: DATASET_VERSION }]);
   });
 });
 

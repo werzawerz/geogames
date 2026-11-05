@@ -875,6 +875,11 @@ a {
   flex-shrink: 0;
 }
 
+.guess-miss {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
 .route-message {
   text-align: center;
   color: var(--muted);
@@ -1423,4 +1428,124 @@ a {
   color: #fcd34d;
   font-weight: 700;
   margin: 0;
+}
+
+.daily {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.daily-title {
+  margin: 0 0 4px;
+}
+
+.daily-games {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.daily-today {
+  font-weight: 400;
+}
+
+.daily-share-line {
+  font-size: 1.25rem;
+  letter-spacing: 1px;
+  overflow-wrap: anywhere;
+}
+
+.pin-line {
+  fill: none;
+  stroke: #f8fafc;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.pin-guess {
+  fill: var(--wrong);
+  stroke: #f8fafc;
+  stroke-width: 1.5;
+}
+
+.gc-line {
+  fill: none;
+  stroke: #f8fafc;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.mystery-clues {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mystery-clues li {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--accent, currentColor);
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.mystery-table {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.mystery-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.4fr) minmax(0, 1.1fr) 3rem 4.5rem 3.5rem 3.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  text-align: center;
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.mystery-row > :first-child {
+  text-align: left;
+}
+
+.mystery-row.tone-optimal { box-shadow: inset 4px 0 0 var(--tone-optimal); }
+.mystery-row.tone-near { box-shadow: inset 4px 0 0 var(--tone-near); }
+.mystery-row.tone-far { box-shadow: inset 4px 0 0 var(--tone-far); }
+
+.mystery-head {
+  background: none;
+  padding-block: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.mystery-way {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+@media (max-width: 640px) {
+  .mystery-row {
+    grid-template-columns: minmax(0, 1.5fr) 2rem 3.6rem 2.6rem 2.6rem;
+    font-size: 0.85rem;
+    gap: 0.25rem;
+    padding-inline: 0.6rem;
+  }
+
+  .mystery-row > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .mystery-head > :first-child {
+    display: none;
+  }
 }

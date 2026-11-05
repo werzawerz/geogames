@@ -72,10 +72,42 @@ test('the server enforces the daily limit', async ({ page }) => {
   await expect(page.getByText("You've used today's free plays")).toBeVisible();
 });
 
+test('the daily challenge is the same run for everyone, one try each, and spends no free play', async ({ browser }) => {
+  test.slow();
+  const ends = async (page: import('@playwright/test').Page) => {
+    await page.goto('/#/daily/border-route');
+    await expect(page.getByRole('combobox')).toBeVisible({ timeout: 15_000 });
+    return page.locator('.route-end').allTextContents();
+  };
+  const first = await browser.newContext();
+  const second = await browser.newContext();
+  const alice = await first.newPage();
+  const bob = await second.newPage();
+  const routeOfAlice = await ends(alice);
+  expect(await ends(bob)).toEqual(routeOfAlice);
+
+  // Starting it left all free plays.
+  await alice.goto('/#/');
+  await alice.reload();
+  await expect(alice.locator('.topbar').getByText('3/3 plays')).toBeVisible();
+  await first.close();
+  await second.close();
+});
+
 test('there is no simulated subscription with a server', async ({ page }) => {
   await page.goto('/#/premium');
   await expect(page.getByText("Payments aren't wired up yet.")).toBeVisible();
   await expect(page.getByRole('button', { name: /Premium|Free \(dev\)/ })).toHaveCount(0);
+});
+
+plainTest('the daily challenge asks to try again when the server is unreachable, and recovers', async ({ page }) => {
+  let down = true;
+  await page.route(`${API}/**`, (route) => (down ? route.abort() : route.continue()));
+  await page.goto('/#/daily/border-route');
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  down = false;
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await expect(page.getByRole('combobox')).toBeVisible({ timeout: 15_000 });
 });
 
 // Without the error-checking fixture: browsers log every error status to the console.

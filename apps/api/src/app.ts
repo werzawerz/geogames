@@ -2,7 +2,12 @@ import { Hono, type Context } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
 import {
+  DAILY_GAMES,
   DATASET_VERSION,
+  dailyDate,
+  dailySeed,
+  dailySettings,
+  dailyVariant,
   getGame,
   normalizeSettings,
   randomSeed,
@@ -16,6 +21,7 @@ import {
   type LeaderboardEntryDto,
   type LeaderboardResponse,
   type MeResponse,
+  type StartDailyResponse,
   type StartSessionResponse,
 } from '@geogames/games';
 
@@ -27,6 +33,8 @@ export interface AppOptions {
   /** The player id a bearer token belongs to, or null if it isn't valid. */
   verifyToken(token: string): Promise<string | null>;
   freePlaysPerDay: number;
+  /** Keeps coming days' seeds unguessable. */
+  dailySecret: string;
   /** Origins allowed to call the API. Requests carry a token rather than cookies, so "*" is safe. */
   allowedOrigins: readonly string[] | '*';
 }
@@ -50,7 +58,7 @@ const allowanceDto = (a: StoredAllowance): AllowanceDto => ({ ...a, resetsAt: ne
 
 type Env = { Variables: { player: string } };
 
-export function createApp({ rpc, verifyToken, freePlaysPerDay, allowedOrigins }: AppOptions) {
+export function createApp({ rpc, verifyToken, freePlaysPerDay, dailySecret, allowedOrigins }: AppOptions) {
   const app = new Hono<Env>().basePath('/api');
 
   const fail = (c: Context, status: 400 | 401 | 402 | 404 | 409 | 422 | 500, error: ApiErrorCode, extra: Partial<ApiErrorResponse> = {}) =>
@@ -134,6 +142,30 @@ export function createApp({ rpc, verifyToken, freePlaysPerDay, allowedOrigins }:
     })) as { ok: boolean; sessionId?: string; allowance: StoredAllowance };
     if (!started.ok) return fail(c, 402, 'out-of-plays', { allowance: allowanceDto(started.allowance) });
     return c.json<StartSessionResponse>({ sessionId: started.sessionId!, seed, allowance: allowanceDto(started.allowance) }, 201);
+  });
+
+  app.post('/daily/:gameId/start', signedIn, async (c) => {
+    const gameId = c.req.param('gameId') ?? '';
+    const game = DAILY_GAMES.includes(gameId) ? getGame(gameId) : undefined;
+    if (!game) return fail(c, 404, 'not-found');
+    const input = await body(c);
+    if (input?.datasetVersion !== DATASET_VERSION) return fail(c, 409, 'update-required');
+    const date = dailyDate();
+    const session = (await rpc('start_daily_session', {
+      p_player: c.get('player'),
+      p_default_name: newPlayerName(),
+      p_game_id: game.id,
+      p_variant: dailyVariant(date),
+      p_settings: dailySettings(game),
+      p_seed: await dailySeed(game.id, date, dailySecret),
+      p_dataset_version: DATASET_VERSION,
+    })) as { sessionId: string; seed: number; status: 'playing' | 'finished'; score: number | null };
+    return c.json<StartDailyResponse>({
+      date,
+      sessionId: session.sessionId,
+      seed: Number(session.seed),
+      finishedScore: session.status === 'finished' ? session.score : null,
+    });
   });
 
   app.post('/sessions/:id/finish', signedIn, async (c) => {

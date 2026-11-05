@@ -1,10 +1,13 @@
-import { dataset } from '@geogames/geodata';
-import { cityIndex } from '@geogames/geodata/cities';
+import { dataset, queryCountries } from '@geogames/geodata';
+import { cityIndex, loadGreatCircles } from '@geogames/geodata/cities';
 import type { GameDefinition } from './catalog.ts';
 import { createChoiceQuiz, replayChoiceQuiz } from './choice-quiz.ts';
 import { createCircleArcade, replayCircleArcade, type CircleArcade } from './circle-arcade.ts';
 import { createCircleGame, replayCircle } from './circle.ts';
 import { createHigherLowerGame, replayHigherLower, type Guess } from './higher-lower.ts';
+import { createGreatCircle, replayGreatCircle } from './great-circle.ts';
+import { createMysteryCountry, replayMysteryCountry } from './mystery-country.ts';
+import { createPinDrop, replayPinDrop } from './pin-drop.ts';
 import { arcadePools, circleCities, loadPool, quizItems, routeCountries } from './pools.ts';
 import { createRouteGame, replayRoute } from './route.ts';
 import type { GameSettings } from './settings.ts';
@@ -49,7 +52,11 @@ export async function replayGame(
       return { score: state.score, finished: state.status === 'over' };
     }
     case 'route': {
-      const engine = createRouteGame({ countries: routeCountries(settings), rounds: game.rounds });
+      const engine = createRouteGame({
+        countries: routeCountries(settings),
+        rounds: game.rounds,
+        hard: settings.routeMode === 'hard',
+      });
       const state = replayRoute(engine, seed, moves);
       return { score: state.score, finished: state.status === 'over' };
     }
@@ -68,6 +75,21 @@ export async function replayGame(
         placement: settings.circlePlacement,
       });
       const state = replayCircle(engine, seed, moves);
+      return { score: state.score, finished: state.status === 'over' };
+    }
+    case 'great-circle': {
+      const { puzzles } = await loadGreatCircles();
+      const engine = createGreatCircle({ puzzles, countries: queryCountries(), rounds: game.rounds });
+      const state = replayGreatCircle(engine, seed, moves);
+      return { score: state.score, finished: state.status === 'over' };
+    }
+    case 'mystery-country': {
+      const engine = createMysteryCountry({ countries: queryCountries(), rounds: game.rounds });
+      const state = replayMysteryCountry(engine, seed, moves);
+      return { score: state.score, finished: state.status === 'over' };
+    }
+    case 'pin-drop': {
+      const state = replayPinDrop(createPinDrop(await arcadePools()), seed, moves);
       return { score: state.score, finished: state.status === 'over' };
     }
     case 'circle-arcade': {

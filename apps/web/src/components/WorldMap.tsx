@@ -94,6 +94,8 @@ export function WorldMap({
   markers,
   onPick,
   label,
+  borders = true,
+  maxZoom = MAX_ZOOM,
 }: {
   shapes: WorldShapes;
   countries?: readonly MapCountry[];
@@ -106,6 +108,10 @@ export function WorldMap({
   /** Called with [lng, lat] when the map is clicked (not dragged); also shows a crosshair cursor. */
   onPick?: (lngLat: [number, number]) => void;
   label: string;
+  /** False leaves out every border but those of `countries`: the others aren't in the page at all. */
+  borders?: boolean;
+  /** How far in the map zooms, compared to its starting view. */
+  maxZoom?: number;
 }) {
   const focusKey = focus.join(',');
   const projection = useMemo(() => {
@@ -181,7 +187,7 @@ export function WorldMap({
   useEffect(() => {
     const [[x0, y0], [x1, y1]] = path.bounds({ type: 'Sphere' });
     applyZoom((behavior) => {
-      behavior.scaleExtent([minZoom, MAX_ZOOM]).translateExtent([
+      behavior.scaleExtent([minZoom, maxZoom]).translateExtent([
         [Math.min(0, x0), Math.min(0, y0)],
         [Math.max(WIDTH, x1), Math.max(HEIGHT, y1)],
       ]);
@@ -189,7 +195,7 @@ export function WorldMap({
     // A new frame (next round) starts at its fitted view.
     resetZoom();
     // applyZoom and resetZoom only read refs, so they aren't dependencies.
-  }, [path, minZoom]);
+  }, [path, minZoom, maxZoom]);
 
   const toScreen: ToScreen = (lngLat) => {
     const point = projection(lngLat);
@@ -217,7 +223,7 @@ export function WorldMap({
         <rect className="map-sea" width={WIDTH} height={HEIGHT} />
         <g transform={transform.toString()}>
           <path className="map-land" d={landPath} />
-          <g>{base}</g>
+          {borders && <g>{base}</g>}
           {countries.map(({ id, tone }) => {
             const shape = shapes.countries.get(id);
             return shape ? <path key={id} className={`map-country map-highlight tone-${tone}`} d={path(shape) ?? ''} /> : null;

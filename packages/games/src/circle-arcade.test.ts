@@ -96,6 +96,20 @@ describe('city circle arcade', () => {
     }
   });
 
+  it('keeps a separate leaderboard for each Border Route mode', () => {
+    const route = getGame('border-route')!;
+    expect(variantKey(normalizeSettings({}, route), route)).toBe('world');
+    // A run goes around the world, so a remembered region doesn't apply.
+    const hard = normalizeSettings({ routeMode: 'hard', region: 'Europe' }, route);
+    expect(hard.region).toBe('world');
+    expect(variantKey(hard, route)).toBe('world-hard');
+    expect(settingsFromVariant('world-hard', route)).toEqual(hard);
+    // Quizzes have their own "hard", and no route mode.
+    const quiz = getGame('capitals')!;
+    expect(settingsFromVariant('world-hard', quiz).routeMode).toBe('easy');
+    expect(settingsFromVariant('world-hard', quiz).difficulty).toBe('hard');
+  });
+
   it('keeps a separate leaderboard for each city dataset', () => {
     const arcade = getGame('city-circle-arcade')!;
     const proper = normalizeSettings({ cityData: 'proper' }, arcade);

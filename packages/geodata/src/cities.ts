@@ -4,7 +4,7 @@
 import index from '../data/cities/index.json' with { type: 'json' };
 import { getCountry } from './index.ts';
 import { isPlayable } from './city-rules.ts';
-import { continentSlug, type City, type CityIndex, type CityProperData, type Continent, type CountryId, type SmallCity } from './types.ts';
+import { continentSlug, type City, type CityIndex, type CityProperData, type Continent, type CountryId, type GreatCircleData, type SmallCity } from './types.ts';
 
 export { CITY_SIZE_STOPS, isPlayable } from './city-rules.ts';
 
@@ -70,6 +70,12 @@ export async function loadSmallCities(): Promise<readonly SmallCity[]> {
 export async function loadCityProper(): Promise<CityProperData> {
   const m = await import('../data/cities/city-proper.json', { with: { type: 'json' } });
   return m.default as unknown as CityProperData;
+}
+
+/** The lines of the Great Circle game (scripts/build-great-circles.ts), loaded only when it's played. */
+export async function loadGreatCircles(): Promise<GreatCircleData> {
+  const m = await import('../data/great-circles.json', { with: { type: 'json' } });
+  return m.default as unknown as GreatCircleData;
 }
 
 /** Loads exactly the city files the query needs and filters them. */

@@ -30,6 +30,14 @@ export const CITY_DATA: readonly { id: CityData; label: string; description: str
   { id: 'proper', label: 'City proper', description: 'GeoNames figures: the city itself, without its suburbs, so Yokohama is not part of Tokyo.' },
 ];
 
+/** Border Route: how much the map and the status line give away. */
+export type RouteMode = 'easy' | 'hard';
+
+export const ROUTE_MODES: readonly { id: RouteMode; label: string; description: string }[] = [
+  { id: 'easy', label: 'Easy', description: 'The map shows every border, and you know how long the shortest route is.' },
+  { id: 'hard', label: 'Hard', description: 'Only your countries show their borders, the shortest route stays secret until the end, and a country off your route costs a guess.' },
+];
+
 export type CirclePlacement = 'random' | 'custom';
 
 /** City Circle radius slider range (km). A radius of 0 means "auto" (smallest that holds enough cities). */
@@ -67,6 +75,8 @@ export interface GameSettings {
   circlePlacement: CirclePlacement;
   /** City Circle Arcade only: which population figures to play with. */
   cityData: CityData;
+  /** Border Route only. */
+  routeMode: RouteMode;
 }
 
 export const DEFAULT_CITY_MIN_POPULATION = 1_000_000;
@@ -79,6 +89,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   circleRadiusKm: 0,
   circlePlacement: 'random',
   cityData: 'metro',
+  routeMode: 'easy',
 };
 
 /** Below this many items a game repeats too quickly to be fun. */
@@ -89,8 +100,9 @@ export const usesCitySize = (game: GameDefinition) => game.kind === 'higher-lowe
 export const usesDifficulty = (game: GameDefinition) => game.kind === 'quiz';
 export const usesCircleOptions = (game: GameDefinition) => game.kind === 'circle';
 export const usesCityData = (game: GameDefinition) => game.kind === 'circle-arcade';
+export const usesRouteMode = (game: GameDefinition) => game.kind === 'route';
 /** Arcade games follow a fixed progression around the world, so there's no region to pick. */
-export const usesRegion = (game: GameDefinition) => game.kind !== 'circle-arcade';
+export const usesRegion = (game: GameDefinition) => !['circle-arcade', 'route', 'pin-drop', 'great-circle', 'mystery-country'].includes(game.kind);
 
 /**
  * Smallest city size offered per region. World games stop at 300k: below that,
@@ -127,7 +139,8 @@ export function normalizeSettings(settings: Partial<GameSettings>, game: GameDef
   // "Auto" picks a radius per random circle; a self-placed circle needs a real one.
   if (circlePlacement === 'custom' && circleRadiusKm === 0) circleRadiusKm = CUSTOM_DEFAULT_RADIUS_KM;
   const cityData: CityData = usesCityData(game) && settings.cityData === 'proper' ? 'proper' : 'metro';
-  const base = { region, difficulty, circleRadiusKm, circlePlacement, cityData };
+  const routeMode: RouteMode = usesRouteMode(game) && settings.routeMode === 'hard' ? 'hard' : 'easy';
+  const base = { region, difficulty, circleRadiusKm, circlePlacement, cityData, routeMode };
   if (!usesCitySize(game)) return { ...base, cityMinPopulation: DEFAULT_CITY_MIN_POPULATION };
   const stops = citySizeStops(region);
   const wanted = settings.cityMinPopulation ?? DEFAULT_CITY_MIN_POPULATION;
@@ -156,6 +169,7 @@ export function variantKey(settings: GameSettings, game: GameDefinition): string
     if (settings.circlePlacement === 'custom') parts.push('custom');
   }
   if (usesCityData(game) && settings.cityData === 'proper') parts.push('proper');
+  if (usesRouteMode(game) && settings.routeMode === 'hard') parts.push('hard');
   return parts.join('-');
 }
 
@@ -168,7 +182,8 @@ export function settingsFromVariant(variant: string, game: GameDefinition): Game
   const circleRadiusKm = RADIUS_BANDS.find((b) => rest.includes(b.id))?.radius ?? 0;
   const circlePlacement: CirclePlacement = rest.includes('custom') ? 'custom' : 'random';
   const cityData: CityData = rest.includes('proper') ? 'proper' : 'metro';
-  return normalizeSettings({ region, cityMinPopulation, difficulty, circleRadiusKm, circlePlacement, cityData }, game);
+  const routeMode: RouteMode = rest.includes('hard') ? 'hard' : 'easy';
+  return normalizeSettings({ region, cityMinPopulation, difficulty, circleRadiusKm, circlePlacement, cityData, routeMode }, game);
 }
 
 export function regionLabel(region: Region): string {
@@ -177,7 +192,10 @@ export function regionLabel(region: Region): string {
 
 /** Short human description, e.g. "Europe · cities 100k+" or "Asia · Hard". */
 export function describeSettings(settings: GameSettings, game: GameDefinition): string {
-  if (!usesRegion(game)) return settings.cityData === 'proper' ? 'Arcade · City proper' : 'Arcade';
+  if (!usesRegion(game)) {
+    const mode = usesCityData(game) && settings.cityData === 'proper' ? ' · City proper' : usesRouteMode(game) && settings.routeMode === 'hard' ? ' · Hard' : '';
+    return `Arcade${mode}`;
+  }
   const parts = [regionLabel(settings.region)];
   if (usesCitySize(game)) parts.push(`cities ${formatPopulationShort(settings.cityMinPopulation)}+`);
   if (usesDifficulty(game)) parts.push(DIFFICULTIES.find((d) => d.id === settings.difficulty)!.label);

@@ -7,6 +7,9 @@ import {
   variantKey,
   usesCircleOptions,
   usesCityData,
+  usesRouteMode,
+  CITY_DATA,
+  ROUTE_MODES,
   usesCitySize,
   usesDifficulty,
   usesRegion,
@@ -20,7 +23,7 @@ import { GameScreen } from '../games/registry.tsx';
 import type { GameOutcome } from '../games/types.ts';
 import { RegionPicker } from '../components/RegionPicker.tsx';
 import { CitySizeSlider } from '../components/CitySizeSlider.tsx';
-import { CityDataPicker } from '../components/CityDataPicker.tsx';
+import { DescribedChips } from '../components/ChoiceChips.tsx';
 import { DifficultyPicker } from '../components/DifficultyPicker.tsx';
 import { CircleOptions } from '../components/CircleOptions.tsx';
 import { href } from '../router.ts';
@@ -146,9 +149,15 @@ export function GamePage({ game }: { game: GameDefinition }) {
 const RULES: Record<GameDefinition['kind'], string> = {
   'higher-lower': 'Guess right to keep your streak going. One wrong answer ends the game.',
   route:
-    'Five routes, each a bit longer. The fewer guesses you need, the more points you get. Bridges and tunnels count as borders (Denmark–Sweden, the Channel Tunnel); exclaves like Kaliningrad only lead to their own neighbours.',
+    'Twenty levels, with longer routes in less familiar places as you go. Running out of guesses ends your run. The fewer guesses you need and the higher the level, the more points you get. Bridges and tunnels count as borders (Denmark–Sweden, the Channel Tunnel); exclaves like Kaliningrad only lead to their own neighbours.',
   quiz: 'A point for every right answer. Three wrong answers and you’re out.',
   circle: 'Three circles. A point for every top city you find; five misses end a circle.',
+  'great-circle':
+    'A straight line runs between two cities, the shortest way around the globe (so it can look curved on the map). The map shows no borders, only the countries at each end and the ones you find. Name every country the line crosses, in any order. A wrong country or a skip costs one of your 5 lives; a perfect level earns one back. Twenty levels, with longer lines through less familiar places.',
+  'mystery-country':
+    'Guess the hidden country. Every wrong guess shows how far it is from the mystery country (centre to centre), which way to go, whether it’s on the same continent, and whether the mystery country has more people and land (▲▲ means over 3 times more, ▼▼ under a third). More clues appear as you run out of guesses. The fewer guesses you need and the higher the level, the more points you get. Twenty levels, with less familiar countries and fewer guesses as you go; running out of guesses ends your run.',
+  'pin-drop':
+    'A city is named: click where it is, zooming in for precision. Up to 100 points for a close pin. Every kilometre off comes out of your 5,000 km budget, and the run ends when it’s gone. Within 50 km costs nothing and earns 250 km back. Less famous cities come in as you go, and pay more.',
   'circle-arcade':
     'Name the top cities in each circle, anywhere in the world. Early circles are big and mostly about famous, much-visited cities; later ones get smaller and ask for more. Wrong guesses are free but spoil a perfect level; a skip costs a life. Hints (the country and every third letter) are limited and halve a city’s points. A perfect level, without misses, skips or hints, earns a life and a hint back.',
 };
@@ -170,7 +179,7 @@ function GameSetup({
   const inPlay = sizes[settings.region];
   const unit = game.subject === 'city' ? 'cities' : 'countries';
   // City Circle counts possible circle centres, which isn't a useful number to show.
-  const showCount = game.kind !== 'circle' && game.kind !== 'circle-arcade';
+  const showCount = !['circle', 'circle-arcade', 'pin-drop', 'great-circle', 'mystery-country'].includes(game.kind);
 
   return (
     <div className="panel center">
@@ -198,7 +207,13 @@ function GameSetup({
         {usesCityData(game) && (
           <>
             <h2 className="setup-label">City data</h2>
-            <CityDataPicker value={settings.cityData} onChange={(cityData) => onChange({ ...settings, cityData })} />
+            <DescribedChips options={CITY_DATA} label="City data" value={settings.cityData} onChange={(cityData) => onChange({ ...settings, cityData })} />
+          </>
+        )}
+        {usesRouteMode(game) && (
+          <>
+            <h2 className="setup-label">Difficulty</h2>
+            <DescribedChips options={ROUTE_MODES} label="Difficulty" value={settings.routeMode} onChange={(routeMode) => onChange({ ...settings, routeMode })} />
           </>
         )}
         {usesCitySize(game) && (

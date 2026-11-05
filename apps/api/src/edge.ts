@@ -16,7 +16,8 @@ function serviceKey(): string {
   return key;
 }
 
-const supabase = createClient(Deno.env.get('SUPABASE_URL')!, serviceKey(), {
+const key = serviceKey();
+const supabase = createClient(Deno.env.get('SUPABASE_URL')!, key, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
@@ -33,6 +34,8 @@ const app = createApp({
     return error ? null : (data.user?.id ?? null);
   },
   freePlaysPerDay: Number(Deno.env.get('FREE_PLAYS_PER_DAY')) || 5,
+  // Already a secret of this project, so a daily challenge needs no extra setup.
+  dailySecret: key,
   allowedOrigins: origins ? origins.split(',').map((o) => o.trim()) : '*',
 });
 

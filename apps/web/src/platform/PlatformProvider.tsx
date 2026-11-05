@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { GameDefinition, GameSettings } from '@geogames/games';
 import { createApiBackend } from './api-backend.ts';
 import { createDevAuth, createSupabaseAuth } from './auth.ts';
-import { createLocalBackend, type Backend, type FinishedGame, type FinishResult, type Play, type StartResult } from './backend.ts';
+import { createLocalBackend, type Backend, type DailyStart, type FinishedGame, type FinishResult, type Play, type StartResult } from './backend.ts';
 import type { Allowance, Plan } from './entitlements.ts';
 import type { ScoreService } from './scores.ts';
 import type { Player } from './player.ts';
@@ -12,6 +12,7 @@ interface Platform {
   renamePlayer(name: string): void;
   allowance: Allowance;
   startPlay(game: GameDefinition, settings: GameSettings): Promise<StartResult>;
+  startDaily(game: GameDefinition): Promise<DailyStart>;
   finishPlay(play: Play, game: FinishedGame): Promise<FinishResult>;
   /** Only without a server: lets the free-play limit be tried out. */
   setPlan?(plan: Plan): void;
@@ -57,6 +58,8 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     [backend],
   );
 
+  const startDaily = useCallback((game: GameDefinition) => backend.startDaily(game), [backend]);
+
   const finishPlay = useCallback((play: Play, game: FinishedGame) => backend.finishPlay(play, game, player), [backend, player]);
 
   const setPlan = useMemo(
@@ -75,8 +78,8 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ player, renamePlayer, allowance, startPlay, finishPlay, setPlan, scores: backend.scores }),
-    [player, renamePlayer, allowance, startPlay, finishPlay, setPlan, backend],
+    () => ({ player, renamePlayer, allowance, startPlay, startDaily, finishPlay, setPlan, scores: backend.scores }),
+    [player, renamePlayer, allowance, startPlay, startDaily, finishPlay, setPlan, backend],
   );
   return <PlatformContext.Provider value={value}>{children}</PlatformContext.Provider>;
 }

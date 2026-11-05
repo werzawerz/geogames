@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { countries as allCountries, getCountry, type CountryId } from '@geogames/geodata';
+import { getCountry, type CountryId } from '@geogames/geodata';
 import { loadWorldShapes, type WorldShapes } from '@geogames/geodata/shapes';
 import {
   EXTRA_GUESSES,
   createRouteGame,
-  maxGuesses,
+  replayRoute,
   routeCountries,
   type GuessQuality,
   type RouteDefinition,
@@ -20,7 +20,7 @@ import { WorldMap, type MapCountry } from '../../components/WorldMap.tsx';
 const name = (id: CountryId) => getCountry(id)?.name ?? id;
 
 /** Loads map shapes (lazily, ~740 KB) and the region's border graph, then plays. */
-export function RouteScreen({ game: definition, settings, seed, onGameOver }: GameScreenProps<RouteDefinition>) {
+export function RouteScreen({ game: definition, settings, seed, initialMoves, onMovesChange, onGameOver }: GameScreenProps<RouteDefinition>) {
   const [shapes, setShapes] = useState<WorldShapes | null>(null);
   const [error, setError] = useState(false);
   useEffect(() => {
@@ -35,13 +35,28 @@ export function RouteScreen({ game: definition, settings, seed, onGameOver }: Ga
   }, []);
 
   const game = useMemo(
-    () => createRouteGame({ countries: routeCountries(settings), rounds: definition.rounds }),
+    () =>
+      createRouteGame({
+        countries: routeCountries(settings),
+        rounds: definition.rounds,
+        hard: settings.routeMode === 'hard',
+      }),
     [settings, definition.rounds],
   );
 
   if (error) return <p className="panel center">Couldn't load the map. Check your connection and try again.</p>;
   if (!shapes) return <p className="panel center muted">Loading map…</p>;
-  return <RoutePlay game={game} shapes={shapes} seed={seed} onGameOver={onGameOver} region={settings.region} />;
+  return (
+    <RoutePlay
+      game={game}
+      shapes={shapes}
+      seed={seed}
+      initialMoves={initialMoves}
+      onMovesChange={onMovesChange}
+      onGameOver={onGameOver}
+      hard={settings.routeMode === 'hard'}
+    />
+  );
 }
 
 const MESSAGES = {
@@ -55,27 +70,27 @@ function RoutePlay({
   game,
   shapes,
   seed,
-  region,
+  initialMoves,
+  onMovesChange,
+  hard,
   onGameOver,
 }: {
   game: RouteGame;
   shapes: WorldShapes;
   seed: number;
-  region: string;
+  initialMoves: GameScreenProps['initialMoves'];
+  onMovesChange: GameScreenProps['onMovesChange'];
+  hard: boolean;
   onGameOver: GameScreenProps['onGameOver'];
 }) {
-  const [state, setState] = useState<RouteGameState>(() => game.start(seed));
+  const [state, setState] = useState<RouteGameState>(() => replayRoute(game, seed, initialMoves ?? []));
+  useEffect(() => onMovesChange?.(state.moves), [state.moves, onMovesChange]);
   const [message, setMessage] = useState<string | null>(null);
   const round = game.current(state);
   const { puzzle } = round;
   const playing = state.status === 'playing';
 
   const searchItems = useMemo(() => countryItems(game.graph.keys()), [game]);
-  // Dim only what lies outside the chosen region; islands and territories inside it look normal.
-  const inPlay = useMemo(
-    () => new Set(allCountries.filter((c) => region === 'world' || c.continent === region).map((c) => c.id)),
-    [region],
-  );
   const exclude = useMemo(() => new Set([puzzle.start, puzzle.end, ...round.guesses]), [puzzle, round.guesses]);
   const qualities = round.guesses.map((id) => [id, game.classify(puzzle, id)] as const);
   const route = playing ? [] : game.shortestRoute(puzzle, round.guesses);
@@ -97,17 +112,18 @@ function RoutePlay({
 
   const guess = (id: CountryId) => {
     const { state: next, result } = game.guess(state, id);
-    setMessage(result === 'accepted' ? null : MESSAGES[result](id));
+    if (result === 'not-adjacent' && hard) setMessage(`${name(id)} doesn't border your route. That cost you a guess.`);
+    else setMessage(result === 'accepted' ? null : MESSAGES[result](id));
     setState(next);
   };
 
-  const left = maxGuesses(puzzle) - round.guesses.length;
+  const left = game.guessLimit(puzzle) - round.guesses.length - round.misses.length;
 
   return (
     <div className="route">
       <div className="route-status">
         <span>
-          Route <strong>{state.rounds.length}</strong> of {game.rounds}
+          Level <strong>{state.rounds.length}</strong> of {game.rounds}
         </span>
         <span aria-live="polite">
           Score <strong>{state.score}</strong>
@@ -128,12 +144,17 @@ function RoutePlay({
         </span>
       </div>
       <p className="route-hint muted">
-        Shortest route: <strong>{puzzle.minimal}</strong> {puzzle.minimal === 1 ? 'country' : 'countries'} in between
-        {region !== 'world' && ' (within the region)'}
-        {playing && ` · ${left} guesses left`}
+        {hard && playing ? (
+          `${left} guesses left`
+        ) : (
+          <>
+            Shortest route: <strong>{puzzle.minimal}</strong> {puzzle.minimal === 1 ? 'country' : 'countries'} in between
+            {playing && ` · ${left} guesses left`}
+          </>
+        )}
       </p>
 
-      <WorldMap shapes={shapes} countries={mapCountries} focus={focus} inPlay={inPlay} label="Map of your route" />
+      <WorldMap shapes={shapes} countries={mapCountries} focus={focus} label="Map of your route" borders={!hard} />
 
       <ul className="map-legend" aria-label="Legend">
         <li className="tone-optimal">On a shortest route</li>
@@ -153,7 +174,9 @@ function RoutePlay({
           />
           <p className="route-message" role="status">
             {message ??
-              `Go country by country from ${name(puzzle.start)}: each guess must border your route. You have ${puzzle.minimal} + ${EXTRA_GUESSES} guesses.`}
+              (hard
+                ? `Go country by country from ${name(puzzle.start)}: each guess should border your route. One that doesn't costs a guess and points, as does every step beyond the shortest route.`
+                : `Go country by country from ${name(puzzle.start)}: each guess must border your route. You have ${puzzle.minimal} + ${EXTRA_GUESSES} guesses.`)}
           </p>
         </>
       ) : (
@@ -162,11 +185,21 @@ function RoutePlay({
           points={round.points}
           route={route}
           last={state.status === 'over'}
-          onNext={() => (state.status === 'over' ? onGameOver({ score: state.score, moves: state.moves }) : setState(game.nextRound(state)))}
+          onNext={() => {
+            if (state.status !== 'over') return setState(game.nextRound(state));
+            const level = state.rounds.length;
+            onGameOver({
+              score: state.score,
+              moves: state.moves,
+              message:
+                round.status === 'solved' ? `You connected all ${level} routes!` : `You reached level ${level} of ${game.rounds}.`,
+              shareLine: state.rounds.map(routeEmoji).join(''),
+            });
+          }}
         />
       )}
 
-      {round.guesses.length > 0 && (
+      {round.guesses.length + round.misses.length > 0 && (
         <ol className="guess-list" aria-label="Your guesses">
           {qualities.map(([id, q]) => (
             <li key={id} className={`guess tone-${q}`}>
@@ -175,10 +208,23 @@ function RoutePlay({
               <span className="sr-only"> ({QUALITY_TEXT[q]})</span>
             </li>
           ))}
+          {round.misses.map((id) => (
+            <li key={`miss-${id}`} className="guess guess-miss">
+              <Flag iso2={getCountry(id)!.iso2} className="suggestion-flag" />
+              {name(id)}
+              <span className="sr-only"> (doesn't border your route)</span>
+            </li>
+          ))}
         </ol>
       )}
     </div>
   );
+}
+
+/** One square per level: 🟩 no extra guesses, 🟧 solved with some, 🟥 failed. */
+function routeEmoji(round: RouteGameState['rounds'][number]): string {
+  if (round.status !== 'solved') return '🟥';
+  return round.guesses.length + round.misses.length === round.puzzle.minimal ? '🟩' : '🟧';
 }
 
 const QUALITY_TEXT: Record<GuessQuality, string> = {
@@ -205,7 +251,7 @@ function RoundSummary({
       <p className="route-summary-title">{solved ? `Connected! +${points}` : 'Out of guesses'}</p>
       <p className="muted">Shortest route: {route.map(name).join(' → ')}</p>
       <button className="btn btn-primary btn-lg" onClick={onNext} autoFocus>
-        {last ? 'See final score' : 'Next route'}
+        {last ? 'See final score' : 'Next level'}
       </button>
     </div>
   );

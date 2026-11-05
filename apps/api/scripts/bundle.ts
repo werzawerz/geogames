@@ -36,6 +36,10 @@ function slim(file: string, data: any): unknown {
       })),
     };
   }
+  if (/great-circles\.json$/.test(file)) {
+    const end = (c: Record<string, unknown>) => ({ id: c.id, countryId: c.countryId });
+    return { puzzles: data.puzzles.map((p: Record<string, any>) => ({ ...p, from: end(p.from), to: end(p.to) })) };
+  }
   if (/cities[\\/]index\.json$/.test(file)) return { ...data, sources: {} };
   if (/cities[\\/]small-cities\.json$/.test(file)) return data.map((row: unknown[]) => row.slice(0, 6));
   if (/cities[\\/]city-proper\.json$/.test(file)) return { tourismRank: data.tourismRank, cities: data.cities.map((row: unknown[]) => row.slice(0, 6)) };

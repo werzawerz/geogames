@@ -8,6 +8,7 @@ import {
   arcadePools,
   createCircleArcade,
   hintText,
+  replayCircleArcade,
   type ArcadeGuessResult,
   type ArcadeState,
   type CircleArcade,
@@ -23,7 +24,7 @@ import type { GameScreenProps } from '../types.ts';
 import { CityMarkers, GuessTable, circleShape, compact, guessMarker, includesTitle, type CityMarker } from './shared.tsx';
 
 /** Loads map shapes and the city pool (both lazily), then plays. */
-export function ArcadeScreen({ settings, seed, onGameOver }: GameScreenProps<CircleArcadeDefinition>) {
+export function ArcadeScreen({ settings, seed, initialMoves, onMovesChange, onGameOver }: GameScreenProps<CircleArcadeDefinition>) {
   const [loaded, setLoaded] = useState<{ shapes: WorldShapes; game: CircleArcade } | null>(null);
   const [error, setError] = useState(false);
   useEffect(() => {
@@ -39,7 +40,7 @@ export function ArcadeScreen({ settings, seed, onGameOver }: GameScreenProps<Cir
 
   if (error) return <p className="panel center">Couldn't load the map. Check your connection and try again.</p>;
   if (!loaded) return <p className="panel center muted">Loading map…</p>;
-  return <ArcadePlay {...loaded} cityData={settings.cityData} seed={seed} onGameOver={onGameOver} />;
+  return <ArcadePlay {...loaded} cityData={settings.cityData} seed={seed} initialMoves={initialMoves} onMovesChange={onMovesChange} onGameOver={onGameOver} />;
 }
 
 const MESSAGES: Record<ArcadeGuessResult, (city: CircleCity | undefined, rank: number | null, points: number) => string> = {
@@ -55,15 +56,20 @@ function ArcadePlay({
   game,
   cityData,
   seed,
+  initialMoves,
+  onMovesChange,
   onGameOver,
 }: {
   shapes: WorldShapes;
   game: CircleArcade;
   cityData: CityData;
   seed: number;
+  initialMoves: GameScreenProps['initialMoves'];
+  onMovesChange: GameScreenProps['onMovesChange'];
   onGameOver: GameScreenProps['onGameOver'];
 }) {
-  const [state, setState] = useState<ArcadeState>(() => game.start(seed));
+  const [state, setState] = useState<ArcadeState>(() => replayCircleArcade(game, seed, initialMoves ?? []));
+  useEffect(() => onMovesChange?.(state.moves), [state.moves, onMovesChange]);
   const [message, setMessage] = useState<string | null>(null);
   const { level } = state;
   const { puzzle, target } = level;

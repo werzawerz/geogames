@@ -9,6 +9,8 @@ import {
   type LeaderboardResponse,
   type MeResponse,
   type RenameRequest,
+  type StartDailyRequest,
+  type StartDailyResponse,
   type StartSessionRequest,
   type StartSessionResponse,
 } from '@geogames/games';
@@ -140,6 +142,16 @@ export function createApiBackend(baseUrl: string, auth: Auth): Backend {
         }
         if (error instanceof ApiError && error.code === 'update-required') return { status: 'update-required' };
         return { status: 'ok', play: { seed: randomSeed(), sessionId: null }, allowance: assumedAllowance() };
+      }
+    },
+    async startDaily(game) {
+      try {
+        const { date, sessionId, seed, finishedScore } = await request<StartDailyResponse>('POST', `/daily/${game.id}/start`, {
+          datasetVersion: DATASET_VERSION,
+        } satisfies StartDailyRequest);
+        return { status: 'ok', date, play: { seed, sessionId }, finishedScore };
+      } catch (error) {
+        return { status: error instanceof ApiError && error.code === 'update-required' ? 'update-required' : 'unavailable' };
       }
     },
     async finishPlay(play, game, player) {
