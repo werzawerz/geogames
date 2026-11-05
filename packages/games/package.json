@@ -1,0 +1,13 @@
+{
+  "name": "@geogames/games",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure, framework-free game logic shared by the web app and (later) the backend",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@geogames/geodata": "*"
+  }
+}

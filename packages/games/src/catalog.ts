@@ -1,0 +1,148 @@
+import type { MetricId } from '@geogames/geodata';
+
+export type GameKind = GameDefinition['kind'];
+
+/** What the game's items are; decides which pool is loaded and how cards are drawn. */
+export type Subject = 'country' | 'city';
+
+interface BaseDefinition {
+  id: string;
+  subject: Subject;
+  title: string;
+  tagline: string;
+  /** `coming-soon` games are listed as teasers but can't be started. */
+  status: 'live' | 'coming-soon';
+}
+
+export interface HigherLowerDefinition extends BaseDefinition {
+  kind: 'higher-lower';
+  metric: MetricId;
+  /** Shown under values so players know what is measured. */
+  valueNote?: string;
+}
+
+export interface RouteDefinition extends BaseDefinition {
+  kind: 'route';
+  subject: 'country';
+  /** Puzzles per game. */
+  rounds: number;
+}
+
+export interface QuizDefinition extends BaseDefinition {
+  kind: 'quiz';
+  subject: 'country';
+  /** What is asked: a country's capital, or which country a flag belongs to. */
+  quiz: 'capital' | 'flag';
+  lives: number;
+}
+
+export interface CircleDefinition extends BaseDefinition {
+  kind: 'circle';
+  subject: 'city';
+  /** Circles per game. */
+  rounds: number;
+  /** How many of the most populous cities to find per circle. */
+  target: number;
+  /** Wrong guesses allowed per circle. */
+  misses: number;
+}
+
+export interface CircleArcadeDefinition extends BaseDefinition {
+  kind: 'circle-arcade';
+  subject: 'city';
+}
+
+/** Static description of a game mode; the web app maps `kind` to a UI component. */
+export type GameDefinition = HigherLowerDefinition | RouteDefinition | QuizDefinition | CircleDefinition | CircleArcadeDefinition;
+
+export const GAMES: readonly GameDefinition[] = [
+  {
+    id: 'higher-lower-population',
+    kind: 'higher-lower',
+    subject: 'country',
+    title: 'Higher or Lower: Population',
+    tagline: 'Does the next country have more or fewer people?',
+    status: 'live',
+    metric: 'population',
+  },
+  {
+    id: 'higher-lower-area',
+    kind: 'higher-lower',
+    subject: 'country',
+    title: 'Higher or Lower: Area',
+    tagline: 'Is the next country bigger or smaller?',
+    status: 'live',
+    metric: 'area',
+  },
+  {
+    id: 'higher-lower-gdp-per-capita',
+    kind: 'higher-lower',
+    subject: 'country',
+    title: 'Higher or Lower: Wealth',
+    tagline: 'Is the next country richer or poorer per person?',
+    status: 'live',
+    metric: 'gdpPerCapita',
+  },
+  {
+    id: 'higher-lower-city-population',
+    kind: 'higher-lower',
+    subject: 'city',
+    title: 'Higher or Lower: Cities',
+    tagline: 'Do more people live in the next city?',
+    status: 'live',
+    metric: 'population',
+    valueNote: 'Metro area · UN estimate for 2025',
+  },
+  {
+    id: 'border-route',
+    kind: 'route',
+    subject: 'country',
+    title: 'Border Route',
+    tagline: 'Connect two countries through as few neighbours as possible.',
+    status: 'live',
+    rounds: 5,
+  },
+  {
+    id: 'capitals',
+    kind: 'quiz',
+    subject: 'country',
+    quiz: 'capital',
+    title: 'Capitals',
+    tagline: 'Name the capital, from Paris to Paramaribo.',
+    status: 'live',
+    lives: 3,
+  },
+  {
+    id: 'flags',
+    kind: 'quiz',
+    subject: 'country',
+    quiz: 'flag',
+    title: 'Flags',
+    tagline: 'Whose flag is it?',
+    status: 'live',
+    lives: 3,
+  },
+  {
+    id: 'city-circle-arcade',
+    kind: 'circle-arcade',
+    subject: 'city',
+    title: 'City Circle Arcade',
+    tagline: 'Endless circles, getting smaller and harder. How far can you get?',
+    status: 'live',
+  },
+  {
+    id: 'city-circle',
+    kind: 'circle',
+    subject: 'city',
+    title: 'City Circle: Free Play',
+    tagline: 'Pick your region, radius or own circles, and name the five biggest cities.',
+    status: 'live',
+    rounds: 3,
+    target: 5,
+    misses: 5,
+  },
+];
+
+export function getGame(id: string): GameDefinition | undefined {
+  return GAMES.find((g) => g.id === id);
+}

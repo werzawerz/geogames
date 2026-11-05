@@ -1,0 +1,10 @@
+# Project settings for the Supabase CLI. Deploy steps are in docs/deploy.md.
+project_id = "geogames"
+
+[auth]
+# Players start without an account; the API sees them as normal signed-in users.
+enable_anonymous_sign_ins = true
+
+[functions.api]
+# The API checks tokens itself: the global leaderboard and health check are public.
+verify_jwt = false

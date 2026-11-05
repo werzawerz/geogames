@@ -1,0 +1,37 @@
+{
+  "$comment": "Manual decisions on WUP 2025 urban areas, keyed by city id (wup-<City_Code>). Every entry needs a reason.",
+  "cities": {
+    "wup-11569": { "exclude": true, "reason": "Labelled 'Cape Town' but located in India; no such city in GeoNames nearby" },
+
+    "wup-8364": { "name": "Delhi", "reason": "The urban area is Delhi; New Delhi is only its central district" },
+    "wup-655": { "name": "Conakry", "geonamesId": 2422465, "capital": true, "reason": "WUP misspells it 'Conacry', doesn't flag it as the capital, and the name match picks the suburb Coyah" },
+    "wup-2178": { "name": "Kyiv", "reason": "WUP gives the outdated English form 'Kiev' in parentheses" },
+    "wup-555": { "name": "Helsinki", "reason": "WUP puts the Swedish name 'Helsingfors' in the English slot" },
+    "wup-5508": { "name": "Aden", "reason": "WUP puts the transliteration 'Adan in the English slot" },
+    "wup-7017": { "name": "Islamabad", "reason": "Common English spelling without diacritics" },
+    "wup-615": { "name": "Colombo", "reason": "WUP joins the administrative capital name; Colombo is the recognised city" },
+    "wup-11460": { "name": "Macau", "reason": "WUP labels the cross-border area 'Macau - Zhuhai'; Zhuhai is listed separately where large enough" },
+    "wup-11994": { "name": "Xiamen", "reason": "Drop the 'City' suffix" },
+    "wup-4923": { "name": "Batam", "reason": "Drop the 'City' suffix" },
+    "wup-11050": { "name": "Haikou", "reason": "Xiuying is a district of Haikou, the city players know" },
+    "wup-11070": { "name": "Huai'an", "reason": "Huaiyin is a district of Huai'an" },
+    "wup-8026": { "name": "São Gonçalo", "reason": "Restore diacritics" },
+
+    "wup-5196": { "name": "Mbuji-Mayi", "geonamesId": 209228, "reason": "WUP uses the province name Kasaï-Oriental; Mbuji-Mayi is 2 km from the centroid" },
+    "wup-3668": { "name": "Faiyum", "geonamesId": 361320, "reason": "GeoNames spells it Al Fayyum (1 km away)" },
+    "wup-456": { "name": "Hodeidah", "geonamesId": 79415, "reason": "GeoNames spells it Al Ḩudaydah (1 km away)" },
+    "wup-3414": { "name": "Al-Ahsa", "geonamesId": 109571, "reason": "Al-Ahsa is the Hofuf–Mubarraz urban area; Al Hufūf is 2 km away" },
+    "wup-9940": { "name": "Huaihua", "geonamesId": 1807689, "reason": "Labelled 'Yingkou' but located at Huaihua, Hunan (5 km); Yingkou is in Liaoning" },
+    "wup-10770": { "name": "Huainan", "geonamesId": 1807681, "reason": "Tianjia'an is a district of Huainan (2 km)" },
+    "wup-9224": { "name": "Zunyi", "geonamesId": 1783621, "reason": "Honghuagang is a district of Zunyi (3 km)" },
+    "wup-8226": { "name": "Nanchong", "geonamesId": 1800146, "reason": "Shunqing is a district of Nanchong (2 km)" },
+    "wup-6712": { "name": "Okene", "geonamesId": 2327220, "reason": "Otite is part of the Okene urban area (3 km)" },
+    "wup-4203": { "name": "Soshanguve", "geonamesId": 954013, "reason": "Klipgat is part of the Soshanguve urban area north of Pretoria (2 km)" },
+    "wup-9582": { "geonamesId": 1793424, "reason": "Binhai New Area is Tianjin's coastal district; Tanggu is its centre (1 km)" },
+    "wup-9189": { "name": "Hubballi-Dharwad", "geonamesId": 1269920, "reason": "Twin city; GeoNames lists Hubballi 18 km from the centroid" },
+    "wup-6824": { "name": "Wah Cantonment", "geonamesId": 11785389, "reason": "Labelled Taxila but centred on Wah Cantonment (1 km)" },
+
+    "wup-198": { "recognizable": true, "reason": "Well-known city; GeoNames counts only the small city proper" },
+    "wup-7380": { "recognizable": true, "reason": "Well-known city; GeoNames counts only the small city proper" }
+  }
+}

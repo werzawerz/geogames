@@ -1,0 +1,23 @@
+{
+  "name": "@geogames/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Backend API: game sessions, verified scores, leaderboards. Runs on Supabase Edge Functions.",
+  "scripts": {
+    "dev": "node src/dev.ts",
+    "build": "node scripts/build.ts",
+    "smoke": "node scripts/smoke.ts"
+  },
+  "dependencies": {
+    "@geogames/games": "*",
+    "@geogames/geodata": "*",
+    "@supabase/supabase-js": "^2.49.0",
+    "hono": "^4.7.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.3.0",
+    "@hono/node-server": "^1.14.0",
+    "esbuild": "^0.25.0"
+  }
+}

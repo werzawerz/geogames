@@ -1,0 +1,50 @@
+{
+  "$comment": "Hand-maintained corrections applied on top of the upstream sources. Every metric needs a citation in `note`.",
+  "idAliases": {
+    "UNK": "XKX"
+  },
+  "sovereignty": {
+    "VAT": "un-observer",
+    "PSE": "un-observer",
+    "XKX": "partially-recognized",
+    "TWN": "partially-recognized"
+  },
+  "metrics": {
+    "TWN": {
+      "population": {
+        "value": 23400220,
+        "year": 2024,
+        "note": "Department of Household Registration, Ministry of the Interior (Taiwan), end of 2024"
+      }
+    },
+    "VAT": {
+      "population": {
+        "value": 882,
+        "year": 2023,
+        "note": "Vatican City State official statistics (residents)"
+      }
+    }
+  },
+  "capitals": {
+    "KAZ": {
+      "capitals": [
+        "Astana"
+      ],
+      "reason": "Renamed back from Nur-Sultan to Astana in September 2022"
+    },
+    "BOL": {
+      "capitals": [
+        "Sucre",
+        "La Paz"
+      ],
+      "reason": "Sucre is the constitutional capital, La Paz the seat of government; accept both"
+    },
+    "LKA": {
+      "capitals": [
+        "Sri Jayawardenepura Kotte",
+        "Colombo"
+      ],
+      "reason": "Kotte is the official capital, Colombo the commercial capital; accept both"
+    }
+  }
+}
