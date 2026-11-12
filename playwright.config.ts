@@ -3,10 +3,12 @@ import { defineConfig, devices } from '@playwright/test';
 // Runs the browser tests against the Vite dev server (catches dev-only module
 // issues), the production build, and the app in API mode against the real API.
 // Ports differ from `npm run dev` (5317) so a running dev session isn't disturbed.
-const DEV_PORT = 5319;
-const PREVIEW_PORT = 5320;
-const API_PORT = 5321;
-const API_WEB_PORT = 5322;
+// E2E_PORT_BASE moves all four, so branches in other worktrees can test at the same time.
+const BASE = Number(process.env.E2E_PORT_BASE ?? 5319);
+const DEV_PORT = BASE;
+const PREVIEW_PORT = BASE + 1;
+const API_PORT = BASE + 2;
+const API_WEB_PORT = BASE + 3;
 
 export default defineConfig({
   testDir: 'apps/web/e2e',
