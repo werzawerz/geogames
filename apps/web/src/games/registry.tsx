@@ -9,6 +9,7 @@ const CircleScreen = lazy(() => import('./circle/CircleScreen.tsx').then((m) => 
 const GreatCircleScreen = lazy(() => import('./great-circle/GreatCircleScreen.tsx').then((m) => ({ default: m.GreatCircleScreen })));
 const MysteryScreen = lazy(() => import('./mystery/MysteryScreen.tsx').then((m) => ({ default: m.MysteryScreen })));
 const PinDropScreen = lazy(() => import('./pin/PinDropScreen.tsx').then((m) => ({ default: m.PinDropScreen })));
+const HalfwayScreen = lazy(() => import('./halfway/HalfwayScreen.tsx').then((m) => ({ default: m.HalfwayScreen })));
 const ArcadeScreen = lazy(() => import('./circle/ArcadeScreen.tsx').then((m) => ({ default: m.ArcadeScreen })));
 
 /** Renders the screen for a game's kind. Adding a game kind = one engine + one screen + one case here. */
@@ -47,6 +48,12 @@ export function GameScreen(props: GameScreenProps) {
       return (
         <Suspense fallback={<p className="panel center muted">Loading…</p>}>
           <PinDropScreen {...props} game={game} />
+        </Suspense>
+      );
+    case 'halfway':
+      return (
+        <Suspense fallback={<p className="panel center muted">Loading…</p>}>
+          <HalfwayScreen {...props} game={game} />
         </Suspense>
       );
     case 'circle-arcade':

@@ -7,6 +7,7 @@ import {
   geoCentroid,
   geoCircle,
   geoDistance,
+  geoInterpolate,
   geoMercator,
   geoPath,
   type GeoPermissibleObjects,
@@ -37,6 +38,9 @@ const PLACES = {
   bogota: [-74.0721, 4.711],
   delhi: [77.2167, 28.6667],
   athens: [23.749, 37.9534],
+  paris: [2.3522, 48.8566],
+  berlin: [13.405, 52.52],
+  frankfurt: [8.6821, 50.1109],
 } satisfies Record<string, [number, number]>;
 
 /** Drops points that stray less than `tolerance` from the line between their neighbours (Douglas-Peucker). */
@@ -139,6 +143,10 @@ const free = scene(framed(geoMercator(), [[-86, 36], [-66, 46]], 16));
 // Pin Drop: a pin and how far off it was.
 const pin = scene(framed(geoMercator(), [[-92, 14], [-28, -32]], 14));
 
+// Halfway: Paris and Berlin, the circle around their real midpoint, and Frankfurt inside it.
+const halfway = scene(framed(geoMercator(), [[-3, 46], [18, 55]], 16));
+const halfwayMid = geoInterpolate(PLACES.paris, PLACES.berlin)(0.5) as [number, number];
+
 // Capitals: Italy and its capital.
 const capital = scene(framed(geoMercator(), bounds('ITA'), 26));
 
@@ -198,6 +206,13 @@ const art = {
     path: pin.line(PLACES.bogota, PLACES.rio),
     guess: pin.point(PLACES.bogota),
     target: pin.point(PLACES.rio),
+  },
+  halfway: {
+    land: halfway.land,
+    path: halfway.line(PLACES.paris, PLACES.berlin),
+    ends: [halfway.point(PLACES.paris), halfway.point(PLACES.berlin)],
+    ring: halfway.circle(halfwayMid, 200),
+    answer: halfway.point(PLACES.frankfurt),
   },
   capital: {
     land: capital.land,

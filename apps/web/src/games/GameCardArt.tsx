@@ -200,6 +200,17 @@ const ART: Record<string, () => ReactNode> = {
       <circle className="art-pin-hole" cx={art.pin.guess[0]} cy={art.pin.guess[1]! - 25} r={4.5} />
     </>
   ),
+  halfway: () => (
+    <>
+      <Land d={art.halfway.land} />
+      <path className="art-ring art-ring-placed" d={art.halfway.ring} />
+      <path className="art-dash" d={art.halfway.path} />
+      {art.halfway.ends.map((at) => (
+        <Dot key={at.join()} at={at} />
+      ))}
+      <Dot at={art.halfway.answer} className="art-dot art-found" />
+    </>
+  ),
   'mystery-country': () => (
     <>
       <Land d={art.mystery.land} />
