@@ -5,6 +5,7 @@ import { createChoiceQuiz, replayChoiceQuiz } from './choice-quiz.ts';
 import { createCircleArcade, replayCircleArcade, type CircleArcade } from './circle-arcade.ts';
 import { createCircleGame, replayCircle } from './circle.ts';
 import { createHigherLowerGame, replayHigherLower, type Guess } from './higher-lower.ts';
+import { createHalfway, replayHalfway } from './halfway.ts';
 import { createGreatCircle, replayGreatCircle } from './great-circle.ts';
 import { createMysteryCountry, replayMysteryCountry } from './mystery-country.ts';
 import { createPinDrop, replayPinDrop } from './pin-drop.ts';
@@ -90,6 +91,11 @@ export async function replayGame(
     }
     case 'pin-drop': {
       const state = replayPinDrop(createPinDrop(await arcadePools()), seed, moves);
+      return { score: state.score, finished: state.status === 'over' };
+    }
+    case 'halfway': {
+      const engine = createHalfway({ ...(await arcadePools()), countries: queryCountries() });
+      const state = replayHalfway(engine, seed, moves);
       return { score: state.score, finished: state.status === 'over' };
     }
     case 'circle-arcade': {

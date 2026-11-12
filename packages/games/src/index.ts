@@ -8,6 +8,7 @@ export * from './choice-quiz.ts';
 export * from './circle.ts';
 export * from './circle-arcade.ts';
 export * from './pin-drop.ts';
+export * from './halfway.ts';
 export * from './great-circle.ts';
 export * from './mystery-country.ts';
 export * from './replay.ts';

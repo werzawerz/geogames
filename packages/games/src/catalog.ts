@@ -57,6 +57,11 @@ export interface PinDropDefinition extends BaseDefinition {
   subject: 'city';
 }
 
+export interface HalfwayDefinition extends BaseDefinition {
+  kind: 'halfway';
+  subject: 'city';
+}
+
 export interface GreatCircleDefinition extends BaseDefinition {
   kind: 'great-circle';
   subject: 'country';
@@ -79,6 +84,7 @@ export type GameDefinition =
   | CircleDefinition
   | CircleArcadeDefinition
   | PinDropDefinition
+  | HalfwayDefinition
   | GreatCircleDefinition
   | MysteryCountryDefinition;
 
@@ -181,6 +187,14 @@ export const GAMES: readonly GameDefinition[] = [
     subject: 'city',
     title: 'Pin Drop',
     tagline: 'Click where the city is. Every kilometre off eats into your budget.',
+    status: 'live',
+  },
+  {
+    id: 'halfway',
+    kind: 'halfway',
+    subject: 'city',
+    title: 'Halfway',
+    tagline: 'Name a city halfway between two others. Paris and Berlin? Try Frankfurt.',
     status: 'live',
   },
   {
