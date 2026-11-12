@@ -31,7 +31,7 @@ import { href } from '../router.ts';
 type Phase =
   | { name: 'setup' }
   | { name: 'playing'; play: Play; settings: GameSettings }
-  | { name: 'over'; score: number; settings: GameSettings; result: FinishResult | null; message?: string };
+  | { name: 'over'; score: number; settings: GameSettings; result: FinishResult | null; message?: string; completed?: boolean };
 
 /** Last-used settings per game, so "Play" starts where the player left off. */
 function useRememberedSettings(game: GameDefinition) {
@@ -70,11 +70,11 @@ export function GamePage({ game }: { game: GameDefinition }) {
   const play = phase.name === 'playing' ? phase.play : null;
   const playing = phase.name === 'playing' ? phase.settings : settings;
   const onGameOver = useCallback(
-    async ({ score, moves, message }: GameOutcome) => {
-      setPhase({ name: 'over', score, settings: playing, result: null, message });
+    async ({ score, moves, message, completed }: GameOutcome) => {
+      setPhase({ name: 'over', score, settings: playing, result: null, message, completed });
       if (!play) return;
       const result = await finishPlay(play, { gameId: game.id, variant: variantKey(playing, game), score, seed: play.seed, moves });
-      setPhase({ name: 'over', score: result.score, settings: playing, result, message });
+      setPhase({ name: 'over', score: result.score, settings: playing, result, message, completed });
     },
     [finishPlay, game, play, playing],
   );
@@ -118,7 +118,9 @@ export function GamePage({ game }: { game: GameDefinition }) {
 
       {phase.name === 'over' && (
         <div className="panel center">
-          <p className="eyebrow">Game over · {describeSettings(phase.settings, game)}</p>
+          <p className="eyebrow">
+            {phase.completed ? 'Run complete' : 'Game over'} · {describeSettings(phase.settings, game)}
+          </p>
           <p className="big-score">{phase.score}</p>
           {phase.message && <p className="lead">🏆 {phase.message}</p>}
           {phase.result && (
@@ -159,7 +161,7 @@ const RULES: Record<GameDefinition['kind'], string> = {
   'pin-drop':
     'A city is named: click where it is, zooming in for precision. Up to 100 points for a close pin. Every kilometre off comes out of your 5,000 km budget, and the run ends when it’s gone. Within 50 km costs nothing and earns 250 km back. Less famous cities come in as you go, and pay more.',
   halfway:
-    'Two cities are shown: name a real city near the point halfway between them, along the shortest route around the globe. A guess within the level’s radius clears it, and the closer, the more points. A guess further away costs one of your 3 lives, and shows how far off it was. A first guess within a third of the radius is flawless: half as many points again, and a life back. Twenty levels: famous cities first, then smaller radii, no line, and at the end no names, only the two dots.',
+    'Two cities are shown: name a real city near the point halfway between them, along the shortest route around the globe. A guess within the level’s radius clears it, and the closer, the more points. A guess further away costs one of your 3 lives, and shows how far off it was. A first guess within a third of the radius is flawless: half as many points again, and a lost life back (never more than 3). Twenty levels: famous cities first, then smaller radii, no line, and at the end no names, only the two dots.',
   'circle-arcade':
     'Name the top cities in each circle, anywhere in the world. Early circles are big and mostly about famous, much-visited cities; later ones get smaller and ask for more. Wrong guesses are free but spoil a perfect level; a skip costs a life. Hints (the country and every third letter) are limited and halve a city’s points. A perfect level, without misses, skips or hints, earns a life and a hint back.',
 };

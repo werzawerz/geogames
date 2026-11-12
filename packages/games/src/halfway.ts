@@ -34,6 +34,11 @@ export interface HalfwayPlan {
   minKnown: number;
   /** Of those, how many must be famous. */
   minFamous: number;
+  /**
+   * Only cities players have heard of as ends: famous ones from FAMOUS_END_MIN_POPULATION,
+   * and never a satellite of a better-known city (Depok next to Jakarta).
+   */
+  wellKnownEnds: boolean;
   /** The great circle between them is drawn. */
   showLine: boolean;
   /** The two cities' names are shown, not only their dots. */
@@ -41,17 +46,26 @@ export interface HalfwayPlan {
 }
 
 export const HALFWAY_PLANS: readonly HalfwayPlan[] = [
-  { from: 1, radiusKm: 300, separationKm: [700, 3000], scope: 'known', sameContinent: true, endMinPopulation: Infinity, crowdedCountryMinPopulation: 20_000_000, minKnown: 3, minFamous: 1, showLine: true, showNames: true },
-  { from: 6, radiusKm: 250, separationKm: [900, 4000], scope: 'no-africa', sameContinent: false, endMinPopulation: 3_000_000, crowdedCountryMinPopulation: 10_000_000, minKnown: 3, minFamous: 1, showLine: true, showNames: true },
-  { from: 11, radiusKm: 200, separationKm: [800, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 3_000_000, minKnown: 3, minFamous: 0, showLine: false, showNames: true },
-  { from: 16, radiusKm: 120, separationKm: [600, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 2_000_000, minKnown: 2, minFamous: 0, showLine: false, showNames: false },
+  { from: 1, radiusKm: 300, separationKm: [700, 3000], scope: 'known', sameContinent: true, endMinPopulation: Infinity, crowdedCountryMinPopulation: 20_000_000, minKnown: 3, minFamous: 1, wellKnownEnds: true, showLine: true, showNames: true },
+  { from: 6, radiusKm: 250, separationKm: [900, 4000], scope: 'no-africa', sameContinent: false, endMinPopulation: 3_000_000, crowdedCountryMinPopulation: 10_000_000, minKnown: 3, minFamous: 1, wellKnownEnds: true, showLine: true, showNames: true },
+  { from: 11, radiusKm: 200, separationKm: [800, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 3_000_000, minKnown: 3, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: true },
+  { from: 16, radiusKm: 120, separationKm: [600, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 2_000_000, minKnown: 2, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: false },
 ];
 
 export const HALFWAY_LEVELS = 20;
 /** Cities this big (or famous) count as well known; smaller ones can still be typed. */
 export const HALFWAY_KNOWN_POPULATION = 1_000_000;
 export const HALFWAY_START_LIVES = 3;
-export const HALFWAY_MAX_LIVES = 5;
+/** A flawless level gives a life back, but never above the start: the run should stay at risk. */
+export const HALFWAY_MAX_LIVES = 3;
+/** Famous but this small (Hạ Long, Bodrum) is too obscure for a well-known end. */
+export const FAMOUS_END_MIN_POPULATION = 250_000;
+/** A city this close to a better-known one is its satellite. */
+export const SATELLITE_KM = 50;
+/** At most this many midpoints per run in one subregion (East Asia, Western Europe…), never two in a row. */
+export const HALFWAY_SUBREGION_MAX = 4;
+/** East and Southeast Asia have so many big cities that, counted apart, they still fill a run between them. */
+const spreadGroup = (subregion: string) => (subregion === 'Eastern Asia' || subregion === 'South-Eastern Asia' ? 'East and Southeast Asia' : subregion);
 /** Points for a level are up to this × its number, by how close the guess was. */
 export const HALFWAY_POINTS_PER_LEVEL = 10;
 /** A first guess within this share of the radius is flawless: half as many points again, and a life back. */
@@ -64,8 +78,6 @@ const MIN_SEPARATION_KM = 800;
 const SEPARATION_MEMORY = 4;
 /** At most this share of a level's fair cities may be fair cities of an earlier level (of the smaller set). */
 const MAX_SHARED = 0.5;
-/** Regions are weighted by their number of pairs to this power: below 1 so smaller ones come up, not so low that their few pairs repeat. */
-const REGION_WEIGHT = 0.7;
 
 /** Too many big cities in too small a part of most players' mental map (as in Pin Drop). */
 const CROWDED_COUNTRIES: ReadonlySet<string> = new Set(['CHN', 'IND']);
@@ -118,6 +130,8 @@ export interface HalfwayLevel {
   fair: readonly CityId[];
   /** Continent of the well-known city nearest the midpoint. */
   region: Continent;
+  /** Subregion of the same city (its continent where there's none). */
+  subregion: string;
   guesses: readonly HalfwayGuess[];
   points: number;
   flawless: boolean;
@@ -142,7 +156,7 @@ export interface HalfwayState {
   readonly bonusLife: boolean;
   readonly marks: readonly HalfwayMark[];
   /** Earlier levels, for keeping new ones different. */
-  readonly past: readonly Pick<HalfwayLevel, 'from' | 'to' | 'midpoint' | 'fair' | 'region'>[];
+  readonly past: readonly Pick<HalfwayLevel, 'from' | 'to' | 'midpoint' | 'fair' | 'region' | 'subregion'>[];
   /** City ids guessed; with the seed this replays the game. */
   readonly moves: readonly string[];
 }
@@ -151,6 +165,8 @@ export interface HalfwayOptions {
   cities: readonly CircleCity[];
   /** Well-known cities (the world's most visited). */
   famous: ReadonlySet<CityId>;
+  /** Rank of each famous city by visitors, 1 = most visited: tells a city from its satellites. */
+  tourismRank?: Readonly<Record<CityId, number>>;
   /** Every country and territory, so cities in Hong Kong or Puerto Rico have a continent. */
   countries: readonly Country[];
   rounds?: number;
@@ -163,9 +179,10 @@ interface Pair {
   middle: [number, number];
   fair: CityId[];
   region: Continent;
+  subregion: string;
 }
 
-export function createHalfway({ cities, famous, countries, rounds = HALFWAY_LEVELS }: HalfwayOptions) {
+export function createHalfway({ cities, famous, tourismRank = {}, countries, rounds = HALFWAY_LEVELS }: HalfwayOptions) {
   const byId = new Map(cities.map((c) => [c.id, c]));
   const countryById = new Map(countries.map((c) => [c.id, c]));
   const continentOf = (c: CircleCity) => countryById.get(c.countryId)?.continent;
@@ -176,7 +193,16 @@ export function createHalfway({ cities, famous, countries, rounds = HALFWAY_LEVE
 
   const sizeable = (c: CircleCity, minPopulation: number, plan: HalfwayPlan) =>
     CROWDED_COUNTRIES.has(c.countryId) ? c.population >= plan.crowdedCountryMinPopulation : famous.has(c.id) || c.population >= minPopulation;
-  const isEnd = (c: CircleCity, plan: HalfwayPlan) => sizeable(c, plan.endMinPopulation, plan) && endInScope(plan.scope, c);
+  const rankOf = (c: CircleCity) => (famous.has(c.id) ? (tourismRank[c.id] ?? 1e9) : Infinity);
+  const famousCities = cities.filter((c) => famous.has(c.id));
+  const satellites = new Set(
+    cities
+      .filter((c) => famousCities.some((f) => f !== c && rankOf(f) < rankOf(c) && distanceKm(f.latlng, c.latlng) <= SATELLITE_KM))
+      .map((c) => c.id),
+  );
+  const wellKnown = (c: CircleCity) => !satellites.has(c.id) && (!famous.has(c.id) || c.population >= FAMOUS_END_MIN_POPULATION);
+  const isEnd = (c: CircleCity, plan: HalfwayPlan) =>
+    sizeable(c, plan.endMinPopulation, plan) && endInScope(plan.scope, c) && (!plan.wellKnownEnds || wellKnown(c));
   const isKnown = (c: CircleCity, plan: HalfwayPlan) => sizeable(c, HALFWAY_KNOWN_POPULATION, plan);
 
   /**
@@ -214,9 +240,10 @@ export function createHalfway({ cities, famous, countries, rounds = HALFWAY_LEVE
         }
         if (near.length < plan.minKnown || near.filter((k) => famous.has(k.c.id)).length < plan.minFamous) continue;
         near.sort((x, y) => x.km - y.km);
-        const region = continentOf(near[0]!.c);
-        if (!region) continue;
-        pairs.push({ a: a.c, b: b.c, middle, fair: near.map((k) => k.c.id), region });
+        const country = countryById.get(near[0]!.c.countryId);
+        if (!country) continue;
+        const { continent: region, subregion } = country;
+        pairs.push({ a: a.c, b: b.c, middle, fair: near.map((k) => k.c.id), region, subregion: spreadGroup(subregion ?? region) });
       }
     }
     return pairs;
@@ -228,42 +255,32 @@ export function createHalfway({ cities, famous, countries, rounds = HALFWAY_LEVE
     return pairs;
   };
 
-  /**
-   * A region (continent of the midpoint) weighted by its number of
-   * pairs to the power REGION_WEIGHT, then a pair in it: Europe and Asia have the most, but North America
-   * and the rest still come up often.
-   */
-  function pickPair(rng: Rng, pairs: readonly Pair[]): Pair {
-    const regions = new Map<Continent, Pair[]>();
-    for (const p of pairs) {
-      const list = regions.get(p.region);
-      if (list) list.push(p);
-      else regions.set(p.region, [p]);
-    }
-    const entries = [...regions].sort(([x], [y]) => x.localeCompare(y));
-    const total = entries.reduce((sum, [, ps]) => sum + ps.length ** REGION_WEIGHT, 0);
-    let r = rng.next() * total;
-    for (const [, ps] of entries) {
-      r -= ps.length ** REGION_WEIGHT;
-      if (r < 0) return pick(rng, ps);
-    }
-    return pick(rng, entries.at(-1)![1]);
-  }
-
   function makeLevel(rng: Rng, number: number, past: HalfwayState['past']): HalfwayLevel {
     const plan = halfwayPlan(number);
-    const used = new Set(past.flatMap((p) => [p.from, p.to]));
+    // An end is never used twice in a run, nor (while possible) an earlier level's answer, and the reverse.
+    const ends = new Set(past.flatMap((p) => [p.from, p.to]));
+    const answers = new Set(past.flatMap((p) => p.fair));
     const recent = past.slice(-SEPARATION_MEMORY);
     const africaRecently = past.slice(-(HALFWAY_AFRICA_SPACING - 1)).some((p) => p.region === 'Africa');
-    const fresh = pairsFor(plan).filter((p) => !used.has(p.a.id) && !used.has(p.b.id));
-    // The first pass keeps every rule; the next lets a midpoint come near a recent one and Africa come
-    // sooner; the last, never needed in testing, allows answers an earlier level had.
+    const last = past.at(-1)?.subregion;
+    const perSubregion = new Map<string, number>();
+    for (const p of past) perSubregion.set(p.subregion, (perSubregion.get(p.subregion) ?? 0) + 1);
+    const fresh = pairsFor(plan).filter((p) => !ends.has(p.a.id) && !ends.has(p.b.id));
+    const spread = (p: Pair) =>
+      p.subregion !== last &&
+      (perSubregion.get(p.subregion) ?? 0) < HALFWAY_SUBREGION_MAX &&
+      !(africaRecently && p.region === 'Africa') &&
+      !recent.some((q) => distanceKm(q.midpoint, p.middle) < MIN_SEPARATION_KM) &&
+      !answers.has(p.a.id) &&
+      !answers.has(p.b.id) &&
+      !p.fair.some((id) => ends.has(id));
+    // The first pass keeps every rule; the next drops the ones that spread a run around the world;
+    // the last, never needed in testing, allows answers an earlier level had.
     for (const pass of [2, 1, 0]) {
-      let options = fresh.filter(
-        (p) => pass < 2 || (!(africaRecently && p.region === 'Africa') && !recent.some((q) => distanceKm(q.midpoint, p.middle) < MIN_SEPARATION_KM)),
-      );
+      let options = fresh.filter((p) => pass < 2 || spread(p));
       while (options.length > 0) {
-        const pair = pickPair(rng, options);
+        // Any allowed pair, equally: the spreading rules, not weights, keep a run varied.
+        const pair = pick(rng, options);
         if (pass >= 1 && past.some((q) => sharesTooMany(pair.fair, q.fair))) {
           options = options.filter((p) => p !== pair);
           continue;
@@ -278,6 +295,7 @@ export function createHalfway({ cities, famous, countries, rounds = HALFWAY_LEVE
           radiusKm: plan.radiusKm,
           fair: pair.fair,
           region: pair.region,
+          subregion: pair.subregion,
           guesses: [],
           points: 0,
           flawless: false,

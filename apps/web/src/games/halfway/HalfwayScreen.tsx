@@ -20,7 +20,7 @@ import {
 import { Flag } from '../../components/Flag.tsx';
 import { SearchInput } from '../../components/SearchInput.tsx';
 import { cityItems } from '../../components/searchItems.ts';
-import { WorldMap, fitLabels, type ToScreen } from '../../components/WorldMap.tsx';
+import { WorldMap, labelSize, type ToScreen } from '../../components/WorldMap.tsx';
 import { circleShape } from '../circle/shared.tsx';
 import type { GameScreenProps } from '../types.ts';
 
@@ -162,34 +162,30 @@ function HalfwayPlay({
     const placed = marks.flatMap((m) => {
       const city = game.cities.get(m.id)!;
       const point = toScreen([city.latlng[1], city.latlng[0]]);
-      return point ? [{ ...m, x: point[0], y: point[1] }] : [];
+      return point ? [{ ...m, key: `${m.tone}-${m.id}`, x: point[0], y: point[1] }] : [];
     });
-    const labelled = new Set(
-      fitLabels(
-        placed.filter((m) => m.text).map((m) => ({ ...m, x: m.x + LABEL_OFFSET, text: m.text! })),
-        'start',
-      ).map((m) => `${m.tone}-${m.id}`),
-    );
     const middle = playing ? null : toScreen([level.midpoint[1], level.midpoint[0]]);
+    const labels = placeLabels(placed, middle);
     return (
       <>
-        {placed.map(({ id, tone, x, y, text }) => (
-          <g key={`${tone}-${id}`} className={`city-marker marker-${tone}`} transform={`translate(${x},${y})`}>
-            <circle r={tone === 'nearby' ? 4 : 6} />
-            {labelled.has(`${tone}-${id}`) && (
-              <text x={LABEL_OFFSET} y={0}>
-                {text}
-              </text>
-            )}
-          </g>
-        ))}
         {middle && (
           <path
             className="halfway-mid"
             d={`M${middle[0] - 9} ${middle[1] - 9}l18 18M${middle[0] - 9} ${middle[1] + 9}l18-18`}
-            aria-label="The midpoint"
           />
         )}
+        {placed.map(({ key, tone, x, y }) => (
+          <g key={key} className={`city-marker marker-${tone}`} transform={`translate(${x},${y})`}>
+            <circle r={tone === 'nearby' ? 4 : 6} />
+          </g>
+        ))}
+        {labels.map(({ key, tone, text, x, y, anchor }) => (
+          <g key={`label-${key}`} className={`city-marker marker-${tone}`}>
+            <text x={x} y={y} textAnchor={anchor}>
+              {text}
+            </text>
+          </g>
+        ))}
       </>
     );
   };
@@ -206,6 +202,7 @@ function HalfwayPlay({
       moves: state.moves,
       message: state.completed ? `You found the middle of all ${game.rounds}!` : `You reached level ${level.number} of ${game.rounds}.`,
       shareLine: state.marks.map((m) => MARKS[m]).join(''),
+      completed: state.completed,
     });
 
   const end = (city: CircleCity, tone: 'start' | 'end') => (
@@ -288,7 +285,7 @@ function HalfwayPlay({
             {game.cities.get(last!.id)!.name} is {km.format(last!.km)} km from the midpoint! +{level.points}
           </p>
           {level.flawless && (
-            <p className="bonus-life">{state.bonusLife ? 'Flawless! +1 ♥' : state.lives >= HALFWAY_MAX_LIVES ? 'Flawless! Lives are full.' : 'Flawless!'}</p>
+            <p className="bonus-life">{state.bonusLife ? 'Flawless! +1 ♥' : `Flawless! Lives are full (${HALFWAY_MAX_LIVES} at most).`}</p>
           )}
           {nearbyText && <p className="muted">Also close: {nearbyText}.</p>}
           {state.completed ? (
@@ -326,4 +323,42 @@ function HalfwayPlay({
       )}
     </div>
   );
+}
+
+interface Box {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}
+const overlaps = (a: Box, b: Box) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
+/**
+ * Places every label (none is dropped: each dot needs its name), trying right,
+ * left, above and below its dot, so it covers neither another label, a dot nor
+ * the midpoint's ×. Earlier marks get the best places.
+ */
+export function placeLabels<T extends { key: string; x: number; y: number; text?: string }>(
+  marks: readonly T[],
+  middle: readonly [number, number] | null,
+): (T & { text: string; anchor: 'start' | 'end' | 'middle' })[] {
+  const size = labelSize();
+  const half = size * 0.55;
+  const dot = size * 0.5;
+  const taken: Box[] = marks.map(({ x, y }) => ({ left: x - dot, right: x + dot, top: y - dot, bottom: y + dot }));
+  if (middle) taken.push({ left: middle[0] - 12, right: middle[0] + 12, top: middle[1] - 12, bottom: middle[1] + 12 });
+  return marks.flatMap((m, i) => {
+    if (!m.text) return [];
+    const w = m.text.length * size * 0.6;
+    const options = [
+      { x: m.x + LABEL_OFFSET, y: m.y, anchor: 'start' as const, box: { left: m.x + LABEL_OFFSET, right: m.x + LABEL_OFFSET + w } },
+      { x: m.x - LABEL_OFFSET, y: m.y, anchor: 'end' as const, box: { left: m.x - LABEL_OFFSET - w, right: m.x - LABEL_OFFSET } },
+      { x: m.x, y: m.y - size * 1.2, anchor: 'middle' as const, box: { left: m.x - w / 2, right: m.x + w / 2 } },
+      { x: m.x, y: m.y + size * 1.2, anchor: 'middle' as const, box: { left: m.x - w / 2, right: m.x + w / 2 } },
+    ].map((o) => ({ ...o, box: { ...o.box, top: o.y - half, bottom: o.y + half } }));
+    const others = taken.filter((_, j) => j !== i);
+    const best = options.find((o) => !others.some((b) => overlaps(o.box, b))) ?? options[0]!;
+    taken.push(best.box);
+    return [{ ...m, text: m.text, x: best.x, y: best.y, anchor: best.anchor }];
+  });
 }

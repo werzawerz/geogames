@@ -7,6 +7,8 @@ export interface GameOutcome {
   message?: string;
   /** A spoiler-free picture of the game for sharing, e.g. 🟩🟩🟧🟥. */
   shareLine?: string;
+  /** The whole run was cleared: the end screen celebrates rather than says "Game over". */
+  completed?: boolean;
 }
 
 /** Contract every game screen implements, so pages and platform code stay game-agnostic. */

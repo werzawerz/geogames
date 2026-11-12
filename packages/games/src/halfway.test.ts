@@ -4,6 +4,8 @@ import { distanceKm, type CircleCity } from './circle.ts';
 import {
   HALFWAY_AFRICA_SPACING,
   HALFWAY_KNOWN_POPULATION,
+  HALFWAY_SUBREGION_MAX,
+  FAMOUS_END_MIN_POPULATION,
   HALFWAY_LEVELS,
   HALFWAY_MAX_LIVES,
   HALFWAY_START_LIVES,
@@ -153,6 +155,49 @@ describe('halfway', () => {
     expect(african / late).toBeGreaterThan(0.03);
     expect(african / late).toBeLessThan(0.25);
   }, 60_000);
+
+  it('spreads a run: no subregion more than 4 times or twice in a row, and no end was an earlier answer', () => {
+    for (let seed = 1; seed <= 100; seed++) {
+      const { levels } = playPerfect(seed);
+      const counts = new Map<string, number>();
+      levels.forEach((level, i) => {
+        counts.set(level.subregion, (counts.get(level.subregion) ?? 0) + 1);
+        if (i > 0) expect(level.subregion, `seed ${seed} level ${level.number}`).not.toBe(levels[i - 1]!.subregion);
+        const earlier = levels.slice(0, i);
+        for (const id of [level.from, level.to]) {
+          expect(earlier.some((l) => l.fair.includes(id) || l.from === id || l.to === id), `seed ${seed}: ${city(id).name}`).toBe(false);
+        }
+      });
+      expect(Math.max(...counts.values()), `seed ${seed}`).toBeLessThanOrEqual(HALFWAY_SUBREGION_MAX);
+    }
+  }, 60_000);
+
+  it('uses only well-known ends up to level 10: no satellites like Depok, no small resorts like Hạ Long', () => {
+    const tooSmall = [...game.cities.values()].filter((c) => pools.famous.has(c.id) && c.population < FAMOUS_END_MIN_POPULATION).map((c) => c.id);
+    expect(tooSmall.map((id) => city(id).name)).toContain('Hạ Long');
+    const depok = [...game.cities.values()].find((c) => c.name === 'Depok')!.id;
+    for (let seed = 1; seed <= 200; seed++) {
+      let state = game.start(seed);
+      while (state.level.number <= 10) {
+        for (const id of [state.level.from, state.level.to]) {
+          expect(id).not.toBe(depok);
+          expect(tooSmall).not.toContain(id);
+        }
+        state = game.nextLevel(game.guess(state, state.level.fair[0]!).state);
+      }
+    }
+  }, 60_000);
+
+  it('never has more than 3 lives', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      let state = game.start(seed);
+      while (state.status !== 'over') {
+        expect(state.lives).toBeLessThanOrEqual(3);
+        state = game.nextLevel(game.guess(state, state.level.fair[0]!).state);
+      }
+      expect(state.lives).toBeLessThanOrEqual(3);
+    }
+  });
 
   it('knows where territories are: Hong Kong is a famous end early, San Juan (Caribbean) only from level 11', () => {
     const ends = new Map<string, number[]>();

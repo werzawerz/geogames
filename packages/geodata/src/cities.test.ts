@@ -7,6 +7,13 @@ const all = await loadCities({ includeUncertain: true });
 const byName = (name: string, countryId: string) => all.find((c) => c.name === name && c.countryId === countryId);
 
 describe('cities', () => {
+  it('uses English names where the UN data has pinyin, keeping it as an alias', () => {
+    const keelung = byName('Keelung', 'TWN')!;
+    expect(keelung.aliases).toContain('Jilong');
+    expect(byName('Jilong', 'TWN')).toBeUndefined();
+    expect(byName('Hsinchu', 'TWN')).toBeDefined();
+  });
+
   it('passes integrity validation against the country dataset', () => {
     const result = validateCities({ ...cityIndex, cities: all }, dataset);
     expect(result.errors).toEqual([]);

@@ -31,6 +31,22 @@ const FILES: Record<string, () => Promise<{ default: unknown }>> = {
   oceania: () => import('../data/cities/oceania.json', { with: { type: 'json' } }),
 };
 
+/**
+ * English names the UN data spells otherwise (pinyin for Taiwanese cities). The
+ * data's own name stays as an alias, so it can still be typed. Applied on load,
+ * so the data files and their version stay as built.
+ */
+const ENGLISH_NAMES: Readonly<Record<string, string>> = {
+  'wup18-895000379': 'Keelung', // Jilong
+  'wup18-895000397': 'Hsinchu', // Xinzhu
+};
+
+const withEnglishName = (c: City): City => {
+  const name = ENGLISH_NAMES[c.id];
+  // The server's slimmed data has no aliases.
+  return name ? { ...c, name, aliases: [c.name, ...(c.aliases ?? []).filter((a) => a !== name)] } : c;
+};
+
 const cache = new Map<FileId, Promise<readonly City[]>>();
 
 function loadFile(id: FileId): Promise<readonly City[]> {
@@ -38,7 +54,7 @@ function loadFile(id: FileId): Promise<readonly City[]> {
   if (!file) {
     const loader = FILES[id];
     if (!loader) throw new Error(`no city file ${id}`);
-    file = loader().then((m) => m.default as City[]);
+    file = loader().then((m) => (m.default as City[]).map(withEnglishName));
     cache.set(id, file);
   }
   return file;
