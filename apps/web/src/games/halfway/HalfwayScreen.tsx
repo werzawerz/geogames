@@ -76,8 +76,8 @@ function messageFor(result: HalfwayGuessResult, city: CircleCity | undefined, st
 function frameFor(from: CircleCity, to: CircleCity, middle: readonly [number, number], seed: number, level: number) {
   const apart = distanceKm(from.latlng, to.latlng);
   const bearing = ((seed * 7 + level * 137) % 360) * (Math.PI / 180);
-  const center = destination(middle, apart * 0.25, bearing);
-  return circleShape(center, Math.max(900, apart * 0.85));
+  const center = destination(middle, apart * 0.15, bearing);
+  return circleShape(center, Math.max(700, apart * 0.7));
 }
 
 interface Mark {
@@ -145,7 +145,8 @@ function HalfwayPlay({
   const marks: Mark[] = [
     { id: level.from, tone: 'end', text: showNames ? from.name : undefined },
     { id: level.to, tone: 'end', text: showNames ? to.name : undefined },
-    ...level.guesses.map((g): Mark => ({
+    // Closest guess first: its label wins when labels would overlap.
+    ...[...level.guesses].sort((a, b) => a.km - b.km).map((g): Mark => ({
       id: g.id,
       tone: g.km <= level.radiusKm ? 'found' : 'outside',
       text: `${game.cities.get(g.id)!.name} · ${km.format(g.km)} km`,
@@ -181,7 +182,7 @@ function HalfwayPlay({
         {middle && (
           <path
             className="halfway-mid"
-            d={`M${middle[0] - 7} ${middle[1] - 7}l14 14M${middle[0] - 7} ${middle[1] + 7}l14-14`}
+            d={`M${middle[0] - 9} ${middle[1] - 9}l18 18M${middle[0] - 9} ${middle[1] + 9}l18-18`}
             aria-label="The midpoint"
           />
         )}
