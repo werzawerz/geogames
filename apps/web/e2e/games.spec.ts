@@ -976,7 +976,7 @@ test('border blitz: name every neighbour against the clock; a wrong answer costs
   await expect(page.locator('.blitz-slots .slot-found')).toHaveCount(state.neighbours.length);
   // Not flawless, so no bonus; the seconds left are banked as points.
   await expect(page.locator('.bonus-life')).toHaveCount(0);
-  const spare = Number((await page.locator('.route-summary').getByText(/s to spare/).textContent())!.match(/(d+) s to spare/)![1]);
+  const spare = Number((await page.locator('.route-summary').getByText(/s to spare/).textContent())!.match(/(\d+) s to spare/)![1]);
   state = engine.claimTime(state, spare);
   await expect(page.locator('.route-summary')).toContainText(`+${spare * 2}`);
   await expect(page.locator('.route-status')).toContainText(`Score ${state.score}`);
@@ -1037,7 +1037,7 @@ test('border blitz: lives earned back, the count hidden from level 11, giving up
 
   // Level 11: no count and no blank tiles, only what's found.
   await expect(page.locator('.route-status')).toContainText('Level 11 of 20');
-  await expect(page.locator('.blitz-count')).not.toContainText(/d+ of d+/);
+  await expect(page.locator('.blitz-count')).not.toContainText(/\d+ of \d+/);
   await expect(page.locator('.blitz-slots li')).toHaveCount(0);
   await input.fill(nameOf(state.neighbours[0]!));
   await input.press('Enter');
@@ -1069,7 +1069,8 @@ test('border blitz: territory owners are free, microstates get a dot, and a save
     await page.goto('about:blank');
     await openGame(page, 'border-blitz');
     await page.getByRole('button', { name: 'Start game' }).click();
-    await expect(page.getByRole('combobox')).toBeVisible({ timeout: 20_000 });
+    // The prompt, not the input: with a deadline already passed, the level ends at once.
+    await expect(page.locator('.blitz-prompt')).toBeVisible({ timeout: 20_000 });
   };
   const name = async (country: string) => {
     await page.getByRole('combobox').fill(country);
