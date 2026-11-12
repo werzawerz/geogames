@@ -64,6 +64,13 @@ export interface GreatCircleDefinition extends BaseDefinition {
   rounds: number;
 }
 
+export interface BorderBlitzDefinition extends BaseDefinition {
+  kind: 'border-blitz';
+  subject: 'country';
+  /** Levels in a run. */
+  rounds: number;
+}
+
 export interface MysteryCountryDefinition extends BaseDefinition {
   kind: 'mystery-country';
   subject: 'country';
@@ -80,7 +87,8 @@ export type GameDefinition =
   | CircleArcadeDefinition
   | PinDropDefinition
   | GreatCircleDefinition
-  | MysteryCountryDefinition;
+  | MysteryCountryDefinition
+  | BorderBlitzDefinition;
 
 export const GAMES: readonly GameDefinition[] = [
   {
@@ -156,6 +164,15 @@ export const GAMES: readonly GameDefinition[] = [
     title: 'City Circle Arcade',
     tagline: 'Endless circles, getting smaller and harder. How far can you get?',
     status: 'live',
+  },
+  {
+    id: 'border-blitz',
+    kind: 'border-blitz',
+    subject: 'country',
+    title: 'Border Blitz',
+    tagline: 'A country lights up on a map without borders. Name all its neighbours before the clock runs out.',
+    status: 'live',
+    rounds: 20,
   },
   {
     id: 'mystery-country',

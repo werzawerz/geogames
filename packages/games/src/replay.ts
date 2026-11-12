@@ -1,6 +1,7 @@
 import { dataset, queryCountries } from '@geogames/geodata';
 import { cityIndex, loadGreatCircles } from '@geogames/geodata/cities';
 import type { GameDefinition } from './catalog.ts';
+import { createBorderBlitz, replayBorderBlitz } from './border-blitz.ts';
 import { createChoiceQuiz, replayChoiceQuiz } from './choice-quiz.ts';
 import { createCircleArcade, replayCircleArcade, type CircleArcade } from './circle-arcade.ts';
 import { createCircleGame, replayCircle } from './circle.ts';
@@ -86,6 +87,11 @@ export async function replayGame(
     case 'mystery-country': {
       const engine = createMysteryCountry({ countries: queryCountries(), rounds: game.rounds });
       const state = replayMysteryCountry(engine, seed, moves);
+      return { score: state.score, finished: state.status === 'over' };
+    }
+    case 'border-blitz': {
+      const engine = createBorderBlitz({ countries: routeCountries(settings), rounds: game.rounds });
+      const state = replayBorderBlitz(engine, seed, moves);
       return { score: state.score, finished: state.status === 'over' };
     }
     case 'pin-drop': {
