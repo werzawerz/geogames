@@ -8,8 +8,8 @@ type Point = [number, number];
 const DEGREES = 180 / Math.PI;
 /** Vertices this close (in degrees) count as on the shared border. */
 const TOUCHING = 0.3;
-/** Never larger than this, unless the borders themselves need more. */
-const MAX_RADIUS = 60;
+/** Degrees of context around the country and its borders, at most. */
+const MAX_MARGIN = 10;
 
 /** Every vertex of every outer ring, as [lng, lat]. */
 function vertices(shape: CountryShape): Point[] {
@@ -86,8 +86,8 @@ export function frameFor(shapes: WorldShapes, id: CountryId, neighbours: readonl
   }
   const centre = geoCentroid({ type: 'MultiPoint', coordinates: points }) as Point;
   const reach = Math.max(...points.map((p) => geoDistance(centre, p) * DEGREES));
-  // Room around it for context, but always enough for the borders themselves.
-  return { centre, radius: Math.max(reach + 2, Math.min(MAX_RADIUS, reach * 1.6 + 3)) };
+  // Room around it for context: more, for its size, around a small country.
+  return { centre, radius: reach + Math.min(MAX_MARGIN, reach * 0.6 + 3) };
 }
 
 export const frameShape = ({ centre, radius }: Frame): GeoPermissibleObjects => geoCircle().center(centre).radius(radius)();
