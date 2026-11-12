@@ -189,21 +189,6 @@ function BlitzPlay({
 
       <WorldMap shapes={shapes} countries={mapCountries} frame={frame} borders={false} label={`Map of ${nameOf(target)} and the neighbours you found`} />
 
-      <ol className="rank-slots blitz-slots" aria-label="Neighbours">
-        {[...found, ...missed].map((id) => (
-          <li key={id} className={found.includes(id) ? 'slot-found' : 'slot-missed'}>
-            <span className="slot-name">
-              <Flag iso2={getCountry(id)!.iso2} className="suggestion-flag" /> {nameOf(id)}
-            </span>
-          </li>
-        ))}
-        {Array.from({ length: neighbours.length - found.length - missed.length }, (_, i) => (
-          <li key={`blank-${i}`}>
-            <span className="slot-name muted">?</span>
-          </li>
-        ))}
-      </ol>
-
       {playing ? (
         <>
           <SearchInput
@@ -239,6 +224,21 @@ function BlitzPlay({
           </button>
         </div>
       )}
+
+      <ol className="rank-slots blitz-slots" aria-label="Neighbours">
+        {[...found, ...missed].map((id) => (
+          <li key={id} className={found.includes(id) ? 'slot-found' : 'slot-missed'}>
+            <span className="slot-name">
+              <Flag iso2={getCountry(id)!.iso2} className="suggestion-flag" /> {nameOf(id)}
+            </span>
+          </li>
+        ))}
+        {Array.from({ length: neighbours.length - found.length - missed.length }, (_, i) => (
+          <li key={`blank-${i}`}>
+            <span className="slot-name muted">?</span>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
