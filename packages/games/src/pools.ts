@@ -85,6 +85,14 @@ export async function arcadePools(settings: GameSettings = DEFAULT_SETTINGS): Pr
   return { cities, famous: new Set(Object.keys(cityIndex.tourismRank)) };
 }
 
+/**
+ * Halfway pools: Pin Drop's cities, plus every country and territory, so a
+ * city in Hong Kong or Puerto Rico has a continent and a scope too.
+ */
+export async function halfwayPools(): Promise<ArcadeOptions & { countries: Country[] }> {
+  return { ...(await arcadePools()), countries: queryCountries({ sovereignty: [...SOVEREIGN, 'territory'] }) };
+}
+
 /** Share of a region's countries asked on Easy: the best-known ones. */
 export const EASY_SHARE = 0.4;
 

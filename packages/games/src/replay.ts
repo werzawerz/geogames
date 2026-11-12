@@ -5,11 +5,11 @@ import { createChoiceQuiz, replayChoiceQuiz } from './choice-quiz.ts';
 import { createCircleArcade, replayCircleArcade, type CircleArcade } from './circle-arcade.ts';
 import { createCircleGame, replayCircle } from './circle.ts';
 import { createHigherLowerGame, replayHigherLower, type Guess } from './higher-lower.ts';
-import { createHalfway, replayHalfway } from './halfway.ts';
+import { createHalfway, replayHalfway, type Halfway } from './halfway.ts';
 import { createGreatCircle, replayGreatCircle } from './great-circle.ts';
 import { createMysteryCountry, replayMysteryCountry } from './mystery-country.ts';
 import { createPinDrop, replayPinDrop } from './pin-drop.ts';
-import { arcadePools, circleCities, loadPool, quizItems, routeCountries } from './pools.ts';
+import { arcadePools, circleCities, halfwayPools, loadPool, quizItems, routeCountries } from './pools.ts';
 import { createRouteGame, replayRoute } from './route.ts';
 import type { GameSettings } from './settings.ts';
 
@@ -35,6 +35,10 @@ function arcadeFor(settings: GameSettings): Promise<CircleArcade> {
   }
   return arcade;
 }
+
+// Halfway works out its fair pairs once per engine.
+let halfwayEngine: Promise<Halfway> | undefined;
+const halfway = () => (halfwayEngine ??= halfwayPools().then(createHalfway));
 
 /**
  * Plays a game again from its seed and the player's moves, with the same
@@ -94,8 +98,7 @@ export async function replayGame(
       return { score: state.score, finished: state.status === 'over' };
     }
     case 'halfway': {
-      const engine = createHalfway({ ...(await arcadePools()), countries: queryCountries() });
-      const state = replayHalfway(engine, seed, moves);
+      const state = replayHalfway(await halfway(), seed, moves);
       return { score: state.score, finished: state.status === 'over' };
     }
     case 'circle-arcade': {

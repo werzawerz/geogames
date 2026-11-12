@@ -10,6 +10,7 @@ import {
   createChoiceQuiz,
   createCircleArcade,
   createHalfway,
+  halfwayPools,
   distanceKm,
   createMysteryCountry,
   createRouteGame,
@@ -111,7 +112,7 @@ describe('the server bundle', () => {
   it('scores Halfway the same with its slimmed cities', async () => {
     const definition = GAMES.find((g) => g.kind === 'halfway')!;
     const settings = normalizeSettings({}, definition);
-    const engine = createHalfway({ ...(await arcadePools()), countries: queryCountries() });
+    const engine = createHalfway(await halfwayPools());
     const cities = [...engine.cities.values()];
     let state = engine.start(41);
     // Clears 12 levels with a city at the edge of each radius, missing first on every third.

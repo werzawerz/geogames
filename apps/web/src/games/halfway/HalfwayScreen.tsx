@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { geoPath, type GeoPermissibleObjects, type GeoProjection } from 'd3-geo';
-import { getCountry, queryCountries, type CityId } from '@geogames/geodata';
+import { getCountry, type CityId } from '@geogames/geodata';
 import { loadWorldShapes, type WorldShapes } from '@geogames/geodata/shapes';
 import {
   HALFWAY_MAX_LIVES,
-  arcadePools,
   createHalfway,
   destination,
   distanceKm,
   halfwayPlan,
+  halfwayPools,
   replayHalfway,
   type CircleCity,
   type Halfway,
@@ -39,8 +39,8 @@ export function HalfwayScreen({ seed, initialMoves, onMovesChange, onGameOver }:
   const [error, setError] = useState(false);
   useEffect(() => {
     let cancelled = false;
-    Promise.all([loadWorldShapes(), arcadePools()]).then(
-      ([shapes, pools]) => !cancelled && setLoaded({ shapes, game: createHalfway({ ...pools, countries: queryCountries() }) }),
+    Promise.all([loadWorldShapes(), halfwayPools()]).then(
+      ([shapes, pools]) => !cancelled && setLoaded({ shapes, game: createHalfway(pools) }),
       () => !cancelled && setError(true),
     );
     return () => {
@@ -114,7 +114,11 @@ function HalfwayPlay({
   useEffect(() => setMessage(null), [level.number]);
 
   const searchItems = useMemo(() => cityItems(game.cities.values()), [game]);
-  const exclude = useMemo(() => new Set([level.from, level.to, ...level.guesses.map((g) => g.id)]), [level]);
+  // While the names are hidden the two cities stay in the search, so it doesn't tell you who they are.
+  const exclude = useMemo(
+    () => new Set([...(plan.showNames ? [level.from, level.to] : []), ...level.guesses.map((g) => g.id)]),
+    [level, plan.showNames],
+  );
   const frame = useMemo<GeoPermissibleObjects>(
     () => frameFor(from, to, level.midpoint, seed, level.number),
     [from, to, level.midpoint, seed, level.number],

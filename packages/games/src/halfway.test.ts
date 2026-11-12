@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { queryCountries } from '@geogames/geodata';
 import { getGame } from './catalog.ts';
 import { distanceKm, type CircleCity } from './circle.ts';
 import {
-  HALFWAY_FAIR_CITIES,
+  HALFWAY_AFRICA_SPACING,
+  HALFWAY_KNOWN_POPULATION,
   HALFWAY_LEVELS,
   HALFWAY_MAX_LIVES,
   HALFWAY_START_LIVES,
@@ -13,14 +13,16 @@ import {
   replayHalfway,
   type HalfwayState,
 } from './halfway.ts';
-import { arcadePools } from './pools.ts';
+import { halfwayPools } from './pools.ts';
 import { replayGame } from './replay.ts';
 import { routeScopes } from './route.ts';
 import { normalizeSettings, usesRegion, variantKey } from './settings.ts';
 
-const pools = await arcadePools();
-const countries = queryCountries();
-const game = createHalfway({ ...pools, countries });
+const pools = await halfwayPools();
+const { countries } = pools;
+const game = createHalfway(pools);
+const continent = new Map(countries.map((c) => [c.id, c.continent]));
+const crowded = (c: CircleCity) => c.countryId === 'CHN' || c.countryId === 'IND';
 const city = (id: string) => game.cities.get(id)!;
 
 /** The fair city nearest the midpoint clears every level. */
@@ -70,7 +72,14 @@ describe('halfway', () => {
       for (const level of levels) {
         const plan = halfwayPlan(level.number);
         expect(level.radiusKm).toBe(plan.radiusKm);
-        expect(level.fair.length).toBeGreaterThanOrEqual(HALFWAY_FAIR_CITIES);
+        expect(level.fair.length).toBeGreaterThanOrEqual(plan.minKnown);
+        expect(level.fair.filter((id) => pools.famous.has(id)).length).toBeGreaterThanOrEqual(plan.minFamous);
+        // Well known: famous or 1M+, never only towns most players haven't heard of.
+        for (const id of level.fair) {
+          const c = city(id);
+          const known = crowded(c) ? c.population >= plan.crowdedCountryMinPopulation : pools.famous.has(id) || c.population >= HALFWAY_KNOWN_POPULATION;
+          expect(known, c.name).toBe(true);
+        }
         for (const id of level.fair) expect(distanceKm(city(id).latlng, level.midpoint)).toBeLessThanOrEqual(level.radiusKm);
         const km = distanceKm(city(level.from).latlng, city(level.to).latlng);
         expect(km).toBeGreaterThanOrEqual(plan.separationKm[0]);
@@ -81,8 +90,6 @@ describe('halfway', () => {
 
   it('starts with famous cities in well-known places, and never reuses one', () => {
     const { isRemote } = routeScopes(countries);
-    const continent = new Map(countries.map((c) => [c.id, c.continent]));
-    const crowded = (c: CircleCity) => c.countryId === 'CHN' || c.countryId === 'IND';
     for (let seed = 1; seed <= 40; seed++) {
       const { levels } = playPerfect(seed);
       const ends = levels.flatMap((l) => [l.from, l.to]);
@@ -98,11 +105,68 @@ describe('halfway', () => {
         // The cities that make an early level fair are well known too.
         for (const id of level.fair) {
           const c = city(id);
-          const big = crowded(c) ? c.population >= 20_000_000 : pools.famous.has(id) || c.population >= 3_000_000;
+          const big = crowded(c) ? c.population >= 20_000_000 : pools.famous.has(id) || c.population >= 1_000_000;
           expect(big, c.name).toBe(true);
         }
       }
     }
+  }, 60_000);
+
+  it('varies the early pairs from run to run, in more than Europe and Asia', () => {
+    const pairs = new Map<string, number>();
+    const regions = new Set<string>();
+    const seeds = 300;
+    for (let seed = 1; seed <= seeds; seed++) {
+      let state = game.start(seed);
+      const seen = new Set<string>();
+      for (let i = 0; i < 5; i++) {
+        seen.add([state.level.from, state.level.to].sort().join('|'));
+        regions.add(state.level.region);
+        state = game.nextLevel(game.guess(state, state.level.fair[0]!).state);
+      }
+      for (const key of seen) pairs.set(key, (pairs.get(key) ?? 0) + 1);
+    }
+    const most = Math.max(...pairs.values());
+    expect(most / seeds).toBeLessThan(0.15);
+    expect(pairs.size).toBeGreaterThan(150);
+    expect([...regions].sort()).toEqual(expect.arrayContaining(['Asia', 'Europe', 'North America']));
+  }, 60_000);
+
+  it('keeps Africa in from level 11, but never two African midpoints close together', () => {
+    let african = 0;
+    let late = 0;
+    for (let seed = 1; seed <= 100; seed++) {
+      const { levels } = playPerfect(seed);
+      levels.forEach((level, i) => {
+        if (level.number <= 10) {
+          // No African ends yet (a midpoint can still be near Cairo, between Europe and Arabia).
+          for (const id of [level.from, level.to]) expect(continent.get(city(id).countryId), city(id).name).not.toBe('Africa');
+          return;
+        }
+        late++;
+        if (level.region !== 'Africa') return;
+        african++;
+        const before = levels.slice(Math.max(0, i - HALFWAY_AFRICA_SPACING + 1), i);
+        expect(before.some((l) => l.region === 'Africa'), `seed ${seed} level ${level.number}`).toBe(false);
+      });
+    }
+    expect(african / late).toBeGreaterThan(0.03);
+    expect(african / late).toBeLessThan(0.25);
+  }, 60_000);
+
+  it('knows where territories are: Hong Kong is a famous end early, San Juan (Caribbean) only from level 11', () => {
+    const ends = new Map<string, number[]>();
+    for (let seed = 1; seed <= 300; seed++) {
+      let state = game.start(seed);
+      while (state.status !== 'over') {
+        for (const id of [state.level.from, state.level.to]) ends.set(city(id).name, [...(ends.get(city(id).name) ?? []), state.level.number]);
+        if (state.level.number >= 10) break;
+        state = game.nextLevel(game.guess(state, state.level.fair[0]!).state);
+      }
+    }
+    expect(Math.min(...(ends.get('Hong Kong') ?? [99]))).toBeLessThanOrEqual(5);
+    expect(ends.get('San Juan') ?? []).toEqual([]);
+    expect(continent.get(city([...game.cities.values()].find((c) => c.name === 'Hong Kong')!.id).countryId)).toBe('Asia');
   }, 60_000);
 
   it("doesn't repeat a level's answers", () => {
@@ -187,6 +251,19 @@ describe('halfway', () => {
     state = game.guess(state, state.level.fair[0]!).state;
     expect(state.level.flawless).toBe(false);
     expect(state.marks).toEqual(['missed']);
+  });
+
+  it('counts a hidden city as an ordinary far guess, so it gives nothing away', () => {
+    let state = game.start(13);
+    while (halfwayPlan(state.level.number).showNames) state = game.nextLevel(game.guess(state, state.level.fair[0]!).state);
+    const { state: next, result } = game.guess(state, state.level.from);
+    expect(result).toBe('outside');
+    expect(next.lives).toBe(state.lives - 1);
+    expect(next.moves.at(-1)).toBe(state.level.from);
+    expect(replayHalfway(game, 13, next.moves)).toEqual(next);
+    // With names shown, it's refused for free.
+    const first = game.start(13);
+    expect(game.guess(first, first.level.to)).toEqual({ state: first, result: 'end' });
   });
 
   it('replays to the same result, and can be verified by a server', async () => {

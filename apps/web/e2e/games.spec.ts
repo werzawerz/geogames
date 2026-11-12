@@ -16,6 +16,7 @@ import {
   createMysteryCountry,
   createPinDrop,
   createHalfway,
+  halfwayPools,
   distanceKm,
   createRouteGame,
   dailyDate,
@@ -1019,7 +1020,7 @@ test('halfway: a far guess costs a life and says how far, a near one clears and 
   await page.addInitScript(() => {
     Math.random = () => 0.5;
   });
-  const engine = createHalfway({ ...(await arcadePools()), countries: queryCountries() });
+  const engine = createHalfway(await halfwayPools());
   const cityNamed = (name: string) => [...engine.cities.values()].filter((c) => c.name === name).sort((a, b) => b.population - a.population)[0]!;
   const nameOf = (id: string) => engine.cities.get(id)!.name;
   let state = engine.start(Math.floor(0.5 * 2 ** 32));

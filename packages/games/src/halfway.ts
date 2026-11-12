@@ -1,4 +1,4 @@
-import type { CityId, Country } from '@geogames/geodata';
+import type { CityId, Continent, Country } from '@geogames/geodata';
 import { distanceKm, type CircleCity } from './circle.ts';
 import { createRng, pick, type Rng } from './rng.ts';
 import { routeScopes, type RouteScope } from './route.ts';
@@ -9,9 +9,10 @@ import { routeScopes, type RouteScope } from './route.ts';
  * it; one outside costs a life. A run is up to 20 levels, with smaller radii
  * and less familiar cities, and ends when the lives are gone.
  *
- * Every level is checked for fairness when it's made: at least
- * HALFWAY_FAIR_CITIES well-known cities lie inside its radius, so no midpoint
- * falls in the sea, a desert or the Arctic with nothing to name.
+ * Every level is checked for fairness when it's made: enough well-known
+ * cities (famous, or 1M+) lie inside its radius, so no midpoint falls in the
+ * sea, a desert or the Arctic with nothing most players could name. Any city
+ * in the game may be typed, though, and counts by its distance.
  */
 
 export interface HalfwayPlan {
@@ -25,12 +26,14 @@ export interface HalfwayPlan {
   scope: RouteScope;
   /** Both cities on the same continent. */
   sameContinent: boolean;
-  /** The two cities: well-known ones always, others from this size. */
+  /** The two cities: famous ones always, others from this size. */
   endMinPopulation: number;
-  /** Cities that count towards a fair level: well-known ones, and others from this size. */
-  answerMinPopulation: number;
-  /** Chinese and Indian cities, as an end or a fair answer, only from this size. */
+  /** Chinese and Indian cities, as an end or a well-known city, only from this size. */
   crowdedCountryMinPopulation: number;
+  /** Well-known cities that must lie inside the radius. */
+  minKnown: number;
+  /** Of those, how many must be famous. */
+  minFamous: number;
   /** The great circle between them is drawn. */
   showLine: boolean;
   /** The two cities' names are shown, not only their dots. */
@@ -38,45 +41,64 @@ export interface HalfwayPlan {
 }
 
 export const HALFWAY_PLANS: readonly HalfwayPlan[] = [
-  { from: 1, radiusKm: 300, separationKm: [700, 3000], scope: 'known', sameContinent: true, endMinPopulation: Infinity, answerMinPopulation: 3_000_000, crowdedCountryMinPopulation: 20_000_000, showLine: true, showNames: true },
-  { from: 6, radiusKm: 250, separationKm: [900, 4000], scope: 'no-africa', sameContinent: false, endMinPopulation: 3_000_000, answerMinPopulation: 1_000_000, crowdedCountryMinPopulation: 10_000_000, showLine: true, showNames: true },
-  { from: 11, radiusKm: 200, separationKm: [800, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, answerMinPopulation: 500_000, crowdedCountryMinPopulation: 3_000_000, showLine: false, showNames: true },
-  { from: 16, radiusKm: 120, separationKm: [600, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, answerMinPopulation: 300_000, crowdedCountryMinPopulation: 1_000_000, showLine: false, showNames: false },
+  { from: 1, radiusKm: 300, separationKm: [700, 3000], scope: 'known', sameContinent: true, endMinPopulation: Infinity, crowdedCountryMinPopulation: 20_000_000, minKnown: 3, minFamous: 1, showLine: true, showNames: true },
+  { from: 6, radiusKm: 250, separationKm: [900, 4000], scope: 'no-africa', sameContinent: false, endMinPopulation: 3_000_000, crowdedCountryMinPopulation: 10_000_000, minKnown: 3, minFamous: 1, showLine: true, showNames: true },
+  { from: 11, radiusKm: 200, separationKm: [800, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 3_000_000, minKnown: 3, minFamous: 0, showLine: false, showNames: true },
+  { from: 16, radiusKm: 120, separationKm: [600, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 2_000_000, minKnown: 2, minFamous: 0, showLine: false, showNames: false },
 ];
 
 export const HALFWAY_LEVELS = 20;
-/** Well-known cities that must lie inside a level's radius. */
-export const HALFWAY_FAIR_CITIES = 3;
+/** Cities this big (or famous) count as well known; smaller ones can still be typed. */
+export const HALFWAY_KNOWN_POPULATION = 1_000_000;
 export const HALFWAY_START_LIVES = 3;
 export const HALFWAY_MAX_LIVES = 5;
 /** Points for a level are up to this × its number, by how close the guess was. */
 export const HALFWAY_POINTS_PER_LEVEL = 10;
 /** A first guess within this share of the radius is flawless: half as many points again, and a life back. */
 export const HALFWAY_FLAWLESS_SHARE = 1 / 3;
+/** At most one African midpoint in this many levels in a row: Africa has many countries but few cities most players know. */
+export const HALFWAY_AFRICA_SPACING = 3;
 
 /** New midpoints stay this far from the last few, so a run moves around the world. */
 const MIN_SEPARATION_KM = 800;
 const SEPARATION_MEMORY = 4;
 /** At most this share of a level's fair cities may be fair cities of an earlier level (of the smaller set). */
 const MAX_SHARED = 0.5;
+/** Regions are weighted by their number of pairs to this power: below 1 so smaller ones come up, not so low that their few pairs repeat. */
+const REGION_WEIGHT = 0.7;
 
 /** Too many big cities in too small a part of most players' mental map (as in Pin Drop). */
 const CROWDED_COUNTRIES: ReadonlySet<string> = new Set(['CHN', 'IND']);
 
 export const halfwayPlan = (level: number): HalfwayPlan => [...HALFWAY_PLANS].reverse().find((p) => level >= p.from)!;
 
-const KM_PER_DEGREE_LAT = 111.19;
+const EARTH_KM = 6371;
 const rad = (d: number) => (d * Math.PI) / 180;
 const deg = (r: number) => (r * 180) / Math.PI;
 
+type Vector = readonly [number, number, number];
+const toVector = ([lat, lng]: readonly [number, number]): Vector => [
+  Math.cos(rad(lat)) * Math.cos(rad(lng)),
+  Math.cos(rad(lat)) * Math.sin(rad(lng)),
+  Math.sin(rad(lat)),
+];
+const dot = (a: Vector, b: Vector) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+
+/** Index of the first item whose z is at least `z`, in a list sorted by z. */
+function firstAbove(items: readonly { v: Vector }[], z: number): number {
+  let lo = 0;
+  for (let hi = items.length; lo < hi; ) {
+    const mid = (lo + hi) >> 1;
+    if (items[mid]!.v[2] < z) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
 /** The point halfway along the great circle between two [lat, lng] points. */
 export function midpoint(a: readonly [number, number], b: readonly [number, number]): [number, number] {
-  const toVector = ([lat, lng]: readonly [number, number]) => [
-    Math.cos(rad(lat)) * Math.cos(rad(lng)),
-    Math.cos(rad(lat)) * Math.sin(rad(lng)),
-    Math.sin(rad(lat)),
-  ];
-  const [x, y, z] = toVector(a).map((v, i) => v + toVector(b)[i]!) as [number, number, number];
+  const [va, vb] = [toVector(a), toVector(b)];
+  const [x, y, z] = [va[0] + vb[0], va[1] + vb[1], va[2] + vb[2]];
   return [deg(Math.atan2(z, Math.hypot(x, y))), deg(Math.atan2(y, x))];
 }
 
@@ -94,6 +116,8 @@ export interface HalfwayLevel {
   radiusKm: number;
   /** Well-known cities inside the radius, nearest first: what a player could have said. */
   fair: readonly CityId[];
+  /** Continent of the well-known city nearest the midpoint. */
+  region: Continent;
   guesses: readonly HalfwayGuess[];
   points: number;
   flawless: boolean;
@@ -118,7 +142,7 @@ export interface HalfwayState {
   readonly bonusLife: boolean;
   readonly marks: readonly HalfwayMark[];
   /** Earlier levels, for keeping new ones different. */
-  readonly past: readonly Pick<HalfwayLevel, 'from' | 'to' | 'midpoint' | 'fair'>[];
+  readonly past: readonly Pick<HalfwayLevel, 'from' | 'to' | 'midpoint' | 'fair' | 'region'>[];
   /** City ids guessed; with the seed this replays the game. */
   readonly moves: readonly string[];
 }
@@ -127,82 +151,138 @@ export interface HalfwayOptions {
   cities: readonly CircleCity[];
   /** Well-known cities (the world's most visited). */
   famous: ReadonlySet<CityId>;
+  /** Every country and territory, so cities in Hong Kong or Puerto Rico have a continent. */
   countries: readonly Country[];
   rounds?: number;
 }
 
+/** A pair of end cities that makes a fair level for a plan. */
+interface Pair {
+  a: CircleCity;
+  b: CircleCity;
+  middle: [number, number];
+  fair: CityId[];
+  region: Continent;
+}
+
 export function createHalfway({ cities, famous, countries, rounds = HALFWAY_LEVELS }: HalfwayOptions) {
   const byId = new Map(cities.map((c) => [c.id, c]));
-  const continent = new Map(countries.map((c) => [c.id, c.continent]));
-  const { inScope } = routeScopes(countries);
+  const countryById = new Map(countries.map((c) => [c.id, c]));
+  const continentOf = (c: CircleCity) => countryById.get(c.countryId)?.continent;
+  const { inScope, isRemote } = routeScopes(countries);
+  // Territories have no prominence of their own: Hong Kong counts as well known, San Juan (Caribbean) doesn't.
+  const endInScope = (scope: RouteScope, c: CircleCity) =>
+    countryById.get(c.countryId)?.sovereignty === 'territory' ? scope === 'any' || !isRemote(c.countryId) : inScope(scope, c.countryId);
 
   const sizeable = (c: CircleCity, minPopulation: number, plan: HalfwayPlan) =>
     CROWDED_COUNTRIES.has(c.countryId) ? c.population >= plan.crowdedCountryMinPopulation : famous.has(c.id) || c.population >= minPopulation;
-  const isEnd = (c: CircleCity, plan: HalfwayPlan) => sizeable(c, plan.endMinPopulation, plan) && inScope(plan.scope, c.countryId);
-  const isFair = (c: CircleCity, plan: HalfwayPlan) => sizeable(c, plan.answerMinPopulation, plan);
+  const isEnd = (c: CircleCity, plan: HalfwayPlan) => sizeable(c, plan.endMinPopulation, plan) && endInScope(plan.scope, c);
+  const isKnown = (c: CircleCity, plan: HalfwayPlan) => sizeable(c, HALFWAY_KNOWN_POPULATION, plan);
 
-  /** Country first, then a city in it, so countries with many big cities don't take over. */
-  const pickCity = (rng: Rng, from: readonly CircleCity[]) => {
-    const countryId = pick(rng, [...new Set(from.map((c) => c.countryId))]);
-    return pick(rng, from.filter((c) => c.countryId === countryId));
+  /**
+   * Every pair of ends that makes a fair level for the plan, worked out once:
+   * picking from all of them (not a city, then a partner) keeps the few
+   * possible pairs in a region from coming up in every run.
+   */
+  function findPairs(plan: HalfwayPlan): Pair[] {
+    const ends = cities.filter((c) => isEnd(c, plan)).map((c) => ({ c, v: toVector(c.latlng) }));
+    const known = cities
+      .filter((c) => isKnown(c, plan))
+      .map((c) => ({ c, v: toVector(c.latlng) }))
+      .sort((x, y) => x.v[2] - y.v[2]);
+    const [minKm, maxKm] = plan.separationKm;
+    const [minDot, maxDot] = [Math.cos(maxKm / EARTH_KM), Math.cos(minKm / EARTH_KM)];
+    // A little slack: the exact distance decides, the dot product only skips the far ones quickly.
+    const nearDot = Math.cos((plan.radiusKm + 1) / EARTH_KM);
+    // Within the radius, a city's z (sine of its latitude) differs from the midpoint's by at most this.
+    const nearZ = (plan.radiusKm + 1) / EARTH_KM;
+    const pairs: Pair[] = [];
+    for (let i = 0; i < ends.length; i++) {
+      for (let j = i + 1; j < ends.length; j++) {
+        const [a, b] = [ends[i]!, ends[j]!];
+        const d = dot(a.v, b.v);
+        if (d < minDot || d > maxDot) continue;
+        if (plan.sameContinent && continentOf(a.c) !== continentOf(b.c)) continue;
+        const middle = midpoint(a.c.latlng, b.c.latlng);
+        const m = toVector(middle);
+        const near: { c: CircleCity; km: number }[] = [];
+        for (let n = firstAbove(known, m[2] - nearZ); n < known.length && known[n]!.v[2] <= m[2] + nearZ; n++) {
+          const k = known[n]!;
+          if (dot(k.v, m) < nearDot) continue;
+          const km = distanceKm(k.c.latlng, middle);
+          if (km <= plan.radiusKm) near.push({ c: k.c, km });
+        }
+        if (near.length < plan.minKnown || near.filter((k) => famous.has(k.c.id)).length < plan.minFamous) continue;
+        near.sort((x, y) => x.km - y.km);
+        const region = continentOf(near[0]!.c);
+        if (!region) continue;
+        pairs.push({ a: a.c, b: b.c, middle, fair: near.map((k) => k.c.id), region });
+      }
+    }
+    return pairs;
+  }
+  const pairsByPlan = new Map<HalfwayPlan, Pair[]>();
+  const pairsFor = (plan: HalfwayPlan) => {
+    let pairs = pairsByPlan.get(plan);
+    if (!pairs) pairsByPlan.set(plan, (pairs = findPairs(plan)));
+    return pairs;
   };
 
-  /** Each plan's fair cities, sorted by latitude so the ones near a midpoint are found quickly. */
-  const fairPools = new Map<HalfwayPlan, CircleCity[]>();
-  const fairPool = (plan: HalfwayPlan) => {
-    let pool = fairPools.get(plan);
-    if (!pool) fairPools.set(plan, (pool = cities.filter((c) => isFair(c, plan)).sort((a, b) => a.latlng[0] - b.latlng[0])));
-    return pool;
-  };
-
-  /** Fair cities within the plan's radius of `middle`, nearest first. */
-  function fairNear(plan: HalfwayPlan, middle: readonly [number, number]): CityId[] {
-    const pool = fairPool(plan);
-    const south = middle[0] - plan.radiusKm / KM_PER_DEGREE_LAT;
-    let lo = 0;
-    for (let hi = pool.length; lo < hi; ) {
-      const mid = (lo + hi) >> 1;
-      if (pool[mid]!.latlng[0] < south) lo = mid + 1;
-      else hi = mid;
+  /**
+   * A region (continent of the midpoint) weighted by its number of
+   * pairs to the power REGION_WEIGHT, then a pair in it: Europe and Asia have the most, but North America
+   * and the rest still come up often.
+   */
+  function pickPair(rng: Rng, pairs: readonly Pair[]): Pair {
+    const regions = new Map<Continent, Pair[]>();
+    for (const p of pairs) {
+      const list = regions.get(p.region);
+      if (list) list.push(p);
+      else regions.set(p.region, [p]);
     }
-    const north = middle[0] + plan.radiusKm / KM_PER_DEGREE_LAT;
-    const near: { id: CityId; km: number }[] = [];
-    for (let i = lo; i < pool.length && pool[i]!.latlng[0] <= north; i++) {
-      const km = distanceKm(pool[i]!.latlng, middle);
-      if (km <= plan.radiusKm) near.push({ id: pool[i]!.id, km });
+    const entries = [...regions].sort(([x], [y]) => x.localeCompare(y));
+    const total = entries.reduce((sum, [, ps]) => sum + ps.length ** REGION_WEIGHT, 0);
+    let r = rng.next() * total;
+    for (const [, ps] of entries) {
+      r -= ps.length ** REGION_WEIGHT;
+      if (r < 0) return pick(rng, ps);
     }
-    return near.sort((x, y) => x.km - y.km).map((c) => c.id);
+    return pick(rng, entries.at(-1)![1]);
   }
 
   function makeLevel(rng: Rng, number: number, past: HalfwayState['past']): HalfwayLevel {
     const plan = halfwayPlan(number);
     const used = new Set(past.flatMap((p) => [p.from, p.to]));
-    const ends = cities.filter((c) => !used.has(c.id) && isEnd(c, plan));
     const recent = past.slice(-SEPARATION_MEMORY);
-    const [minKm, maxKm] = plan.separationKm;
-    // Each city gets one try as the first end per pass. The first pass keeps midpoints apart and answers
-    // fresh; the second lets a midpoint come near a recent one; the last, never needed in testing, allows anything.
+    const africaRecently = past.slice(-(HALFWAY_AFRICA_SPACING - 1)).some((p) => p.region === 'Africa');
+    const fresh = pairsFor(plan).filter((p) => !used.has(p.a.id) && !used.has(p.b.id));
+    // The first pass keeps every rule; the next lets a midpoint come near a recent one and Africa come
+    // sooner; the last, never needed in testing, allows answers an earlier level had.
     for (const pass of [2, 1, 0]) {
-      let untried = ends;
-      while (untried.length > 0) {
-        const a = pickCity(rng, untried);
-        untried = untried.filter((c) => c !== a);
-        const options = new Map<CityId, { middle: [number, number]; fair: CityId[] }>();
-        for (const b of ends) {
-          if (b === a || (plan.sameContinent && continent.get(b.countryId) !== continent.get(a.countryId))) continue;
-          const km = distanceKm(a.latlng, b.latlng);
-          if (km < minKm || km > maxKm) continue;
-          const middle = midpoint(a.latlng, b.latlng);
-          if (pass >= 2 && recent.some((p) => distanceKm(p.midpoint, middle) < MIN_SEPARATION_KM)) continue;
-          const fair = fairNear(plan, middle);
-          if (fair.length < HALFWAY_FAIR_CITIES) continue;
-          if (pass >= 1 && past.some((p) => sharesTooMany(fair, p.fair))) continue;
-          options.set(b.id, { middle, fair });
+      let options = fresh.filter(
+        (p) => pass < 2 || (!(africaRecently && p.region === 'Africa') && !recent.some((q) => distanceKm(q.midpoint, p.middle) < MIN_SEPARATION_KM)),
+      );
+      while (options.length > 0) {
+        const pair = pickPair(rng, options);
+        if (pass >= 1 && past.some((q) => sharesTooMany(pair.fair, q.fair))) {
+          options = options.filter((p) => p !== pair);
+          continue;
         }
-        if (options.size === 0) continue;
-        const b = pickCity(rng, ends.filter((c) => options.has(c.id)));
-        const { middle, fair } = options.get(b.id)!;
-        return { number, from: a.id, to: b.id, midpoint: middle, radiusKm: plan.radiusKm, fair, guesses: [], points: 0, flawless: false, status: 'playing' };
+        // Either city may come first.
+        const [from, to] = rng.next() < 0.5 ? [pair.a, pair.b] : [pair.b, pair.a];
+        return {
+          number,
+          from: from.id,
+          to: to.id,
+          midpoint: pair.middle,
+          radiusKm: plan.radiusKm,
+          fair: pair.fair,
+          region: pair.region,
+          guesses: [],
+          points: 0,
+          flawless: false,
+          status: 'playing',
+        };
       }
     }
     throw new Error(`no Halfway level ${number}`);
@@ -240,8 +320,9 @@ export function createHalfway({ cities, famous, countries, rounds = HALFWAY_LEVE
       const { level } = state;
       const city = byId.get(id);
       if (state.status !== 'playing' || !city) return { state, result: 'unknown' };
-      // Naming one of the two cities isn't a guess: it can never be halfway.
-      if (id === level.from || id === level.to) return { state, result: 'end' };
+      // Naming one of the two cities isn't a guess: it can never be halfway. While their names are
+      // hidden it's an ordinary (far) guess, so it can't be used to find out which cities they are.
+      if ((id === level.from || id === level.to) && halfwayPlan(level.number).showNames) return { state, result: 'end' };
       if (level.guesses.some((g) => g.id === id)) return { state, result: 'repeat' };
       const km = distanceKm(city.latlng, level.midpoint);
       const guesses = [...level.guesses, { id, km }];
