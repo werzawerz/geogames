@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { GAMES, dailyDate, dailyGames, dailyVariant, type GameDefinition } from '@geogames/games';
+import { GameCardArt } from '../games/GameCardArt.tsx';
 import { usePlatform } from '../platform/PlatformProvider.tsx';
 import { href } from '../router.ts';
 
@@ -52,6 +53,7 @@ function GameCard({ game }: { game: GameDefinition }) {
   const live = game.status === 'live';
   return (
     <article className={`game-card ${live ? '' : 'soon'}`}>
+      <GameCardArt gameId={game.id} />
       <h2>{game.title}</h2>
       <p>{game.tagline}</p>
       <div className="game-card-footer">

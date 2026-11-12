@@ -239,7 +239,80 @@ a {
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  transition: border-color 0.15s, transform 0.15s;
 }
+
+.game-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-card {
+    transition: none;
+  }
+
+  .game-card:hover {
+    transform: none;
+  }
+}
+
+.card-art {
+  display: block;
+  width: calc(100% + 2.5rem);
+  max-width: none;
+  aspect-ratio: 640 / 280;
+  margin: -1.25rem -1.25rem 1rem;
+  background: linear-gradient(160deg, #0d1a33, #0a1324);
+  border-bottom: 1px solid var(--border);
+}
+
+.art-land { fill: #26364f; }
+.art-area { stroke: #0a1324; stroke-width: 1.5; stroke-linejoin: round; }
+.art-start { fill: var(--tone-start, #38bdf8); }
+.art-end { fill: var(--tone-end, #c084fc); }
+.art-optimal { fill: var(--tone-optimal, #22c55e); }
+.art-near { fill: var(--tone-near, #f59e0b); }
+.art-far { fill: var(--tone-far, #ef4444); }
+.art-route { fill: #64748b; }
+
+.art-dot { fill: #fff; stroke: #0a1324; stroke-width: 3; }
+.art-ring { fill: rgba(56, 189, 248, 0.09); stroke: #38bdf8; stroke-width: 3; }
+.art-ring-1 { fill: rgba(56, 189, 248, 0.13); stroke-opacity: 0.75; }
+.art-ring-0 { stroke-opacity: 0.45; }
+.art-ring-placed { stroke-dasharray: 10 8; }
+.art-crosshair { stroke: #fff; stroke-width: 3; stroke-linecap: round; }
+.art-line { fill: none; stroke: #fff; stroke-width: 4; stroke-linecap: round; }
+.art-dash { fill: none; stroke: #f8fafc; stroke-width: 3.5; stroke-dasharray: 3 9; stroke-linecap: round; }
+.art-pin { fill: var(--tone-far, #ef4444); stroke: #0a1324; stroke-width: 2; }
+.art-pin-hole { fill: #fff; }
+.art-star { fill: #fde047; stroke: #0a1324; stroke-width: 2; stroke-linejoin: round; }
+.art-hidden { fill: rgba(56, 189, 248, 0.16); stroke: #38bdf8; stroke-width: 3; stroke-dasharray: 6 5; }
+
+.art-mark {
+  fill: #fff;
+  font: 800 30px system-ui, sans-serif;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  paint-order: stroke;
+  stroke: #0a1324;
+  stroke-width: 6px;
+}
+
+.art-chip rect { fill: #0a1324; stroke: #38bdf8; stroke-width: 2; }
+.art-chip text { fill: #fff; font: 700 19px system-ui, sans-serif; text-anchor: middle; dominant-baseline: middle; }
+
+.art-fill-a { fill: #38bdf8; }
+.art-fill-b { fill: #c084fc; }
+.art-ground { stroke: #334155; stroke-width: 3; }
+.art-window { fill: #0d1a33; opacity: 0.55; }
+.art-versus circle { fill: #0a1324; stroke: #fff; stroke-width: 3; }
+.art-versus path { fill: #fff; }
+.art-coins-a ellipse { fill: #fde047; stroke: #a16207; stroke-width: 2; }
+.art-coins-b ellipse { fill: #fbbf24; stroke: #92400e; stroke-width: 2; }
+.art-coin-edge { fill: none; stroke: #92400e; stroke-width: 2; }
+.art-flag-edge { fill: none; stroke: rgba(10, 19, 36, 0.5); stroke-width: 2; }
 
 .game-card p {
   color: var(--muted);

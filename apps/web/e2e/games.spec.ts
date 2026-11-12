@@ -33,6 +33,17 @@ test('home lists every game', async ({ page }) => {
   for (const game of GAMES) await expect(page.getByRole('heading', { name: game.title })).toBeVisible();
 });
 
+test('every game card has its picture, with real shapes drawn in it', async ({ page }) => {
+  await page.goto('/');
+  const cards = page.locator('.game-card');
+  await expect(cards).toHaveCount(GAMES.length);
+  for (let i = 0; i < GAMES.length; i++) {
+    const art = cards.nth(i).locator('svg.card-art');
+    await expect(art, GAMES[i]!.id).toBeVisible();
+    expect(await art.locator(':is(path, rect, circle, ellipse)').count(), GAMES[i]!.id).toBeGreaterThan(0);
+  }
+});
+
 for (const game of GAMES.filter((g) => g.kind === 'higher-lower' && g.status === 'live')) {
   test(`${game.id}: starts, reveals answers and records a score`, async ({ page }) => {
     await openGame(page, game.id);
