@@ -10,7 +10,7 @@ Brief: idea #1 in the round-1 ideas file. Branch `game/border-blitz`. Ports: dev
 
 ## Next (screen, registry, rules, card art and bundle test are done; typecheck + vitest pass)
 - Screen done: apps/web/src/games/border-blitz/BorderBlitzScreen.tsx (deadline-based clock, sends timeout move).
-- Remaining: e2e test in apps/web/e2e/games.spec.ts, screenshots (desktop + 390px) to the pipeline/border-blitz scratchpad folder.
+- e2e test added and passing (dev + build). Remaining: screenshots (desktop + 390px), final commit.
 
 ## Open questions
 - Resume restarts the current level's clock (time isn't in the moves).

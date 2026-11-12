@@ -13,6 +13,7 @@ import {
   createHigherLowerGame,
   loadPool,
   createGreatCircle,
+  createBorderBlitz,
   createMysteryCountry,
   createPinDrop,
   createRouteGame,
@@ -920,6 +921,74 @@ test('mystery country: wrong guesses give clues, and running out ends the run', 
   const misses = pool.filter((c) => c.id !== next.id).slice(0, 6);
   for (const w of misses) await guess(w.name);
   await expect(page.locator('.route-summary.failed')).toContainText(`It was ${next.name}.`);
+  await page.getByRole('button', { name: 'See final score' }).click();
+  await expect(page.locator('.big-score')).toHaveText(String(state.score));
+  await expect(page.getByText('You reached level 2 of 20.')).toBeVisible();
+});
+
+test('border blitz: name every neighbour against the clock; wrong answers cost a life and time', async ({ page }) => {
+  test.slow();
+  await page.clock.install();
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  const engine = createBorderBlitz({ countries: routeCountries(), rounds: 20 });
+  const nameOf = (id: string) => getCountry(id)!.name;
+  let state = engine.start(Math.floor(0.5 * 2 ** 32));
+  const target = state.target;
+
+  await openGame(page, 'border-blitz');
+  await expect(page.getByRole('radio', { name: /Europe/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Start game' }).click();
+  const input = page.getByRole('combobox');
+  await expect(input).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('.route-status')).toContainText('Level 1 of 20');
+  await expect(page.locator('.blitz-prompt')).toContainText(`Name every neighbour of ${nameOf(target)}`);
+  await expect(page.locator('.blitz-prompt')).toContainText(`0 of ${state.neighbours.length} found`);
+  // Only the country itself is drawn: no borders, and no neighbour named anywhere.
+  await expect(page.locator('.world-map .map-country')).toHaveCount(1);
+  await expect(page.locator('.map-label')).toHaveText([nameOf(target)]);
+  await expect(page.locator('.blitz-slots li')).toHaveCount(state.neighbours.length);
+  await expect(page.locator('.blitz-slots')).toHaveText(/^\?+$/);
+
+  const guess = async (id: string) => {
+    await input.fill(nameOf(id));
+    await input.press('Enter');
+    state = engine.guess(state, id).state;
+  };
+  const seconds = async () => Number((await page.locator('.blitz-clock-text').textContent())!.replace(' s', ''));
+
+  // A wrong country costs a life and two seconds; the country itself is free.
+  const wrong = queryCountries().find((c) => c.id !== target && !state.neighbours.includes(c.id))!;
+  const before = await seconds();
+  await guess(wrong.id);
+  await expect(page.locator('.route-message')).toContainText(`${wrong.name} doesn't border ${nameOf(target)}`);
+  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(2);
+  expect(await seconds()).toBeLessThanOrEqual(before - 2);
+  await input.fill(nameOf(target));
+  await input.press('Enter');
+  await expect(page.locator('.route-message')).toContainText('itself');
+  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(2);
+
+  // Every neighbour, in any order: each is drawn as it's found.
+  for (const id of [...state.neighbours].reverse()) await guess(id);
+  await expect(page.locator('.route-summary.solved')).toContainText('Level 1 cleared!');
+  await expect(page.locator('.blitz-slots .slot-found')).toHaveCount(state.neighbours.length);
+  // Not flawless, so no bonus.
+  await expect(page.locator('.bonus-life')).toHaveCount(0);
+  await expect(page.locator('.route-status')).toContainText(`Score ${state.score}`);
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextLevel(state);
+  await expect(page.locator('.route-status')).toContainText('Level 2 of 20');
+  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(3);
+
+  // One neighbour, then the clock runs out: the run ends and shows what was missed.
+  await guess(state.neighbours[0]!);
+  await expect(page.locator('.blitz-prompt')).toContainText(`1 of ${state.neighbours.length} found`);
+  await page.clock.fastForward('02:00');
+  state = engine.timeout(state);
+  await expect(page.locator('.route-summary.failed')).toContainText("Time's up!");
+  await expect(page.locator('.route-summary')).toContainText(nameOf(state.neighbours[1]!));
   await page.getByRole('button', { name: 'See final score' }).click();
   await expect(page.locator('.big-score')).toHaveText(String(state.score));
   await expect(page.getByText('You reached level 2 of 20.')).toBeVisible();
