@@ -85,6 +85,18 @@ export async function arcadePools(settings: GameSettings = DEFAULT_SETTINGS): Pr
   return { cities, famous: new Set(Object.keys(cityIndex.tourismRank)) };
 }
 
+/**
+ * Halfway pools: Pin Drop's cities, plus every country and territory, so a
+ * city in Hong Kong or Puerto Rico has a continent and a scope too.
+ */
+export async function halfwayPools(): Promise<ArcadeOptions & { countries: Country[]; tourismRank: Readonly<Record<string, number>> }> {
+  return {
+    ...(await arcadePools()),
+    tourismRank: cityIndex.tourismRank,
+    countries: queryCountries({ sovereignty: [...SOVEREIGN, 'territory'] }),
+  };
+}
+
 /** Share of a region's countries asked on Easy: the best-known ones. */
 export const EASY_SHARE = 0.4;
 
@@ -143,7 +155,7 @@ export function poolSizes(game: GameDefinition, settings: GameSettings = DEFAULT
     for (const r of REGIONS) sizes[r.id] = quizItems(game, { ...settings, region: r.id }).length;
     return sizes;
   }
-  if (game.kind === 'pin-drop' || game.kind === 'great-circle' || game.kind === 'mystery-country') {
+  if (game.kind === 'pin-drop' || game.kind === 'halfway' || game.kind === 'great-circle' || game.kind === 'mystery-country') {
     // No region to choose, and the setup screen doesn't show a count.
     sizes.world = MIN_POOL_SIZE;
     return sizes;

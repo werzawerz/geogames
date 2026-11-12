@@ -287,6 +287,7 @@ a {
 .art-dash { fill: none; stroke: #f8fafc; stroke-width: 3.5; stroke-dasharray: 3 9; stroke-linecap: round; }
 .art-pin { fill: var(--tone-far, #ef4444); stroke: #0a1324; stroke-width: 2; }
 .art-pin-hole { fill: #fff; }
+.art-dot.art-found { fill: var(--tone-optimal, #22c55e); }
 .art-star { fill: #fde047; stroke: #0a1324; stroke-width: 2; stroke-linejoin: round; }
 .art-hidden { fill: rgba(56, 189, 248, 0.16); stroke: #38bdf8; stroke-width: 3; stroke-dasharray: 6 5; }
 
@@ -1622,3 +1623,28 @@ a {
     display: none;
   }
 }
+
+/* halfway */
+.marker-end circle { fill: #f8fafc; }
+.marker-nearby circle { fill: #f59e0b; }
+
+.halfway-mid {
+  fill: none;
+  stroke: #facc15;
+  stroke-width: 3;
+  stroke-linecap: round;
+  paint-order: stroke;
+}
+
+.halfway-guesses {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 1rem;
+}
+
+.halfway-guesses .guess-in { color: var(--correct); font-weight: 600; }
+.halfway-guesses .guess-out { color: var(--wrong); }

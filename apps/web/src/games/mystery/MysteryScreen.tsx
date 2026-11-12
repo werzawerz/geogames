@@ -131,6 +131,7 @@ function MysteryPlay({
       score: state.score,
       moves: state.moves,
       message: state.completed ? `You solved all ${rounds} countries!` : `You reached level ${level} of ${rounds}.`,
+      completed: state.completed,
       shareLine: shareLine(state),
     });
 

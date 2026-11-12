@@ -9,6 +9,9 @@ import {
   arcadePools,
   createChoiceQuiz,
   createCircleArcade,
+  createHalfway,
+  halfwayPools,
+  distanceKm,
   createMysteryCountry,
   createRouteGame,
   normalizeSettings,
@@ -105,6 +108,28 @@ describe('the server bundle', () => {
     expect(full).toEqual({ score: state.score, finished: true });
     expect(await server.replayGame(definition, settings, 31, state.moves)).toEqual(full);
   });
+
+  it('scores Halfway the same with its slimmed cities', async () => {
+    const definition = GAMES.find((g) => g.kind === 'halfway')!;
+    const settings = normalizeSettings({}, definition);
+    const engine = createHalfway(await halfwayPools());
+    const cities = [...engine.cities.values()];
+    let state = engine.start(41);
+    // Clears 12 levels with a city at the edge of each radius, missing first on every third.
+    for (let i = 0; i < 12; i++) {
+      if (i % 3 === 2) state = engine.guess(state, cities.find((c) => distanceKm(c.latlng, state.level.midpoint) > 5000)!.id).state;
+      state = engine.nextLevel(engine.guess(state, state.level.fair.at(-1)!).state);
+    }
+    while (state.status === 'playing') {
+      state = engine.guess(state, cities.find((c) => distanceKm(c.latlng, state.level.midpoint) > 5000 && !state.level.guesses.some((g) => g.id === c.id))!.id).state;
+    }
+    const full = await replayGame(definition, settings, 41, state.moves);
+    expect(full).toEqual({ score: state.score, finished: true });
+    expect(full.score).toBeGreaterThan(0);
+    const started = performance.now();
+    expect(await server.replayGame(definition, settings, 41, state.moves)).toEqual(full);
+    console.log(`replaying Halfway: ${(performance.now() - started).toFixed(0)} ms`);
+  }, 30_000);
 
   it('replays hard Border Route with its fixed guesses', async () => {
     const route = GAMES.find((g) => g.kind === 'route') as RouteDefinition;

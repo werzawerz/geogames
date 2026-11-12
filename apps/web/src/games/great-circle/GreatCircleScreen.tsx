@@ -130,6 +130,7 @@ function GreatCirclePlay({
       score: state.score,
       moves: state.moves,
       message: state.completed ? `You crossed all ${rounds} lines!` : `You reached level ${level} of ${rounds}.`,
+      completed: state.completed,
     });
 
   const end = (city: GreatCircleCity, tone: 'start' | 'end') => (

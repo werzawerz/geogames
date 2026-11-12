@@ -95,6 +95,7 @@ function PinPlay({
       score: state.score,
       moves: state.moves,
       message: state.completed ? 'You pinned every city!' : `You reached city ${state.level}.`,
+      completed: state.completed,
       shareLine: state.distances.map(distanceEmoji).join(''),
     });
 
