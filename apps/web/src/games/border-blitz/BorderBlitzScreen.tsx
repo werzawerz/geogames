@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import { geoCentroid } from 'd3-geo';
 import { getCountry, type CountryId } from '@geogames/geodata';
 import { loadWorldShapes, type WorldShapes } from '@geogames/geodata/shapes';
 import {
-  BLITZ_LIVES,
+  BLITZ_HIDDEN_COUNT_FROM,
+  BLITZ_MAX_LIVES,
+  BLITZ_TIME_POINTS,
   BLITZ_WRONG_SECONDS,
   blitzFlawlessBonus,
   blitzSeconds,
@@ -16,6 +19,7 @@ import {
 import { Flag } from '../../components/Flag.tsx';
 import { SearchInput } from '../../components/SearchInput.tsx';
 import { countryItems } from '../../components/searchItems.ts';
+import { mainland } from '../../components/mainland.ts';
 import { WorldMap, type MapCountry, type ToScreen } from '../../components/WorldMap.tsx';
 import { load, remove, save } from '../../platform/storage.ts';
 import type { GameScreenProps } from '../types.ts';
@@ -35,9 +39,16 @@ interface Deadline {
   at: number;
 }
 
+type Ending = NonNullable<BlitzState['ended']>;
+const ENDINGS: Record<Ending, string> = { time: "Time's up!", 'gave-up': 'You gave up.', lives: 'Out of lives' };
+const END_MARKS: Record<Ending, string> = { time: '⏱️', 'gave-up': '🏳️', lives: '🟥' };
+
 /** One mark per level: 🟩 flawless, 🟨 cleared with a mistake, then how the run ended. */
 const shareLine = ({ cleared, completed, ended }: BlitzState) =>
-  cleared.map((flawless) => (flawless ? '🟩' : '🟨')).join('') + (completed ? '' : ended === 'time' ? '⏱️' : '🟥');
+  cleared.map((flawless) => (flawless ? '🟩' : '🟨')).join('') + (completed || !ended ? '' : END_MARKS[ended]);
+
+/** Points the seconds left on the level just cleared earned. */
+const timeBonus = ({ secondsLeft, level }: BlitzState) => (secondsLeft ?? 0) * BLITZ_TIME_POINTS * level;
 
 /** Loads the map shapes (lazily), then plays. */
 export function BorderBlitzScreen({ game: definition, seed, initialMoves, onMovesChange, onGameOver }: GameScreenProps<BorderBlitzDefinition>) {
@@ -103,6 +114,8 @@ function BlitzPlay({
   const { level, target, neighbours, found, wrong } = state;
   const playing = state.status === 'playing';
   const total = blitzSeconds(level, neighbours.length);
+  // From level 11 the player isn't told how many neighbours there are.
+  const showCount = level < BLITZ_HIDDEN_COUNT_FROM;
 
   // The clock: a deadline for this level, which each wrong answer brings closer.
   // It's saved, so a reload carries on with it (and times out at once if it has
@@ -137,17 +150,17 @@ function BlitzPlay({
 
   const frame = useMemo(() => frameShape(frameFor(shapes, target, neighbours)), [shapes, target, neighbours]);
   const missed = playing ? [] : neighbours.filter((id) => !found.includes(id));
-  // Microstates are drawn as dots with their own labels (below), so the map's labels skip them.
-  const label = (id: CountryId) => (isTiny(id) ? undefined : nameOf(id));
+  // Microstates are drawn as dots, and missed countries named in a layer of their
+  // own, so every one gets its label: the map drops labels that overlap.
   const mapCountries: MapCountry[] = [
-    ...missed.map((id): MapCountry => ({ id, tone: 'far', label: label(id) })),
-    ...found.map((id): MapCountry => ({ id, tone: 'optimal', label: label(id) })),
+    ...missed.map((id): MapCountry => ({ id, tone: 'far' })),
+    ...found.map((id): MapCountry => ({ id, tone: 'optimal', label: isTiny(id) ? undefined : nameOf(id) })),
     { id: target, tone: 'start', label: nameOf(target) },
   ];
-  const dots = (toScreen: ToScreen) =>
-    [...found.map((id) => [id, 'marker-found'] as const), ...missed.map((id) => [id, 'marker-outside'] as const)]
-      .filter(([id]) => isTiny(id))
-      .map(([id, className]) => {
+  const dots = [...found.filter(isTiny).map((id) => [id, 'marker-found'] as const), ...missed.filter(isTiny).map((id) => [id, 'marker-outside'] as const)];
+  const markers = (toScreen: ToScreen) => (
+    <>
+      {dots.map(([id, className]) => {
         const [lat, lng] = getCountry(id)!.latlng;
         const point = toScreen([lng, lat]);
         return point ? (
@@ -158,13 +171,29 @@ function BlitzPlay({
             </text>
           </g>
         ) : null;
-      });
+      })}
+      {missed
+        .filter((id) => !isTiny(id))
+        .map((id) => {
+          const shape = shapes.countries.get(id);
+          const point = shape ? toScreen(geoCentroid(mainland(shape)) as [number, number]) : null;
+          return point ? (
+            <text key={id} className="map-label blitz-missed-label" x={point[0]} y={point[1]}>
+              {nameOf(id)}
+            </text>
+          ) : null;
+        })}
+    </>
+  );
   const exclude = useMemo(() => new Set([target, ...found, ...wrong]), [target, found, wrong]);
 
   const guess = (id: CountryId) => {
-    const { state: next, result } = game.guess(state, id);
-    if (result === 'wrong' && deadline) keepDeadline({ ...deadline, at: deadline.at - BLITZ_WRONG_SECONDS * 1000 });
-    setMessage(messageFor(result, id, target, next.score - state.score, game.throughTerritory(target, id)));
+    const answered = game.guess(state, id);
+    let next = answered.state;
+    if (answered.result === 'wrong' && deadline) keepDeadline({ ...deadline, at: deadline.at - BLITZ_WRONG_SECONDS * 1000 });
+    // A cleared level banks its seconds left at once, as a move a server can replay.
+    if (next.status !== 'playing' && !next.ended) next = game.claimTime(next, Math.floor(left / 1000));
+    setMessage(messageFor(answered.result, id, target, answered.state.score - state.score, game.throughTerritory(target, id)));
     setState(next);
   };
 
@@ -176,9 +205,22 @@ function BlitzPlay({
       shareLine: shareLine(state),
     });
 
-  const livesLeft = playing || state.status === 'level-clear' ? BLITZ_LIVES - wrong.length : 0;
   const seconds = Math.ceil(left / 1000);
-  const flawless = state.status !== 'playing' && state.cleared.length === level && state.cleared[level - 1];
+  const rewards = (state.status === 'level-clear' || state.completed) && (
+    <>
+      {state.bonusLife && (
+        <p className="bonus-life">
+          Flawless! +{blitzFlawlessBonus(level, neighbours.length)}
+          {state.lives >= BLITZ_MAX_LIVES ? ' (lives are full)' : ' and +1 ♥'}
+        </p>
+      )}
+      {(state.secondsLeft ?? 0) > 0 && (
+        <p className="muted">
+          {state.secondsLeft} s to spare: +{timeBonus(state)}
+        </p>
+      )}
+    </>
+  );
 
   return (
     <div className="route blitz-game">
@@ -186,9 +228,9 @@ function BlitzPlay({
         <span>
           Level <strong>{level}</strong> of {rounds}
         </span>
-        <span className="lives" aria-label={`${livesLeft} lives`}>
-          {Array.from({ length: BLITZ_LIVES }, (_, i) => (
-            <span key={i} className={i < livesLeft ? 'life' : 'life lost'} aria-hidden="true">
+        <span className="lives" aria-label={`${state.lives} ${state.lives === 1 ? 'life' : 'lives'}`}>
+          {Array.from({ length: Math.max(state.lives, 1) }, (_, i) => (
+            <span key={i} className={i < state.lives ? 'life' : 'life lost'} aria-hidden="true">
               ♥
             </span>
           ))}
@@ -201,69 +243,79 @@ function BlitzPlay({
       <p className="blitz-prompt">
         Name every neighbour of <Flag iso2={getCountry(target)!.iso2} className="suggestion-flag" /> <strong>{nameOf(target)}</strong>
         <span className="blitz-count muted">
-          {found.length} of {neighbours.length} found
+          {showCount ? `${found.length} of ${neighbours.length} found` : 'How many there are is up to you to know: the level ends when you have them all.'}
         </span>
       </p>
 
       {playing && (
-        <div className={`blitz-clock${seconds <= 5 ? ' blitz-clock-low' : ''}`} role="timer" aria-label={`${seconds} seconds left`}>
-          <div className="blitz-clock-bar" style={{ width: `${Math.min(100, (left / (total * 1000)) * 100)}%` }} />
-          <span className="blitz-clock-text">{seconds} s</span>
-        </div>
-      )}
-
-      <WorldMap shapes={shapes} countries={mapCountries} frame={frame} markers={dots} borders={false} label={`Map of ${nameOf(target)} and the neighbours you found`} />
-
-      {playing ? (
-        <>
-          <SearchInput
-            key={level}
-            items={items}
-            exclude={exclude}
-            onPick={guess}
-            onNoMatch={() => setMessage('No such country.')}
-            placeholder="Type a country…"
-            label={`Name a neighbour of ${nameOf(target)}`}
-          />
-          <p className="route-message" role="status">
-            {message ?? 'Any order. A wrong country costs a life and two seconds.'}
-          </p>
-        </>
-      ) : state.status === 'level-clear' ? (
-        <div className="route-summary solved" role="status">
-          <p className="route-summary-title">Level {level} cleared!</p>
-          {flawless && <p className="bonus-life">Flawless! +{blitzFlawlessBonus(level, neighbours.length)} bonus</p>}
-          <button className="btn btn-primary btn-lg" autoFocus onClick={() => setState(game.nextLevel(state))}>
-            Next level
-          </button>
-        </div>
-      ) : (
-        <div className={`route-summary ${state.completed ? 'solved' : 'failed'}`} role="status">
-          <p className="route-summary-title">
-            {state.completed ? `All ${rounds} levels cleared!` : state.ended === 'time' ? "Time's up!" : 'Out of lives'}
-          </p>
-          {flawless && <p className="bonus-life">Flawless! +{blitzFlawlessBonus(level, neighbours.length)} bonus</p>}
-          {missed.length > 0 && <p className="muted">You missed {missed.map(nameOf).join(', ')}.</p>}
-          <button className="btn btn-primary btn-lg" autoFocus onClick={finish}>
-            See final score
+        <div className="blitz-timer-row">
+          <div className={`blitz-clock${seconds <= 5 ? ' blitz-clock-low' : ''}`} role="timer" aria-label={`${seconds} seconds left`}>
+            <div className="blitz-clock-bar" style={{ width: `${Math.min(100, (left / (total * 1000)) * 100)}%` }} />
+            <span className="blitz-clock-text">{seconds} s</span>
+          </div>
+          <button className="btn" onClick={() => setState(game.giveUp(state))}>
+            Give up
           </button>
         </div>
       )}
 
-      <ol className="rank-slots blitz-slots" aria-label="Neighbours">
-        {[...found, ...missed].map((id) => (
-          <li key={id} className={found.includes(id) ? 'slot-found' : 'slot-missed'}>
-            <span className="slot-name">
-              <Flag iso2={getCountry(id)!.iso2} className="suggestion-flag" /> {nameOf(id)}
-            </span>
-          </li>
-        ))}
-        {Array.from({ length: neighbours.length - found.length - missed.length }, (_, i) => (
-          <li key={`blank-${i}`}>
-            <span className="slot-name muted">?</span>
-          </li>
-        ))}
-      </ol>
+      <div className="blitz-board">
+        <div className="blitz-map">
+          <WorldMap shapes={shapes} countries={mapCountries} frame={frame} markers={markers} borders={false} label={`Map of ${nameOf(target)} and the neighbours you found`} />
+        </div>
+
+        <div className="blitz-controls">
+          {playing ? (
+            <>
+              <SearchInput
+                key={level}
+                items={items}
+                exclude={exclude}
+                onPick={guess}
+                onNoMatch={() => setMessage('No such country.')}
+                placeholder="Type a country…"
+                label={`Name a neighbour of ${nameOf(target)}`}
+              />
+              <p className="route-message" role="status">
+                {message ?? 'Any order. A wrong country costs a life and two seconds.'}
+              </p>
+            </>
+          ) : state.status === 'level-clear' ? (
+            <div className="route-summary solved" role="status">
+              <p className="route-summary-title">Level {level} cleared!</p>
+              {rewards}
+              <button className="btn btn-primary btn-lg" autoFocus onClick={() => setState(game.nextLevel(state))}>
+                Next level
+              </button>
+            </div>
+          ) : (
+            <div className={`route-summary ${state.completed ? 'solved' : 'failed'}`} role="status">
+              <p className="route-summary-title">{state.completed ? `All ${rounds} levels cleared!` : ENDINGS[state.ended ?? 'lives']}</p>
+              {rewards}
+              {missed.length > 0 && <p className="muted">You missed {missed.map(nameOf).join(', ')}.</p>}
+              <button className="btn btn-primary btn-lg" autoFocus onClick={finish}>
+                See final score
+              </button>
+            </div>
+          )}
+        </div>
+
+        <ol className="rank-slots blitz-slots" aria-label="Neighbours found">
+          {[...found, ...missed].map((id) => (
+            <li key={id} className={found.includes(id) ? 'slot-found' : 'slot-missed'}>
+              <span className="slot-name">
+                <Flag iso2={getCountry(id)!.iso2} className="suggestion-flag" /> {nameOf(id)}
+              </span>
+            </li>
+          ))}
+          {showCount &&
+            Array.from({ length: neighbours.length - found.length - missed.length }, (_, i) => (
+              <li key={`blank-${i}`}>
+                <span className="slot-name muted">?</span>
+              </li>
+            ))}
+        </ol>
+      </div>
     </div>
   );
 }

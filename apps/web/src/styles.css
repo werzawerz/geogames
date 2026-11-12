@@ -1671,4 +1671,45 @@ a {
 
 .blitz-slots {
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  align-content: start;
+}
+
+.blitz-timer-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.blitz-timer-row .blitz-clock {
+  flex: 1;
+}
+
+/* Map, then the input, then the answers; on wide screens the answers sit beside
+   the map, so they stay in view above the fold. */
+.blitz-board {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-areas: 'map' 'controls' 'slots';
+}
+
+.blitz-map { grid-area: map; min-width: 0; }
+.blitz-controls { grid-area: controls; display: flex; flex-direction: column; gap: 0.75rem; }
+.blitz-board .blitz-slots { grid-area: slots; }
+
+@media (min-width: 900px) {
+  .blitz-board {
+    grid-template-columns: minmax(0, 1fr) 12.5rem;
+    grid-template-areas: 'map slots' 'controls slots';
+    align-items: start;
+  }
+
+  .blitz-board .blitz-slots {
+    grid-template-columns: 1fr;
+    max-height: 32rem;
+    overflow-y: auto;
+  }
+}
+
+.blitz-missed-label {
+  pointer-events: none;
 }

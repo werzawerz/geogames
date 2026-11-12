@@ -11,6 +11,6 @@ bb/old holds commit 7d77f21 for the before numbers). Before: bb/playtest-before.
   Familiarity floors Europe 0.7, South America 0.6. Min 3 neighbours. No subregion repeat within 3 levels.
 
 ## Next
-- Engine tests (old ones are out of date and fail), bundle test (lives now carry over).
-- Screen: lives display, Give up button, claimTime on clear, hide count from level 11, labels for all missed, tiles above the fold at 1280x900.
+- Engine + bundle tests done (30 pass). e2e being updated: 3 border blitz tests.
+- Screen done (lives, Give up, time bonus, hidden count from 11, missed labels layer, tiles beside the map at >=900px). Rules text updated.
 - Rules text, e2e, screenshots, final commit.
