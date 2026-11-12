@@ -168,15 +168,15 @@ function HalfwayPlay({
       fitLabels(
         placed.filter((m) => m.text).map((m) => ({ ...m, x: m.x + LABEL_OFFSET, text: m.text! })),
         'start',
-      ).map((m) => m.id),
+      ).map((m) => `${m.tone}-${m.id}`),
     );
     const middle = playing ? null : toScreen([level.midpoint[1], level.midpoint[0]]);
     return (
       <>
         {placed.map(({ id, tone, x, y, text }) => (
-          <g key={id} className={`city-marker marker-${tone}`} transform={`translate(${x},${y})`}>
+          <g key={`${tone}-${id}`} className={`city-marker marker-${tone}`} transform={`translate(${x},${y})`}>
             <circle r={tone === 'nearby' ? 4 : 6} />
-            {labelled.has(id) && (
+            {labelled.has(`${tone}-${id}`) && (
               <text x={LABEL_OFFSET} y={0}>
                 {text}
               </text>

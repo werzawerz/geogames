@@ -1083,3 +1083,37 @@ test('halfway: a far guess costs a life and says how far, a near one clears and 
   await expect(page.locator('.big-score')).toBeVisible();
   await expect(page.getByText('You reached level 2 of 20.')).toBeVisible();
 });
+
+test('halfway: with the names hidden, the two cities can be typed but cost a life like any far guess', async ({ page }) => {
+  test.slow();
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  const engine = createHalfway(await halfwayPools());
+  const typed = (id: string) => {
+    const c = engine.cities.get(id)!;
+    return `${c.name}, ${getCountry(c.countryId)!.name}`;
+  };
+  let state = engine.start(Math.floor(0.5 * 2 ** 32));
+  await openGame(page, 'halfway');
+  await page.getByRole('button', { name: 'Start game' }).click();
+  const input = page.getByRole('combobox');
+  await expect(input).toBeVisible({ timeout: 20_000 });
+  while (state.level.number < 16) {
+    await input.fill(typed(state.level.fair[0]!));
+    await input.press('Enter');
+    await page.getByRole('button', { name: 'Next level' }).click();
+    state = engine.nextLevel(engine.guess(state, state.level.fair[0]!).state);
+  }
+  await expect(page.locator('.route-end')).toHaveText(['?', '?']);
+  const end = engine.cities.get(state.level.from)!;
+  await expect(page.locator('.world-map')).not.toContainText(end.name);
+  // The hidden city is offered like any other, and naming it is a normal far guess.
+  await input.fill(end.name);
+  await expect(page.getByRole('option').first()).toContainText(end.name);
+  await input.fill(typed(end.id));
+  await input.press('Enter');
+  const after = engine.guess(state, end.id).state;
+  await expect(page.locator('.route-message')).toContainText(`${end.name} is`);
+  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(after.lives);
+});
