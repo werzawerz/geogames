@@ -8,7 +8,7 @@ Brief: idea #5 in the round-1 ideas file. Name a city near the great-circle midp
 
 ## Next
 - Screen done (HalfwayScreen.tsx, registry, RULES, card art, CSS). Not yet checked in a browser.
-- bundle.test.ts case, e2e test in games.spec.ts, screenshots.
+- bundle.test.ts case and e2e test done and passing. Next: screenshots, full vitest, final commit.
 
 ## Open questions
 - None yet.

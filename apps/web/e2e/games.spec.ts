@@ -15,6 +15,8 @@ import {
   createGreatCircle,
   createMysteryCountry,
   createPinDrop,
+  createHalfway,
+  distanceKm,
   createRouteGame,
   dailyDate,
   dailySeed,
@@ -1011,4 +1013,72 @@ test('city search: absorbed cities, a country after the name, and misspellings',
   await expect(first.locator('.suggestion-via')).toHaveText('Pozsony');
   await input.fill('Ungvar');
   await expect(first).toContainText('Uzhhorod');
+});
+
+test('halfway: a far guess costs a life and says how far, a near one clears and shows the midpoint', async ({ page }) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  const engine = createHalfway({ ...(await arcadePools()), countries: queryCountries() });
+  const cityNamed = (name: string) => [...engine.cities.values()].filter((c) => c.name === name).sort((a, b) => b.population - a.population)[0]!;
+  const nameOf = (id: string) => engine.cities.get(id)!.name;
+  let state = engine.start(Math.floor(0.5 * 2 ** 32));
+  const { level } = state;
+  // Cities that can't be near any midpoint of the first levels, unique enough to type.
+  const far = ['Sydney', 'Lima', 'Santiago', 'Johannesburg', 'Auckland', 'Honolulu'].map(cityNamed);
+
+  await openGame(page, 'halfway');
+  await expect(page.getByRole('radio', { name: /Europe/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Start game' }).click();
+  const input = page.getByRole('combobox');
+  await expect(input).toBeVisible({ timeout: 20_000 });
+
+  // The two cities and the line between them; no borders, no midpoint, no answer.
+  await expect(page.locator('.route-end')).toHaveText([nameOf(level.from), nameOf(level.to)]);
+  await expect(page.locator('.gc-line')).toHaveAttribute('d', /.{10}/);
+  await expect(page.locator('.world-map .map-country')).toHaveCount(0);
+  await expect(page.locator('.halfway-mid, .circle-area')).toHaveCount(0);
+  await expect(page.locator('.route-status')).toContainText('Within 300 km');
+  expect(await page.content()).not.toContain(nameOf(level.fair[0]!));
+
+  // A far city: a life gone, how far it was, and its dot on the map.
+  const miss = far.find((c) => distanceKm(c.latlng, level.midpoint) > 3000)!;
+  await input.fill(miss.name);
+  await input.press('Enter');
+  state = engine.guess(state, miss.id).state;
+  const missKm = new Intl.NumberFormat('en').format(Math.round(state.level.guesses[0]!.km));
+  await expect(page.locator('.route-message')).toContainText(`${miss.name} is ${missKm} km from the midpoint`);
+  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(2);
+  await expect(page.locator('.marker-outside text')).toContainText(miss.name);
+  await expect(page.locator('.halfway-guesses')).toContainText(miss.name);
+
+  // The nearest well-known city clears it, and the midpoint and radius appear.
+  const answer = engine.cities.get(level.fair[0]!)!;
+  await input.fill(answer.name);
+  await input.press('Enter');
+  state = engine.guess(state, answer.id).state;
+  await expect(page.locator('.route-summary.solved')).toContainText(`${answer.name} is`);
+  await expect(page.locator('.route-summary.solved')).toContainText(`from the midpoint! +${state.level.points}`);
+  await expect(page.locator('.halfway-mid')).toHaveCount(1);
+  await expect(page.locator('.circle-area')).toHaveCount(1);
+  await expect(page.locator('.route-status')).toContainText(`Score ${state.score}`);
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextLevel(state);
+  await expect(page.locator('.route-status')).toContainText('Level 2 of 20');
+  await expect(page.locator('.route-end')).toHaveText([nameOf(state.level.from), nameOf(state.level.to)]);
+
+  // Far guesses until the lives are gone.
+  for (const city of far.filter((c) => distanceKm(c.latlng, state.level.midpoint) > 3000)) {
+    if (state.status === 'over') break;
+    await input.fill(city.name);
+    await input.press('Enter');
+    state = engine.guess(state, city.id).state;
+  }
+  expect(state.status).toBe('over');
+  await expect(page.locator('.route-summary.failed')).toContainText('Out of lives');
+  await expect(page.locator('.route-summary.failed')).toContainText('You could have said');
+  await expect(page.locator('.halfway-mid')).toHaveCount(1);
+  await page.getByRole('button', { name: 'See final score' }).click();
+  await expect(page.locator('.big-score')).toBeVisible();
+  await expect(page.getByText('You reached level 2 of 20.')).toBeVisible();
 });
