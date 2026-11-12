@@ -150,13 +150,14 @@ function BlitzPlay({
 
   const frame = useMemo(() => frameShape(frameFor(shapes, target, neighbours)), [shapes, target, neighbours]);
   const missed = playing ? [] : neighbours.filter((id) => !found.includes(id));
-  // Microstates are drawn as dots, and missed countries named in a layer of their
-  // own, so every one gets its label: the map drops labels that overlap.
+  // Microstates are drawn as dots. Once a level is over, every neighbour is named
+  // in a layer of its own, so none loses its label: the map drops labels that overlap.
   const mapCountries: MapCountry[] = [
     ...missed.map((id): MapCountry => ({ id, tone: 'far' })),
-    ...found.map((id): MapCountry => ({ id, tone: 'optimal', label: isTiny(id) ? undefined : nameOf(id) })),
+    ...found.map((id): MapCountry => ({ id, tone: 'optimal', label: isTiny(id) || !playing ? undefined : nameOf(id) })),
     { id: target, tone: 'start', label: nameOf(target) },
   ];
+  const named = playing ? [] : [...found, ...missed].filter((id) => !isTiny(id));
   const dots = [...found.filter(isTiny).map((id) => [id, 'marker-found'] as const), ...missed.filter(isTiny).map((id) => [id, 'marker-outside'] as const)];
   const markers = (toScreen: ToScreen) => (
     <>
@@ -172,17 +173,15 @@ function BlitzPlay({
           </g>
         ) : null;
       })}
-      {missed
-        .filter((id) => !isTiny(id))
-        .map((id) => {
-          const shape = shapes.countries.get(id);
-          const point = shape ? toScreen(geoCentroid(mainland(shape)) as [number, number]) : null;
-          return point ? (
-            <text key={id} className="map-label blitz-missed-label" x={point[0]} y={point[1]}>
-              {nameOf(id)}
-            </text>
-          ) : null;
-        })}
+      {named.map((id) => {
+        const shape = shapes.countries.get(id);
+        const point = shape ? toScreen(geoCentroid(mainland(shape)) as [number, number]) : null;
+        return point ? (
+          <text key={id} className={`map-label blitz-end-label${missed.includes(id) ? ' blitz-missed-label' : ''}`} x={point[0]} y={point[1]}>
+            {nameOf(id)}
+          </text>
+        ) : null;
+      })}
     </>
   );
   const exclude = useMemo(() => new Set([target, ...found, ...wrong]), [target, found, wrong]);

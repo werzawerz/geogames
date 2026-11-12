@@ -1704,12 +1704,13 @@ a {
   }
 
   .blitz-board .blitz-slots {
-    grid-template-columns: 1fr;
+    /* minmax: a long name is cut short with an ellipsis instead of widening the column. */
+    grid-template-columns: minmax(0, 1fr);
     max-height: 32rem;
     overflow-y: auto;
   }
 }
 
-.blitz-missed-label {
+.blitz-end-label {
   pointer-events: none;
 }
