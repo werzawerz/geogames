@@ -22,8 +22,13 @@ const countries = routeCountries();
 const game = createBorderBlitz({ countries, rounds: 20 });
 const sovereign = countries.filter((c) => c.sovereignty !== 'territory');
 const wrongFor = (state: BlitzState) =>
-  sovereign.find((c) => c.id !== state.target && !state.neighbours.includes(c.id) && !state.wrong.includes(c.id))!.id;
-const remote = (id: string) => getCountry(id)?.continent === 'Africa' || getCountry(id)?.subregion === 'Caribbean';
+  sovereign.find(
+    (c) => c.id !== state.target && !state.neighbours.includes(c.id) && !state.wrong.includes(c.id) && !game.throughTerritory(state.target, c.id),
+  )!.id;
+const african = (id: string) => getCountry(id)?.continent === 'Africa';
+const remote = (id: string) => african(id) || getCountry(id)?.subregion === 'Caribbean';
+/** Central Asia and the Caucasus: known by name, rarely by their borders. */
+const lessKnown = (id: string) => getCountry(id)?.subregion === 'Central Asia' || ['ARM', 'AZE', 'GEO'].includes(id);
 
 /** Names every neighbour of every level: a perfect run. */
 const runs = new Map<number, BlitzState>();
@@ -76,12 +81,37 @@ describe('border blitz', () => {
         expect(n.length, `seed ${seed} level ${level}: ${id}`).toBeGreaterThanOrEqual(lo);
         expect(n.length, `seed ${seed} level ${level}: ${id}`).toBeLessThanOrEqual(hi);
         if (level <= 8) {
-          // No Africa or Caribbean early on, neither asked nor as an answer.
+          // No Africa or Caribbean early on, neither asked nor as an answer, except
+          // Morocco for Spain: they only meet at Ceuta and Melilla.
           expect(remote(id), `seed ${seed} level ${level}: ${id}`).toBe(false);
-          expect(n.some(remote), `seed ${seed} level ${level}: ${id}`).toBe(false);
+          expect(n.filter((a) => remote(a) && !(id === 'ESP' && a === 'MAR')), `seed ${seed} level ${level}: ${id}`).toEqual([]);
+        }
+        if (level <= 4) {
+          expect(lessKnown(id), `seed ${seed} level ${level}: ${id}`).toBe(false);
+          expect(n.filter(lessKnown), `seed ${seed} level ${level}: ${id}`).toEqual([]);
         }
       });
     }
+  });
+
+  it('lets Spain come early, but not Central Asia or the Caucasus', () => {
+    const early = new Set([...Array(SEEDS).keys()].flatMap((i) => playAll(i + 1).past.slice(0, 4)));
+    expect(early).toContain('ESP');
+    for (const id of ['UZB', 'AZE', 'KGZ', 'TJK', 'TKM', 'KAZ']) expect(early).not.toContain(id);
+  });
+
+  it('asks an African country at most about a third of the time from level 9, and never 3 in a row', () => {
+    const later = Array(21).fill(0);
+    for (let seed = 1; seed <= SEEDS * 3; seed++) {
+      const { past } = playAll(seed);
+      past.forEach((id, i) => {
+        if (african(id)) later[i + 1]++;
+        if (i >= 2) expect(past.slice(i - 2, i + 1).every(african), `seed ${seed} level ${i + 1}`).toBe(false);
+      });
+    }
+    for (let level = 9; level <= 20; level++) expect(later[level] / (SEEDS * 3), `level ${level}`).toBeLessThan(0.38);
+    // But Africa does come in: it has many of the countries with many neighbours.
+    expect(later.slice(9).reduce((a, b) => a + b) / (SEEDS * 3 * 12)).toBeGreaterThan(0.2);
   });
 
   it('never repeats a country, and no two levels share over half their neighbours', () => {
@@ -162,6 +192,27 @@ describe('border blitz', () => {
     expect(out.score).toBe(state.score);
     expect(out.moves.at(-1)).toBe(BLITZ_TIMEOUT);
     expect(game.timeout(out)).toBe(out);
+  });
+
+  it('lets a neighbour through a territory pass for free, either way round', () => {
+    expect(game.throughTerritory('BRA', 'FRA')).toBe('GUF');
+    expect(game.throughTerritory('FRA', 'BRA')).toBe('GUF');
+    expect(game.throughTerritory('FRA', 'SUR')).toBe('GUF');
+    expect(game.throughTerritory('ESP', 'GBR')).toBe('GIB');
+    expect(game.throughTerritory('GBR', 'ESP')).toBe('GIB');
+    // Real neighbours, strangers and China's own Hong Kong aren't passes.
+    expect(game.throughTerritory('ESP', 'FRA')).toBeNull();
+    expect(game.throughTerritory('BRA', 'DEU')).toBeNull();
+    expect(game.throughTerritory('CHN', 'CHN')).toBeNull();
+
+    // Find a run that asks Brazil, and name France there.
+    const seed = [...Array(SEEDS * 3).keys()].map((i) => i + 1).find((s) => playAll(s).past.includes('BRA'))!;
+    let state = game.start(seed);
+    while (state.target !== 'BRA') {
+      for (const id of state.neighbours) state = game.guess(state, id).state;
+      state = game.nextLevel(state);
+    }
+    expect(game.guess(state, 'FRA')).toEqual({ state, result: 'territory' });
   });
 
   it('charges nothing for repeats, the country itself, or a territory', () => {

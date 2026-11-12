@@ -3,7 +3,7 @@ import type { Continent, Country, CountryId, Dataset, MetricId, Sovereignty } fr
 
 export type * from './types.ts';
 export { METRICS, type MetricDefinition } from './metrics.ts';
-export { EXCLAVES, FIXED_LINKS, type Exclave } from './links.ts';
+export { EXCLAVES, FIXED_LINKS, TERRITORY_OWNERS, type Exclave } from './links.ts';
 
 // The generated file is validated at build time; its inferred literal type is too wide to check against `Dataset`.
 export const dataset = data as unknown as Dataset;

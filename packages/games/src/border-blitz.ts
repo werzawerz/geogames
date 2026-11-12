@@ -1,4 +1,4 @@
-import { countryProminence, type Country, type CountryId } from '@geogames/geodata';
+import { EXCLAVES, TERRITORY_OWNERS, countryProminence, type Country, type CountryId } from '@geogames/geodata';
 import { createRng, pick, type Rng } from './rng.ts';
 import { buildBorderGraph, routeScopes, type RouteScope } from './route.ts';
 
@@ -11,6 +11,8 @@ import { buildBorderGraph, routeScopes, type RouteScope } from './route.ts';
  * Neighbours come from the same border graph as Border Route, so bridges and
  * tunnels (the Channel Tunnel, the Øresund Bridge) count. Only countries are
  * asked or answers, not territories: Hong Kong doesn't count as China's neighbour.
+ * Naming a territory's owner (France for Brazil, through French Guiana) is a
+ * free pass, not a mistake: that border just doesn't count here.
  *
  * The clock runs on the player's screen. When it runs out, the screen sends a
  * TIMEOUT move, so the score still follows from the moves alone and a server
@@ -27,14 +29,18 @@ export interface BlitzLevelPlan {
   minProminence: number;
   /** Seconds on the clock per neighbour, on top of BLITZ_BASE_SECONDS. */
   secondsEach: number;
+  /** Keeps out Central Asia and the Caucasus, as the country or an answer: well known only by name. */
+  familiar?: boolean;
+  /** How often an African country is asked, at most; Africa would otherwise take half the levels. */
+  africaShare?: number;
 }
 
 export const BLITZ_LEVELS: readonly BlitzLevelPlan[] = [
-  { from: 1, neighbours: [3, 5], scope: 'known', minProminence: 0.5, secondsEach: 8 },
+  { from: 1, neighbours: [3, 5], scope: 'known', minProminence: 0.5, secondsEach: 8, familiar: true },
   { from: 5, neighbours: [3, 6], scope: 'no-africa', minProminence: 0.35, secondsEach: 7 },
-  { from: 9, neighbours: [4, 7], scope: 'any', minProminence: 0.25, secondsEach: 6 },
-  { from: 13, neighbours: [5, 8], scope: 'any', minProminence: 0, secondsEach: 5 },
-  { from: 17, neighbours: [7, Infinity], scope: 'any', minProminence: 0, secondsEach: 4.5 },
+  { from: 9, neighbours: [4, 7], scope: 'any', minProminence: 0.25, secondsEach: 6, africaShare: 0.3 },
+  { from: 13, neighbours: [5, 8], scope: 'any', minProminence: 0, secondsEach: 5, africaShare: 0.3 },
+  { from: 17, neighbours: [7, Infinity], scope: 'any', minProminence: 0, secondsEach: 4.5, africaShare: 0.35 },
 ];
 
 export const BLITZ_BASE_SECONDS = 10;
@@ -47,6 +53,10 @@ export const BLITZ_POINTS_PER_LEVEL = 10;
 export const BLITZ_FLAWLESS_SHARE = 0.5;
 /** A new country may share at most this share of the smaller neighbour set with an earlier one. */
 const MAX_SHARED = 0.5;
+/** At most this many African countries in a row. */
+const MAX_AFRICA_IN_A_ROW = 2;
+/** The Caucasus, which the UN counts as Western Asia; Central Asia is a subregion of its own. */
+const CAUCASUS: readonly CountryId[] = ['ARM', 'AZE', 'GEO'];
 /** The move the screen sends when the clock runs out. */
 export const BLITZ_TIMEOUT = 'timeout';
 
@@ -59,7 +69,8 @@ export const blitzSeconds = (level: number, neighbours: number) => BLITZ_BASE_SE
 export const blitzFlawlessBonus = (level: number, neighbours: number) =>
   Math.round(BLITZ_POINTS_PER_LEVEL * level * neighbours * BLITZ_FLAWLESS_SHARE);
 
-export type BlitzGuessResult = 'found' | 'wrong' | 'repeat' | 'target' | 'unknown';
+/** 'territory': a neighbour only through a territory (France for Brazil), which is free. */
+export type BlitzGuessResult = 'found' | 'wrong' | 'repeat' | 'target' | 'territory' | 'unknown';
 
 export interface BlitzState {
   readonly seed: number;
@@ -96,6 +107,26 @@ export function createBorderBlitz({ countries, rounds }: { countries: readonly C
   const askable = sovereign.filter((c) => neighboursOf(c.id).length > 0);
   const { inScope, isRemote } = routeScopes(countries);
   const prominence = countryProminence(sovereign);
+  const byId = new Map(countries.map((c) => [c.id, c]));
+  const isAfrican = (id: CountryId) => byId.get(id)?.continent === 'Africa';
+  const lessKnown = (id: CountryId) => byId.get(id)?.subregion === 'Central Asia' || CAUCASUS.includes(id);
+  /** Spain reaches Morocco only through Ceuta and Melilla: that doesn't make Spain an unfamiliar level. */
+  const onlyViaExclave = (id: CountryId, n: CountryId) =>
+    EXCLAVES.some((e) => e.country === id && e.borders.includes(n) && !e.mainlandToo?.includes(n));
+
+  /**
+   * The territory through which `guess` borders `target`, when it does only that
+   * way: French Guiana for France and Brazil (either way round), Gibraltar for
+   * Spain and the United Kingdom.
+   */
+  function throughTerritory(target: CountryId, guess: CountryId): CountryId | null {
+    if (guess === target || neighboursOf(target).includes(guess)) return null;
+    for (const [territory, owner] of Object.entries(TERRITORY_OWNERS)) {
+      const touches = graph.get(territory) ?? [];
+      if ((owner === guess && touches.includes(target)) || (owner === target && touches.includes(guess))) return territory;
+    }
+    return null;
+  }
 
   const fits = (c: Country, plan: BlitzLevelPlan, scope: RouteScope) => {
     const n = neighboursOf(c.id);
@@ -105,7 +136,8 @@ export function createBorderBlitz({ countries, rounds }: { countries: readonly C
       inScope(scope, c.id) &&
       (prominence.get(c.id) ?? 0) >= plan.minProminence &&
       // A familiar level shouldn't need the unfamiliar regions as answers either.
-      (scope === 'any' || !n.some(isRemote))
+      (scope === 'any' || !n.some((a) => isRemote(a) && !onlyViaExclave(c.id, a))) &&
+      (!plan.familiar || (!lessKnown(c.id) && !n.some(lessKnown)))
     );
   };
   /** Too much like an earlier level: over half the smaller set of neighbours in common. */
@@ -114,6 +146,21 @@ export function createBorderBlitz({ countries, rounds }: { countries: readonly C
     const nb = neighboursOf(b);
     return na.filter((n) => nb.includes(n)).length > MAX_SHARED * Math.min(na.length, nb.length);
   };
+
+  /**
+   * Africa has most of the countries with many neighbours, so left alone it takes
+   * half the later levels. This asks an African country at most `africaShare` of
+   * the time, and never more than MAX_AFRICA_IN_A_ROW in a row.
+   */
+  function balanceAfrica(rng: Rng, plan: BlitzLevelPlan, past: readonly CountryId[], ids: CountryId[]): CountryId[] {
+    if (plan.africaShare === undefined) return ids;
+    const african = ids.filter(isAfrican);
+    const other = ids.filter((id) => !isAfrican(id));
+    if (african.length === 0 || other.length === 0) return ids;
+    const streak = past.slice(-MAX_AFRICA_IN_A_ROW);
+    if (streak.length === MAX_AFRICA_IN_A_ROW && streak.every(isAfrican)) return other;
+    return rng.next() < plan.africaShare ? african : other;
+  }
 
   function nextTarget(rng: Rng, level: number, past: readonly CountryId[]): CountryId {
     const plan = blitzPlan(level);
@@ -129,7 +176,7 @@ export function createBorderBlitz({ countries, rounds }: { countries: readonly C
       if (candidates.length === 0) continue;
       // Straight after a country, one of its neighbours would feel like the same level again.
       const apart = candidates.filter((c) => !previous || !neighboursOf(previous).includes(c.id));
-      return pick(rng, (apart.length > 0 ? apart : candidates).map((c) => c.id));
+      return pick(rng, balanceAfrica(rng, plan, past, (apart.length > 0 ? apart : candidates).map((c) => c.id)));
     }
     throw new Error('no country left to ask');
   }
@@ -152,6 +199,7 @@ export function createBorderBlitz({ countries, rounds }: { countries: readonly C
   return {
     graph,
     neighboursOf,
+    throughTerritory,
     askable: askable.map((c) => c.id),
 
     start(seed: number): BlitzState {
@@ -174,11 +222,12 @@ export function createBorderBlitz({ countries, rounds }: { countries: readonly C
       return levelState(empty, createRng(seed), 1);
     },
 
-    /** Wrong answers cost a life; repeats, the country itself and unknown names are free. */
+    /** Wrong answers cost a life; repeats, the country itself, neighbours through a territory and unknown names are free. */
     guess(state: BlitzState, id: CountryId): { state: BlitzState; result: BlitzGuessResult } {
       if (state.status !== 'playing' || !isSovereign.has(id)) return { state, result: 'unknown' };
       if (id === state.target) return { state, result: 'target' };
       if (state.found.includes(id) || state.wrong.includes(id)) return { state, result: 'repeat' };
+      if (throughTerritory(state.target, id)) return { state, result: 'territory' };
       const moves = [...state.moves, id];
       if (!state.neighbours.includes(id)) {
         const wrong = [...state.wrong, id];
