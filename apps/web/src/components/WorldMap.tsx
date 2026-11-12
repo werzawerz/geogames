@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { select } from 'd3-selection';
 import { zoom, zoomIdentity, type ZoomBehavior, type ZoomTransform } from 'd3-zoom';
-import { geoArea, geoCentroid, geoNaturalEarth1, geoPath, type GeoPermissibleObjects, type GeoProjection } from 'd3-geo';
-import type { Feature, Polygon } from 'geojson';
+import { geoCentroid, geoNaturalEarth1, geoPath, type GeoPermissibleObjects, type GeoProjection } from 'd3-geo';
 import type { CountryId } from '@geogames/geodata';
-import type { CountryShape, WorldShapes } from '@geogames/geodata/shapes';
+import type { WorldShapes } from '@geogames/geodata/shapes';
+import { mainland } from './mainland.ts';
 
 export type MapTone = 'start' | 'end' | 'optimal' | 'near' | 'far' | 'route';
 
@@ -19,19 +19,6 @@ const HEIGHT = 540;
 const PADDING = 48;
 /** Caps zoom so neighbouring microstates don't fill the screen. */
 const MAX_SCALE = 2600;
-
-/**
- * The largest polygon of a country. Used for framing and labels so overseas
- * parts (French Guiana, Alaska's Aleutians) don't drag the view across the globe.
- */
-export function mainland(shape: CountryShape): Feature<Polygon> {
-  const { geometry } = shape;
-  if (geometry.type === 'Polygon') return { type: 'Feature', properties: {}, geometry };
-  const polygons = geometry.coordinates.map(
-    (coordinates): Feature<Polygon> => ({ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates } }),
-  );
-  return polygons.reduce((a, b) => (geoArea(b) > geoArea(a) ? b : a));
-}
 
 /** Label font size in map units; must match .map-label in styles.css (it grows on narrow screens). */
 export const labelSize = () => (typeof matchMedia !== 'undefined' && matchMedia('(max-width: 640px)').matches ? 30 : 13);

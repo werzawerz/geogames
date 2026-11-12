@@ -994,6 +994,52 @@ test('border blitz: name every neighbour against the clock; wrong answers cost a
   await expect(page.getByText('You reached level 2 of 20.')).toBeVisible();
 });
 
+test('border blitz: territory owners are free, microstates get a dot, and a saved clock carries on', async ({ page }) => {
+  test.slow();
+  const engine = createBorderBlitz({ countries: routeCountries(), rounds: 20 });
+  /** A seed whose first level asks `id`; Math.random is pinned so the game picks it. */
+  const seedFor = (id: string) => {
+    for (let s = 1; ; s++) if (engine.start(s).target === id) return s;
+  };
+  const startWith = async (seed: number, before?: string) => {
+    await page.addInitScript(
+      ([r, clock]) => {
+        Math.random = () => r;
+        // Not on about:blank, which has no storage.
+        if (clock && location.protocol.startsWith('http')) localStorage.setItem('geogames:border-blitz-clock', clock);
+      },
+      [seed / 2 ** 32, before ?? ''] as const,
+    );
+    // A fresh page load each time: going to the same hash wouldn't reload the app.
+    await page.goto('about:blank');
+    await openGame(page, 'border-blitz');
+    await page.getByRole('button', { name: 'Start game' }).click();
+    await expect(page.getByRole('combobox')).toBeVisible({ timeout: 20_000 });
+  };
+  const name = async (country: string) => {
+    await page.getByRole('combobox').fill(country);
+    await page.getByRole('combobox').press('Enter');
+  };
+
+  // Spain: the UK meets it only at Gibraltar, so naming it is a free pass.
+  await startWith(seedFor('ESP'));
+  await expect(page.locator('.blitz-prompt')).toContainText('Spain');
+  await name('United Kingdom');
+  await expect(page.locator('.route-message')).toContainText('only through Gibraltar');
+  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(3);
+
+  // Switzerland: Liechtenstein is too small to see, so it's drawn as a labelled dot.
+  await startWith(seedFor('CHE'));
+  await name('Liechtenstein');
+  await expect(page.locator('.city-marker.marker-found')).toHaveText('Liechtenstein');
+  await expect(page.locator('.map-label')).not.toContainText(['Liechtenstein']);
+
+  // A deadline saved for this level that has already passed: time's up at once, no fresh clock.
+  const seed = seedFor('BEL');
+  await startWith(seed, JSON.stringify({ seed, level: 1, at: Date.now() - 1000 }));
+  await expect(page.locator('.route-summary.failed')).toContainText("Time's up!");
+});
+
 test('daily challenge: mystery country resumes after a reload and shares without spoilers', async ({ page, context }) => {
   test.slow();
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);

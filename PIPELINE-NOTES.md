@@ -8,5 +8,5 @@ Review: scratchpad pipeline/border-blitz/review-1.md. Before numbers saved in sc
 - 6 early levels: Spain allowed (Morocco only via the Ceuta/Melilla exclave, from EXCLAVES); `familiar` keeps Central Asia + Caucasus out of 1-4. Tests.
 
 ## Next
-- Screen: 'territory' message + rules text (1); save deadline in storage for resume (3); frame covering every neighbour's border + test (4); microstate dots (5).
-- Re-run review scripts (simulate, africa) for after numbers; e2e; screenshots; final commit.
+- Screen done: territory message + rules (1), saved deadline (3), frame.ts + frame.test.ts (4), microstate dots (5). e2e: 2 border blitz tests pass.
+- After numbers in scratchpad bb/after.txt. Remaining: screenshots, final commit.
