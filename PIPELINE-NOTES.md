@@ -8,9 +8,9 @@ Brief: idea #1 in the round-1 ideas file. Branch `game/border-blitz`. Ports: dev
   3 lives per level, 3rd wrong ends the run. Clock runs on the screen; it sends a `timeout` move. Score: 10 x level per neighbour,
   flawless level +50%. Not in `DAILY_GAMES` (user decides).
 
-## Next
-- Screen `apps/web/src/games/border-blitz/BorderBlitzScreen.tsx`, registry, RULES in GamePage, showCount list.
-- Card art (GameCardArt + build-card-art), e2e test, screenshots.
+## Next (screen, registry, rules, card art and bundle test are done; typecheck + vitest pass)
+- Screen done: apps/web/src/games/border-blitz/BorderBlitzScreen.tsx (deadline-based clock, sends timeout move).
+- Remaining: e2e test in apps/web/e2e/games.spec.ts, screenshots (desktop + 390px) to the pipeline/border-blitz scratchpad folder.
 
 ## Open questions
 - Resume restarts the current level's clock (time isn't in the moves).

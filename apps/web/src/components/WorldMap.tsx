@@ -24,7 +24,7 @@ const MAX_SCALE = 2600;
  * The largest polygon of a country. Used for framing and labels so overseas
  * parts (French Guiana, Alaska's Aleutians) don't drag the view across the globe.
  */
-function mainland(shape: CountryShape): Feature<Polygon> {
+export function mainland(shape: CountryShape): Feature<Polygon> {
   const { geometry } = shape;
   if (geometry.type === 'Polygon') return { type: 'Feature', properties: {}, geometry };
   const polygons = geometry.coordinates.map(

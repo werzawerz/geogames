@@ -200,6 +200,15 @@ const ART: Record<string, () => ReactNode> = {
       <circle className="art-pin-hole" cx={art.pin.guess[0]} cy={art.pin.guess[1]! - 25} r={4.5} />
     </>
   ),
+  'border-blitz': () => (
+    <>
+      <Land d={art.blitz.land} />
+      {art.blitz.found.map((d) => (
+        <Area key={d} d={d} tone="optimal" />
+      ))}
+      <Area d={art.blitz.target} tone="start" />
+    </>
+  ),
   'mystery-country': () => (
     <>
       <Land d={art.mystery.land} />

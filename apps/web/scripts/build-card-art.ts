@@ -151,6 +151,9 @@ const toneFor = (id: string) => {
   return guess.borders.includes(target.id) || km < 1000 ? 'optimal' : km < 3000 ? 'near' : 'far';
 };
 
+// Border Blitz: Germany lit up, some of its neighbours found, the rest still to name.
+const blitz = scene(framed(geoMercator(), [[-1, 55.5], [21, 44]], 10));
+
 // Area: two countries at the same scale, so their sizes compare truly.
 function sameScale(id: string, x: number) {
   const shape = countries.get(id)!;
@@ -209,6 +212,11 @@ const art = {
     guesses: ['ZAF', 'NGA', 'EGY', 'COD', 'DZA'].map((id) => ({ d: mystery.shape(id), tone: toneFor(id) })),
     target: mystery.shape(target.id),
     point: mystery.point([target.latlng[1], target.latlng[0]]),
+  },
+  blitz: {
+    land: blitz.land,
+    target: blitz.shape('DEU'),
+    found: ['FRA', 'POL', 'AUT', 'NLD'].map(blitz.shape),
   },
   area: { left: sameScale('BRA', 180), right: sameScale('AUS', 460) },
 };

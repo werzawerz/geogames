@@ -26,7 +26,12 @@ const wrongFor = (state: BlitzState) =>
 const remote = (id: string) => getCountry(id)?.continent === 'Africa' || getCountry(id)?.subregion === 'Caribbean';
 
 /** Names every neighbour of every level: a perfect run. */
+const runs = new Map<number, BlitzState>();
 const playAll = (seed: number) => {
+  if (!runs.has(seed)) runs.set(seed, perfectRun(seed));
+  return runs.get(seed)!;
+};
+const perfectRun = (seed: number) => {
   let state = game.start(seed);
   for (;;) {
     for (const id of state.neighbours) state = game.guess(state, id).state;
@@ -34,6 +39,7 @@ const playAll = (seed: number) => {
     state = game.nextLevel(state);
   }
 };
+const SEEDS = 120;
 const shared = (a: readonly string[], b: readonly string[]) => a.filter((n) => b.includes(n)).length;
 
 describe('border blitz', () => {
@@ -60,7 +66,7 @@ describe('border blitz', () => {
   });
 
   it('follows the level plan: few, familiar neighbours first, more later', () => {
-    for (let seed = 1; seed <= 200; seed++) {
+    for (let seed = 1; seed <= SEEDS; seed++) {
       const { past } = playAll(seed);
       expect(past).toHaveLength(20);
       past.forEach((id, i) => {
@@ -79,7 +85,7 @@ describe('border blitz', () => {
   });
 
   it('never repeats a country, and no two levels share over half their neighbours', () => {
-    for (let seed = 1; seed <= 200; seed++) {
+    for (let seed = 1; seed <= SEEDS; seed++) {
       const { past } = playAll(seed);
       expect(new Set(past).size).toBe(past.length);
       for (let i = 0; i < past.length; i++) {

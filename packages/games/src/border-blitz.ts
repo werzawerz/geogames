@@ -90,7 +90,8 @@ export function createBorderBlitz({ countries, rounds }: { countries: readonly C
   const graph = buildBorderGraph(countries);
   const sovereign = countries.filter((c) => c.sovereignty !== 'territory');
   const isSovereign = new Set(sovereign.map((c) => c.id));
-  const neighboursOf = (id: CountryId): CountryId[] => (graph.get(id) ?? []).filter((n) => isSovereign.has(n)).sort();
+  const neighbourSets = new Map(sovereign.map((c) => [c.id, (graph.get(c.id) ?? []).filter((n) => isSovereign.has(n)).sort()]));
+  const neighboursOf = (id: CountryId): readonly CountryId[] => neighbourSets.get(id) ?? [];
   // Countries without neighbours (islands) are never asked.
   const askable = sovereign.filter((c) => neighboursOf(c.id).length > 0);
   const { inScope, isRemote } = routeScopes(countries);
@@ -110,8 +111,8 @@ export function createBorderBlitz({ countries, rounds }: { countries: readonly C
   /** Too much like an earlier level: over half the smaller set of neighbours in common. */
   const overlaps = (a: CountryId, b: CountryId) => {
     const na = neighboursOf(a);
-    const nb = new Set(neighboursOf(b));
-    return na.filter((n) => nb.has(n)).length > MAX_SHARED * Math.min(na.length, nb.size);
+    const nb = neighboursOf(b);
+    return na.filter((n) => nb.includes(n)).length > MAX_SHARED * Math.min(na.length, nb.length);
   };
 
   function nextTarget(rng: Rng, level: number, past: readonly CountryId[]): CountryId {
