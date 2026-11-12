@@ -502,7 +502,11 @@ test('daily challenge: one try, resumes after a reload, and the result can be sh
 
   // On level 2, guess a detour, then reload: the run carries on rather than restarting.
   const level2 = engine.current(state).puzzle;
-  const detour = [...engine.frontier(engine.current(state))].find((id) => engine.classify(level2, id) !== 'optimal')!;
+  // Any guess that doesn't finish the level: some days' level 2 has no detour at all.
+  const frontier = [...engine.frontier(engine.current(state))];
+  const detour =
+    frontier.find((id) => engine.classify(level2, id) !== 'optimal') ??
+    frontier.find((id) => engine.current(engine.guess(state, id).state).status !== 'solved')!;
   await input.fill(nameById.get(detour)!);
   await input.press('Enter');
   state = engine.guess(state, detour).state;
@@ -526,7 +530,8 @@ test('daily challenge: one try, resumes after a reload, and the result can be sh
     state = engine.guess(state, wrong).state;
   }
   await page.getByRole('button', { name: 'See final score' }).click();
-  await expect(page.locator('.big-score')).toHaveText('10');
+  const score = String(state.score);
+  await expect(page.locator('.big-score')).toHaveText(score);
   await expect(page.getByText('You reached level 2 of 20.')).toBeVisible();
   await expect(page.locator('.daily-share-line')).toHaveText('🟩🟥');
 
@@ -535,16 +540,16 @@ test('daily challenge: one try, resumes after a reload, and the result can be sh
   await expect(page.getByRole('button', { name: 'Copied!' })).toBeVisible();
   const shared = await page.evaluate(() => navigator.clipboard.readText());
   expect(shared).toContain(`GeoGames daily ${dailyDate()}`);
-  expect(shared).toContain('Border Route: 10 points');
+  expect(shared).toContain(`Border Route: ${score} points`);
   expect(shared).toContain('🟩🟥');
   expect(shared).not.toContain(nameById.get(puzzle.start)!);
 
   // One try: coming back shows the result, and the home page says so.
   await page.reload();
-  await expect(page.locator('.big-score')).toHaveText('10');
+  await expect(page.locator('.big-score')).toHaveText(score);
   await expect(page.getByRole('combobox')).toHaveCount(0);
   await page.goto('/#/');
-  await expect(page.locator('.daily').getByRole('link', { name: 'Border Route' })).toContainText('today: 10');
+  await expect(page.locator('.daily').getByRole('link', { name: 'Border Route' })).toContainText(`today: ${score}`);
 });
 
 test('border route: Western Sahara is typeable, and a run has no region to pick', async ({ page }) => {

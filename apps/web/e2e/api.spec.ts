@@ -4,7 +4,8 @@
 import { test as plainTest } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 
-const API = 'http://localhost:5321/api';
+// Follows playwright.config.ts: E2E_PORT_BASE moves every test port.
+const API = `http://localhost:${Number(process.env.E2E_PORT_BASE ?? 5319) + 2}/api`;
 
 /** Plays a capitals game: picks the first option until the three lives are gone. */
 async function playCapitals(page: import('@playwright/test').Page) {
