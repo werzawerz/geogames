@@ -14,7 +14,12 @@ You build one game for GeoGames (repo: C:\Users\potty\repos\geogames) in the wor
 - **The server recomputes scores** with `replayGame`, from slimmed data (`apps/api/scripts/bundle.ts`). Scores may depend only on data the server has. If the game needs new data, check the bundle stays under 5 MB and add a case to `apps/api/src/bundle.test.ts`.
 - **Screen** in `apps/web/src/games/<game>/`, lazy-loaded from `registry.tsx`, with rules text in `GamePage.tsx`'s `RULES`. Reuse `WorldMap`, `SearchInput`, `countryItems`/`cityItems`, the `route-*` layout classes and the CSS tokens. Support `initialMoves`/`onMovesChange` (resume), and give `onGameOver` a spoiler-free `shareLine`, so the game can join the daily challenge.
 - **Card picture:** add the game to `apps/web/src/games/GameCardArt.tsx`. If it's a map scene, add it to `apps/web/scripts/build-card-art.ts` and run `npm run art:build -w @geogames/web`.
-- **Arcade shape** unless the brief says otherwise: up to 20 levels, the run ends on failure, and early levels are fair (well-known places; no Africa or Caribbean; Chinese and Indian cities only if huge). Use `routeScopes` and `countryProminence` for that, like the other games.
+- **Life rules, for every arcade game** (the user's standing rule):
+  - Endless: no level cap. Play until out of lives; the ramp keeps going, or holds at its hardest band.
+  - Start with 3 lives; a flawless level gives one back, never above 3.
+  - Within a level a player can lose at most one life: 3 wrong guesses cost it, and so does the Skip button. Running out of time counts like a skip. Losing that life ends the level and moves on to the next.
+  - Every game needs a Skip button.
+- **Arcade shape** unless the brief says otherwise: the run ends when the lives are gone, and early levels are fair (well-known places; no Africa or Caribbean; Chinese and Indian cities only if huge). Use `routeScopes` and `countryProminence` for that, like the other games.
 - Match the code style: short functions, comments that explain why, British spelling in user-facing text, user-facing text that is plain and friendly.
 - Never put a real answer in the page's HTML or labels before it's revealed.
 
