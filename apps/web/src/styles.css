@@ -1740,3 +1740,59 @@ a {
 .blitz-end-label {
   pointer-events: none;
 }
+
+/* Clockwork */
+.art-meridian { stroke: rgba(148, 163, 184, 0.35); stroke-width: 2; stroke-dasharray: 6 8; }
+.art-greenwich { stroke: rgba(250, 204, 21, 0.7); }
+.art-tick { stroke: #38bdf8; stroke-width: 4; stroke-linecap: round; }
+.art-hand { fill: none; stroke: #f8fafc; stroke-width: 7; stroke-linecap: round; }
+.clock-meridian {
+  fill: none;
+  stroke: rgba(148, 163, 184, 0.35);
+  stroke-width: 1;
+  stroke-dasharray: 4 5;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.clock-greenwich { stroke: rgba(250, 204, 21, 0.65); stroke-dasharray: none; }
+.clock-prompt { text-align: center; margin: 0.25rem 0 0.5rem; }
+.clock-prompt p { margin: 0.15rem 0; }
+.clock-given { font-size: 1.05rem; }
+.clock-utc { font-variant-numeric: tabular-nums; color: var(--accent); }
+.clock-question { font-size: 1.2rem; }
+.clock-form {
+  display: flex;
+  gap: 0.5rem;
+  max-width: 320px;
+  margin: 0.75rem auto 0;
+}
+.clock-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 1.4rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  letter-spacing: 0.05em;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+}
+.clock-input:focus { outline: none; border-color: var(--accent); }
+.clock-preview { text-align: center; font-size: 0.85rem; margin: 0.35rem 0 0; min-height: 1.2em; }
+.clock-answer { margin: 0.25rem 0; }
+.clock-note { margin: 0.25rem 0; font-style: italic; }
+.clock-guesses {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 1rem;
+  font-variant-numeric: tabular-nums;
+}
+.clock-guesses .guess-in { color: var(--correct); font-weight: 600; }
+.clock-guesses .guess-out { color: var(--wrong); }
