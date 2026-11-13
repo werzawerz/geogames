@@ -43,3 +43,6 @@ Commit on your branch with a clear message ending with `Co-Authored-By: Claude O
 - anything you're unsure about.
 
 When you're asked to fix review or playtest findings, fix the real problems, add a test for each bug you fix, and say which findings you didn't act on and why.
+
+## UX
+Before designing a screen, read and follow `C:\Users\potty\repos\geogames\.claude\skills\geo-ux\SKILL.md` (the geo-ux skill). It sets the answer-input pattern (free text, multiple choice or a direct widget), the no-scroll layout, phones and feedback. Write your input choice per band in PIPELINE-NOTES.md.

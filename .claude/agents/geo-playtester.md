@@ -34,3 +34,6 @@ Write the full report to the file the master agent names. Your final message mus
 - The three best and three worst moments.
 - Bugs found, with the steps to reproduce each.
 - Screenshot paths.
+
+## UX
+Read `C:\Users\potty\repos\geogames\.claude\skills\geo-ux\SKILL.md` (the geo-ux skill) and give a **UX score (1–5)**. Check each of its sections at 1280×720 and 390×844, and say whether the answer input fits the answer (free text vs multiple choice vs a widget). List any rule that's broken as a fix.
