@@ -132,6 +132,7 @@ function ClockworkPlay({
   useEffect(() => {
     setMessage(null);
     setChoice(null);
+    typed.current = { digits: '', at: 0 };
   }, [level.number]);
 
   // Keyboard play: the time picker while a level is on, the next button after it. Without
@@ -186,7 +187,7 @@ function ClockworkPlay({
     if (!playing) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey || (e.target instanceof HTMLElement && e.target.closest('input, textarea'))) return;
-      if (/^d$/.test(e.key)) {
+      if (/^\d$/.test(e.key)) {
         const now = Date.now();
         const digits = now - typed.current.at > TYPING_GAP_MS || typed.current.digits.length >= 4 ? e.key : typed.current.digits + e.key;
         typed.current = { digits, at: now };

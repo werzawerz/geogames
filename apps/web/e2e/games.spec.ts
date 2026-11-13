@@ -36,6 +36,7 @@ import {
   type HigherLowerDefinition,
   type QuizDefinition,
 } from '@geogames/games';
+import type { Page } from '@playwright/test';
 import { expect, openGame, playRounds, setCitySize, test } from './fixtures.ts';
 
 test('home lists every game', async ({ page }) => {
@@ -1345,7 +1346,14 @@ test('halfway: with the names hidden, the two cities can be typed but count as a
   await expect(page.locator('.route-end')).toHaveText(['?', '?']);
 });
 
-test('clockwork: type the local time; earlier or later after a miss, a skip costs a life, and the run ends with the lives', async ({ page }) => {
+/** Picks a time on the Clockwork picker: the hour button, then the minute chip. */
+async function pickTime(page: Page, minutes: number) {
+  await page.locator('.clock-hour').nth(Math.floor(minutes / 60)).click();
+  await page.locator('.clock-minute').nth((minutes % 60) / 15).click();
+  await expect(page.locator('.clock-chosen')).toContainText(`= ${formatClock(minutes)}`);
+}
+
+test('clockwork: pick the local time; earlier or later after a miss, a skip costs a life, and the run ends with the lives', async ({ page }) => {
   await page.addInitScript(() => {
     Math.random = () => 0.5;
   });
@@ -1356,58 +1364,52 @@ test('clockwork: type the local time; earlier or later after a miss, a skip cost
     return place.city ? `${place.city.name}, ${getCountry(place.country)!.name}` : getCountry(place.country)!.name;
   };
   const lives = page.locator('.lives .life:not(.lost)');
+  const check = page.getByRole('button', { name: 'Check' });
 
   await openGame(page, 'clockwork');
   await expect(page.getByRole('radio', { name: /Europe/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Change settings/ })).toHaveCount(0);
   await page.getByRole('button', { name: 'Start game' }).click();
-  const input = page.getByRole('textbox', { name: 'Local time' });
-  await expect(input).toBeVisible({ timeout: 20_000 });
-  await expect(input).toBeFocused();
+  await expect(page.locator('.clock-hour')).toHaveCount(24, { timeout: 20_000 });
 
-  // The question, the place lit up, and no answer in the page.
+  // The question, the place lit up, no text box, and no answer in the page.
   const utc = formatClock(state.level.utcHour * 60);
   await expect(page.locator('.clock-given')).toHaveText(`It’s ${utc} UTC on ${CLOCK_DATES[state.level.date]!.label}.`);
   await expect(page.locator('.clock-question')).toContainText(nameOf(state));
   await expect(page.locator('.world-map .map-country')).toHaveCount(1);
   await expect(page.locator('.clock-meridian')).toHaveCount(24);
   await expect(page.locator('.clock-answer')).toHaveCount(0);
+  await expect(page.getByRole('textbox')).toHaveCount(0);
+  // The UTC hour is marked as the reference; nothing is chosen yet, so Check waits.
+  await expect(page.locator('.clock-hour-utc')).toHaveText(utc.slice(0, 2));
+  await expect(check).toBeDisabled();
 
-  // Arrow keys step from the UTC time, an hour at a time.
-  await input.press('ArrowUp');
-  await expect(input).toHaveValue(formatClock(state.level.utcHour * 60 + 60));
-  await input.press('Shift+ArrowDown');
-  await expect(input).toHaveValue(formatClock(state.level.utcHour * 60 + 45));
-
-  // An hour late, typed as plain digits: free, and it says the answer is earlier.
+  // An hour tap means :00, and the time shows with the offset it implies.
   const late = (state.level.answer + 60) % 1440;
-  await input.fill(formatClock(late).replace(':', ''));
-  await expect(page.locator('.clock-preview')).toHaveText(`= ${formatClock(late)}`);
-  await input.press('Enter');
+  await page.locator('.clock-hour').nth(Math.floor(late / 60)).click();
+  await expect(page.locator('.clock-chosen')).toContainText(`= ${formatClock(Math.floor(late / 60) * 60)}`);
+  await pickTime(page, late);
+  await check.click();
   state = engine.guess(state, late).state;
   await expect(page.locator('.route-message')).toContainText(`It’s earlier than ${formatClock(late)}. 1 more free miss.`);
   await expect(page.locator('.clock-misses')).toHaveText('1');
-  await expect(page.locator('.clock-guesses')).toContainText('↓ earlier');
+  await expect(page.locator('.clock-hour').nth(Math.floor(late / 60))).toHaveClass(/tried/);
+  await expect(page.locator('.clock-hour').nth(Math.floor(late / 60))).toContainText('↓');
   await expect(lives).toHaveCount(3);
-  await expect(input).toHaveValue('');
-
-  // Nonsense costs nothing.
-  await input.fill('noon');
-  await input.press('Enter');
-  await expect(page.locator('.route-message')).toContainText('isn’t a time');
+  await expect(check).toBeDisabled();
 
   // The right time clears it, not flawless after a miss.
-  await input.fill(formatClock(state.level.answer));
-  await input.press('Enter');
+  await pickTime(page, state.level.answer);
+  await check.click();
   state = engine.guess(state, state.level.answer).state;
   await expect(page.locator('.route-summary.solved')).toContainText(`Right! ${formatClock(state.level.answer)}`);
   await expect(page.locator('.route-status')).toContainText(`Score ${state.score}`);
+  await expect(page.locator('.clock-guesses')).toContainText('↓ earlier');
   await expect(page.locator('.bonus-life')).toHaveCount(0);
   await page.getByRole('button', { name: 'Next level' }).click();
   state = engine.nextLevel(state);
 
   // A skip costs a life and shows the answer.
-  await expect(input).toBeFocused();
   await expect(page.locator('.clock-question')).toContainText(nameOf(state));
   await page.getByRole('button', { name: /Skip/ }).click();
   state = engine.skip(state);
@@ -1420,8 +1422,8 @@ test('clockwork: type the local time; earlier or later after a miss, a skip cost
   // Three misses cost one life, no more.
   for (let i = 1; i <= 3; i++) {
     const wrong = (state.level.answer + 120 * i) % 1440;
-    await input.fill(formatClock(wrong));
-    await input.press('Enter');
+    await pickTime(page, wrong);
+    await check.click();
     state = engine.guess(state, wrong).state;
   }
   await expect(page.locator('.route-summary.failed')).toContainText('3 misses: −1 ♥');
@@ -1436,7 +1438,7 @@ test('clockwork: type the local time; earlier or later after a miss, a skip cost
   await expect(page.getByText('You reached level 4.')).toBeVisible();
 });
 
-test('clockwork: on a short desktop screen the question stays in view, at the start and after every level', async ({ page }) => {
+test('clockwork: plays from the keyboard, and everything fits with no scroll on desktop and phone', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.addInitScript(() => {
     Math.random = () => 0.5;
@@ -1445,27 +1447,46 @@ test('clockwork: on a short desktop screen the question stays in view, at the st
   let state = engine.start(Math.floor(0.5 * 2 ** 32));
   await openGame(page, 'clockwork');
   await page.getByRole('button', { name: 'Start game' }).click();
-  const input = page.getByRole('textbox', { name: 'Local time' });
-  await expect(input).toBeFocused({ timeout: 20_000 });
-  const inView = async () => {
-    await expect(page.locator('.clock-question')).toBeInViewport();
-    await expect(page.locator('.clock-given')).toBeInViewport();
-    await expect(page.locator('.route-status')).toBeInViewport();
+  await expect(page.locator('.clock-hour')).toHaveCount(24, { timeout: 20_000 });
+  const chosen = page.locator('.clock-chosen');
+  const allInView = async () => {
+    for (const part of ['.route-status', '.clock-given', '.clock-question', '.map-frame', '.clock-hours', '.clock-minutes', '.clock-check', '.clock-skip']) {
+      await expect(page.locator(part), part).toBeInViewport({ ratio: 1 });
+    }
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   };
-  await inView();
-  // The input is in view too, without scrolling.
-  await expect(input).toBeInViewport();
+  await allInView();
+
+  // Arrows step from the UTC time, an hour, or 15 minutes with Shift; Escape clears.
+  await page.keyboard.press('ArrowUp');
+  await expect(chosen).toContainText(`= ${formatClock(state.level.utcHour * 60 + 60)}`);
+  await page.keyboard.press('Shift+ArrowDown');
+  await expect(chosen).toContainText(`= ${formatClock(state.level.utcHour * 60 + 45)}`);
+  await page.keyboard.press('Escape');
+  await expect(chosen).toHaveText('Pick an hour');
+
+  // Typed digits make a time; Enter checks it, and Enter again goes on.
   for (let i = 0; i < 3; i++) {
-    await input.fill(formatClock(state.level.answer));
-    await input.press('Enter');
+    const answer = formatClock(state.level.answer);
+    await page.keyboard.type(answer.replace(':', ''));
+    await expect(chosen).toContainText(`= ${answer}`);
+    await page.keyboard.press('Enter');
     state = engine.guess(state, state.level.answer).state;
+    await expect(page.locator('.route-summary.solved')).toContainText(`Right! ${answer}`);
     const next = page.getByRole('button', { name: 'Next level' });
     await expect(next).toBeFocused();
-    await inView();
+    await expect(page.locator('.clock-question')).toBeInViewport();
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
     await page.keyboard.press('Enter');
     state = engine.nextLevel(state);
-    await expect(input).toBeFocused();
-    await inView();
+    await expect(page.locator('.clock-chosen')).toHaveText('Pick an hour');
+    await allInView();
   }
+
+  // A phone: the same, with no scroll and no on-screen keyboard.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await allInView();
+  const box = await page.locator('.clock-hour').first().boundingBox();
+  expect(box!.width).toBeGreaterThanOrEqual(44);
+  expect(box!.height).toBeGreaterThanOrEqual(44);
 });
