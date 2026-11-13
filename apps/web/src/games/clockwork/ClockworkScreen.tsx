@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { geoPath, type GeoPermissibleObjects, type GeoProjection } from 'd3-geo';
 import { getCountry } from '@geogames/geodata';
 import { loadWorldShapes, type WorldShapes } from '@geogames/geodata/shapes';
@@ -23,10 +23,13 @@ import {
 } from '@geogames/games';
 import { WorldMap, type MapCountry, type ToScreen } from '../../components/WorldMap.tsx';
 import { circleShape } from '../circle/shared.tsx';
+import { TimePicker, type TriedTime } from './TimePicker.tsx';
 import type { GameScreenProps } from '../types.ts';
 
 const MARKS: Record<ClockMark, string> = { flawless: '🎯', cleared: '🟩', missed: '🟧', lost: '🟥' };
 const DAY = 24 * 60;
+/** Digits typed within this long of each other make one time: 1, 7, 3, 0 is 17:30. */
+const TYPING_GAP_MS = 1500;
 
 /** Loads the map shapes (lazily), then plays. */
 export function ClockworkScreen({ seed, initialMoves, onMovesChange, onGameOver }: GameScreenProps<ClockworkDefinition>) {
@@ -114,8 +117,9 @@ function ClockworkPlay({
   const [state, setState] = useState<ClockState>(() => replayClockwork(game, seed, initialMoves ?? []));
   useEffect(() => onMovesChange?.(state.moves), [state.moves, onMovesChange]);
   const [message, setMessage] = useState<string | null>(null);
-  const [text, setText] = useState('');
-  const input = useRef<HTMLInputElement>(null);
+  const [choice, setChoice] = useState<number | null>(null);
+  const typed = useRef({ digits: '', at: 0 });
+  const picker = useRef<HTMLDivElement>(null);
   const nextButton = useRef<HTMLButtonElement>(null);
   const { level } = state;
   const place = clockPlace(level.place);
@@ -127,13 +131,13 @@ function ClockworkPlay({
 
   useEffect(() => {
     setMessage(null);
-    setText('');
+    setChoice(null);
   }, [level.number]);
 
-  // Keyboard play: the input while a level is on, the next button after it. Without
+  // Keyboard play: the time picker while a level is on, the next button after it. Without
   // scrolling, which would push the question off the top of a short screen.
   useEffect(() => {
-    (playing ? input.current : nextButton.current)?.focus({ preventScroll: true });
+    (playing ? picker.current : nextButton.current)?.focus({ preventScroll: true });
   }, [playing, level.number]);
 
   const frame = useMemo(() => frameFor(place), [place]);
@@ -165,28 +169,45 @@ function ClockworkPlay({
     );
   };
 
-  const parsed = parseClock(text);
-
   const guess = (minutes: number) => {
     const { state: next, result } = game.guess(state, minutes);
     setMessage(messageFor(result, minutes, next));
     setState(next);
-    if (result === 'earlier' || result === 'later') setText('');
+    if (result === 'earlier' || result === 'later') setChoice(null);
   };
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    if (parsed === null) setMessage(text.trim() ? `“${text.trim()}” isn’t a time. Try 17:30 or 1730.` : 'Type a time like 17:30.');
-    else guess(parsed);
+  const check = () => {
+    if (choice !== null) guess(choice);
   };
 
-  // Arrow keys step the time: an hour, or a quarter with Shift. From empty, they start at the UTC time.
-  const step = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
-    e.preventDefault();
-    const by = (e.shiftKey ? 15 : 60) * (e.key === 'ArrowUp' ? 1 : -1);
-    setText(formatClock((((parsed ?? level.utcHour * 60) + by) % DAY + DAY) % DAY));
-  };
+  // The keyboard as a shortcut: digits type a time (1730), arrows step it by an
+  // hour (a quarter with Shift) from the UTC time, Enter checks, Escape clears.
+  useEffect(() => {
+    if (!playing) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || (e.target instanceof HTMLElement && e.target.closest('input, textarea'))) return;
+      if (/^d$/.test(e.key)) {
+        const now = Date.now();
+        const digits = now - typed.current.at > TYPING_GAP_MS || typed.current.digits.length >= 4 ? e.key : typed.current.digits + e.key;
+        typed.current = { digits, at: now };
+        const minutes = parseClock(digits);
+        if (minutes !== null) setChoice(minutes);
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        const by = (e.shiftKey ? 15 : 60) * (e.key === 'ArrowUp' ? 1 : -1);
+        setChoice((((choice ?? level.utcHour * 60) + by) % DAY + DAY) % DAY);
+      } else if (e.key === 'Enter') {
+        // Also stops a focused hour button from taking Enter as a click.
+        e.preventDefault();
+        check();
+      } else if (e.key === 'Escape') {
+        typed.current = { digits: '', at: 0 };
+        setChoice(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
   const skip = () => {
     setMessage(null);
@@ -203,6 +224,9 @@ function ClockworkPlay({
       shareLine: state.marks.map((m) => MARKS[m]).join(''),
     });
 
+  const tried: TriedTime[] = level.guesses
+    .filter((g) => g !== level.answer)
+    .map((g) => ({ minutes: g, way: ((((level.answer - g) % DAY) + DAY + DAY / 2) % DAY) - DAY / 2 < 0 ? 'earlier' : 'later' }));
   const misses = level.status === 'cleared' ? level.guesses.length - 1 : level.guesses.length;
   const skipped = level.status === 'lost' && state.moves.at(-1) === CLOCK_SKIP;
   const answer = (
@@ -253,34 +277,23 @@ function ClockworkPlay({
 
       {playing ? (
         <>
-          <form className="clock-form" onSubmit={submit}>
-            <input
-              ref={input}
-              className="clock-input"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={step}
-              placeholder="17:30"
-              inputMode="numeric"
-              autoComplete="off"
-              aria-label="Local time"
-              aria-describedby="clock-preview"
+          <div ref={picker} className="clock-play" tabIndex={-1} aria-label="Pick the local time">
+            <TimePicker
+              utcHour={level.utcHour}
+              value={choice}
+              tried={tried}
+              onChange={setChoice}
+              onCheck={check}
+              secondary={
+                <button type="button" className="btn clock-skip" onClick={skip}>
+                  ⏭ Skip <span className="muted">−1 ♥</span>
+                </button>
+              }
             />
-            <button className="btn btn-primary" type="submit">
-              Guess
-            </button>
-          </form>
-          <p id="clock-preview" className="clock-preview muted">
-            {parsed !== null && text.trim() !== formatClock(parsed) ? `= ${formatClock(parsed)}` : '1730, 17:30 or 5:30pm. ↑↓ an hour, Shift ↑↓ 15 min.'}
-          </p>
-          <p className="route-message" role="status">
-            {message ?? 'UTC is London’s winter time. A line on the map every 15°, an hour of the sun’s travel.'}
-          </p>
-          <div className="arcade-actions">
-            <button className="btn" onClick={skip}>
-              ⏭ Skip <span className="muted">−1 ♥</span>
-            </button>
           </div>
+          <p className="route-message" role="status">
+            {message ?? 'Pick the hour, then Check. UTC is London’s winter time; the lines are 15° apart, an hour of the sun’s travel.'}
+          </p>
         </>
       ) : level.status === 'cleared' ? (
         <div className="route-summary solved" role="status">
@@ -316,17 +329,14 @@ function ClockworkPlay({
         </div>
       )}
 
-      {level.guesses.length > 0 && (
+      {!playing && level.guesses.length > 0 && (
         <ol className="clock-guesses" aria-label="Your guesses">
-          {level.guesses.map((g) => {
-            const right = g === level.answer;
-            const diff = ((((level.answer - g) % DAY) + DAY + DAY / 2) % DAY) - DAY / 2;
-            return (
-              <li key={g} className={right ? 'guess-in' : 'guess-out'}>
-                {formatClock(g)} <span className="muted">{right ? '✓' : diff < 0 ? '↓ earlier' : '↑ later'}</span>
-              </li>
-            );
-          })}
+          {level.guesses.map((g) => (
+            <li key={g} className={g === level.answer ? 'guess-in' : 'guess-out'}>
+              {formatClock(g)}{' '}
+              <span className="muted">{g === level.answer ? '✓' : tried.find((t) => t.minutes === g)!.way === 'earlier' ? '↓ earlier' : '↑ later'}</span>
+            </li>
+          ))}
         </ol>
       )}
     </div>
