@@ -7,6 +7,7 @@ import {
   HALFWAY_SUBREGION_MAX,
   FAMOUS_END_MIN_POPULATION,
   HALFWAY_MISSES,
+  HALFWAY_PLANS,
   HALFWAY_SKIP,
   HALFWAY_SUBREGION_WINDOW,
   HALFWAY_MAX_LIVES,
@@ -300,6 +301,12 @@ describe('halfway', () => {
     expect(game.nextLevel(state)).toBe(state);
   });
 
+  it('keeps making levels long after every end city has been used', () => {
+    // About 1,000 cities can be an end late on: 300 levels use 600.
+    const { levels } = playPerfect(3, 300);
+    expect(levels.at(-1)!.number).toBe(300);
+  }, 60_000);
+
   it('skips a level for a life, revealing it, and the skip replays', () => {
     const start = game.start(14);
     let state = game.skip(game.guess(start, farAway(start)).state);
@@ -319,8 +326,12 @@ describe('halfway', () => {
     const { state, levels } = playPerfect(15, 60);
     expect(levels).toHaveLength(60);
     expect(state.status).toBe('level-over');
-    expect(levels.at(-1)!.radiusKm).toBe(halfwayPlan(16).radiusKm);
-    expect(halfwayPlan(1000)).toBe(halfwayPlan(16));
+    // Past 20 the radius keeps shrinking a little, then holds at the hardest band.
+    const hardest = HALFWAY_PLANS.at(-1)!;
+    expect(levels.at(-1)!.radiusKm).toBe(hardest.radiusKm);
+    expect(levels[24]!.radiusKm).toBeGreaterThan(hardest.radiusKm);
+    expect(halfwayPlan(1000)).toBe(hardest);
+    expect(hardest.showNames || hardest.showLine).toBe(false);
     for (const level of levels) expect(level.fair.length).toBeGreaterThanOrEqual(halfwayPlan(level.number).minKnown);
     const ends = levels.flatMap((l) => [l.from, l.to]);
     expect(new Set(ends).size).toBe(ends.length);

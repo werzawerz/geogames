@@ -51,6 +51,7 @@ export const HALFWAY_PLANS: readonly HalfwayPlan[] = [
   { from: 6, radiusKm: 250, separationKm: [900, 4000], scope: 'no-africa', sameContinent: false, endMinPopulation: 3_000_000, crowdedCountryMinPopulation: 10_000_000, minKnown: 3, minFamous: 1, wellKnownEnds: true, showLine: true, showNames: true },
   { from: 11, radiusKm: 200, separationKm: [800, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 3_000_000, minKnown: 3, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: true },
   { from: 16, radiusKm: 120, separationKm: [600, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 2_000_000, minKnown: 2, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: false },
+  { from: 26, radiusKm: 100, separationKm: [600, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 2_000_000, minKnown: 2, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: false },
 ];
 
 /** Wrong guesses in a level; the last of them costs a life and ends it. */
@@ -83,6 +84,8 @@ const MIN_SEPARATION_KM = 800;
 const SEPARATION_MEMORY = 4;
 /** At most this share of a level's fair cities may be fair cities of an earlier level (of the smaller set). */
 const MAX_SHARED = 0.5;
+/** How many levels back the no-repeat rules look. */
+const RUN_MEMORY = 60;
 
 /** Too many big cities in too small a part of most players' mental map (as in Pin Drop). */
 const CROWDED_COUNTRIES: ReadonlySet<string> = new Set(['CHN', 'IND']);
@@ -260,31 +263,36 @@ export function createHalfway({ cities, famous, tourismRank = {}, countries }: H
 
   function makeLevel(rng: Rng, number: number, past: HalfwayState['past']): HalfwayLevel {
     const plan = halfwayPlan(number);
-    // An end is never used twice in a run, nor (while possible) an earlier level's answer, and the reverse.
-    const ends = new Set(past.flatMap((p) => [p.from, p.to]));
-    const answers = new Set(past.flatMap((p) => p.fair));
+    // An end is never used twice in RUN_MEMORY levels, nor (while possible) an earlier level's answer, and
+    // the reverse. Only so many levels back: a run has no end, and would otherwise run out of cities.
+    const remembered = past.slice(-RUN_MEMORY);
+    const ends = new Set(remembered.flatMap((p) => [p.from, p.to]));
+    const answers = new Set(remembered.flatMap((p) => p.fair));
     const recent = past.slice(-SEPARATION_MEMORY);
     const africaRecently = past.slice(-(HALFWAY_AFRICA_SPACING - 1)).some((p) => p.region === 'Africa');
     const last = past.at(-1)?.subregion;
     const perSubregion = new Map<string, number>();
     for (const p of past.slice(-(HALFWAY_SUBREGION_WINDOW - 1))) perSubregion.set(p.subregion, (perSubregion.get(p.subregion) ?? 0) + 1);
     const fresh = pairsFor(plan).filter((p) => !ends.has(p.a.id) && !ends.has(p.b.id));
-    const spread = (p: Pair) =>
+    // Around the world: no subregion twice in a row or too often, Africa spaced out.
+    const varied = (p: Pair) =>
       p.subregion !== last &&
       (perSubregion.get(p.subregion) ?? 0) < HALFWAY_SUBREGION_MAX &&
-      !(africaRecently && p.region === 'Africa') &&
+      !(africaRecently && p.region === 'Africa');
+    // Nothing that echoes a recent level: a nearby midpoint, or a city that was an answer or an end.
+    const novel = (p: Pair) =>
       !recent.some((q) => distanceKm(q.midpoint, p.middle) < MIN_SEPARATION_KM) &&
       !answers.has(p.a.id) &&
       !answers.has(p.b.id) &&
       !p.fair.some((id) => ends.has(id));
-    // The first pass keeps every rule; the next drops the ones that spread a run around the world;
-    // the last, never needed in testing, allows answers an earlier level had.
-    for (const pass of [2, 1, 0]) {
-      let options = fresh.filter((p) => pass < 2 || spread(p));
+    // Each pass gives up a rule, only when nothing keeps it: first the echoes, then the spread around
+    // the world, then answers an earlier level had; the last, never needed in testing, reuses a recent end.
+    for (const pass of [3, 2, 1, 0, -1]) {
+      let options = (pass < 0 ? pairsFor(plan) : fresh).filter((p) => (pass < 3 || novel(p)) && (pass < 2 || varied(p)));
       while (options.length > 0) {
         // Any allowed pair, equally: the spreading rules, not weights, keep a run varied.
         const pair = pick(rng, options);
-        if (pass >= 1 && past.some((q) => sharesTooMany(pair.fair, q.fair))) {
+        if (pass >= 1 && remembered.some((q) => sharesTooMany(pair.fair, q.fair))) {
           options = options.filter((p) => p !== pair);
           continue;
         }
