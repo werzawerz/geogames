@@ -76,6 +76,11 @@ export interface BorderBlitzDefinition extends BaseDefinition {
   rounds: number;
 }
 
+export interface ClockworkDefinition extends BaseDefinition {
+  kind: 'clockwork';
+  subject: 'country';
+}
+
 export interface MysteryCountryDefinition extends BaseDefinition {
   kind: 'mystery-country';
   subject: 'country';
@@ -94,7 +99,8 @@ export type GameDefinition =
   | HalfwayDefinition
   | GreatCircleDefinition
   | MysteryCountryDefinition
-  | BorderBlitzDefinition;
+  | BorderBlitzDefinition
+  | ClockworkDefinition;
 
 export const GAMES: readonly GameDefinition[] = [
   {
@@ -197,6 +203,14 @@ export const GAMES: readonly GameDefinition[] = [
     tagline: 'A straight line runs between two cities. Which countries does it cross?',
     status: 'live',
     rounds: 20,
+  },
+  {
+    id: 'clockwork',
+    kind: 'clockwork',
+    subject: 'country',
+    title: 'Clockwork',
+    tagline: 'It’s 12:00 UTC. A country lights up. What time is it there?',
+    status: 'live',
   },
   {
     id: 'pin-drop',

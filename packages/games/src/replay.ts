@@ -4,6 +4,7 @@ import type { GameDefinition } from './catalog.ts';
 import { createBorderBlitz, replayBorderBlitz } from './border-blitz.ts';
 import { createChoiceQuiz, replayChoiceQuiz } from './choice-quiz.ts';
 import { createCircleArcade, replayCircleArcade, type CircleArcade } from './circle-arcade.ts';
+import { clockworkCountries, createClockwork, replayClockwork } from './clockwork.ts';
 import { createCircleGame, replayCircle } from './circle.ts';
 import { createHigherLowerGame, replayHigherLower, type Guess } from './higher-lower.ts';
 import { createHalfway, replayHalfway, type Halfway } from './halfway.ts';
@@ -97,6 +98,10 @@ export async function replayGame(
     case 'border-blitz': {
       const engine = createBorderBlitz({ countries: routeCountries(settings), rounds: game.rounds });
       const state = replayBorderBlitz(engine, seed, moves);
+      return { score: state.score, finished: state.status === 'over' };
+    }
+    case 'clockwork': {
+      const state = replayClockwork(createClockwork({ countries: clockworkCountries() }), seed, moves);
       return { score: state.score, finished: state.status === 'over' };
     }
     case 'pin-drop': {
