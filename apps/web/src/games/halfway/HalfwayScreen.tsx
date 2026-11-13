@@ -4,6 +4,7 @@ import { getCountry, type CityId } from '@geogames/geodata';
 import { loadWorldShapes, type WorldShapes } from '@geogames/geodata/shapes';
 import {
   HALFWAY_MAX_LIVES,
+  HALFWAY_SKIP,
   createHalfway,
   destination,
   distanceKm,
@@ -30,6 +31,12 @@ const km = new Intl.NumberFormat('en', { maximumFractionDigits: 0 });
 const LABEL_OFFSET = 10;
 /** How many of the cities near the midpoint to show after a level. */
 const SHOWN_NEARBY = 3;
+
+/** "2 misses are free; the third costs a life." and so on, for the level's plan. */
+const freeMisses = (allowed: number) =>
+  allowed === 1
+    ? 'No free misses now: a miss costs a life.'
+    : `${allowed - 1} ${allowed === 2 ? 'miss is' : 'misses are'} free; the ${allowed === 2 ? 'second' : allowed === 3 ? 'third' : 'next'} costs a life.`;
 
 const MARKS: Record<HalfwayMark, string> = { flawless: '🎯', cleared: '🟩', missed: '🟧', lost: '🟥' };
 
@@ -58,8 +65,13 @@ function messageFor(result: HalfwayGuessResult, city: CircleCity | undefined, st
   switch (result) {
     case 'inside':
       return null;
-    case 'outside':
-      return `${city?.name} is ${km.format(guess!.km)} km from the midpoint: further than ${state.level.radiusKm} km. −1 ♥`;
+    case 'outside': {
+      const off = `${city?.name} is ${km.format(guess!.km)} km from the midpoint: further than ${state.level.radiusKm} km.`;
+      const allowed = halfwayPlan(state.level.number).misses;
+      if (state.level.status === 'lost') return `${off} ${allowed === 1 ? 'No free misses now' : `That’s ${allowed} misses`}: −1 ♥`;
+      const left = allowed - 1 - state.level.guesses.filter((g) => g.km > state.level.radiusKm).length;
+      return left > 0 ? `${off} ${left} more free ${left === 1 ? 'miss' : 'misses'}.` : `${off} One more miss costs a life.`;
+    }
     case 'repeat':
       return 'Already tried.';
     case 'end':
@@ -196,13 +208,17 @@ function HalfwayPlay({
     setState(next);
   };
 
+  const skip = () => {
+    setMessage(null);
+    setState(game.skip(state));
+  };
+
   const finish = () =>
     onGameOver({
       score: state.score,
       moves: state.moves,
-      message: state.completed ? `You found the middle of all ${game.rounds}!` : `You reached level ${level.number} of ${game.rounds}.`,
+      message: `You reached level ${level.number}.`,
       shareLine: state.marks.map((m) => MARKS[m]).join(''),
-      completed: state.completed,
     });
 
   const end = (city: CircleCity, tone: 'start' | 'end') => (
@@ -219,13 +235,20 @@ function HalfwayPlay({
   );
 
   const last = level.guesses.at(-1);
+  const misses = level.guesses.filter((g) => g.km > level.radiusKm).length;
+  const skipped = level.status === 'lost' && state.moves.at(-1) === HALFWAY_SKIP;
+  const next = (
+    <button className="btn btn-primary btn-lg" autoFocus onClick={() => setState(game.nextLevel(state))}>
+      Next level
+    </button>
+  );
   const nearbyText = nearby.map((id) => game.cities.get(id)!.name).join(', ');
 
   return (
     <div className="route halfway-game">
       <div className="route-status">
         <span>
-          Level <strong>{level.number}</strong> of {game.rounds}
+          Level <strong>{level.number}</strong>
         </span>
         <span className="lives" aria-label={`${state.lives} lives`}>
           {Array.from({ length: Math.max(state.lives, 1) }, (_, i) => (
@@ -236,6 +259,9 @@ function HalfwayPlay({
         </span>
         <span>
           Within <strong>{level.radiusKm}</strong> km
+        </span>
+        <span aria-label={`${misses} of ${plan.misses} misses`}>
+          Misses <strong className="halfway-misses">{misses}</strong>/{plan.misses}
         </span>
         <span aria-live="polite">
           Score <strong>{state.score}</strong>
@@ -276,10 +302,16 @@ function HalfwayPlay({
             label="Guess a city"
           />
           <p className="route-message" role="status">
-            {message ?? 'Halfway along the shortest route around the globe, so it can look off-centre on the map. A guess further away costs a life.'}
+            {message ??
+              `Halfway along the shortest route around the globe, so it can look off-centre on the map. ${freeMisses(plan.misses)}`}
           </p>
+          <div className="arcade-actions">
+            <button className="btn" onClick={skip}>
+              ⏭ Skip <span className="muted">−1 ♥</span>
+            </button>
+          </div>
         </>
-      ) : state.status === 'level-clear' || (state.completed && level.status === 'cleared') ? (
+      ) : level.status === 'cleared' ? (
         <div className="route-summary solved" role="status">
           <p className="route-summary-title">
             {game.cities.get(last!.id)!.name} is {km.format(last!.km)} km from the midpoint! +{level.points}
@@ -288,27 +320,21 @@ function HalfwayPlay({
             <p className="bonus-life">{state.bonusLife ? 'Flawless! +1 ♥' : `Flawless! Lives are full (${HALFWAY_MAX_LIVES} at most).`}</p>
           )}
           {nearbyText && <p className="muted">Also close: {nearbyText}.</p>}
-          {state.completed ? (
-            <>
-              <p className="route-summary-title">All {game.rounds} levels cleared!</p>
-              <button className="btn btn-primary btn-lg" autoFocus onClick={finish}>
-                See final score
-              </button>
-            </>
-          ) : (
-            <button className="btn btn-primary btn-lg" autoFocus onClick={() => setState(game.nextLevel(state))}>
-              Next level
-            </button>
-          )}
+          {next}
         </div>
       ) : (
         <div className="route-summary failed" role="status">
-          <p className="route-summary-title">Out of lives</p>
-          {message && <p className="muted">{message}</p>}
+          <p className="route-summary-title">{skipped ? 'Skipped: −1 ♥' : plan.misses === 1 ? 'A miss: −1 ♥' : `${plan.misses} misses: −1 ♥`}</p>
+          {state.status === 'over' && <p className="route-summary-title">Out of lives</p>}
+          {message && !skipped && <p className="muted">{message}</p>}
           {nearbyText && <p className="muted">You could have said: {nearbyText}.</p>}
-          <button className="btn btn-primary btn-lg" autoFocus onClick={finish}>
-            See final score
-          </button>
+          {state.status === 'over' ? (
+            <button className="btn btn-primary btn-lg" autoFocus onClick={finish}>
+              See final score
+            </button>
+          ) : (
+            next
+          )}
         </div>
       )}
 

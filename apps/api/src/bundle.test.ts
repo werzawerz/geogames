@@ -122,7 +122,10 @@ describe('the server bundle', () => {
       if (i % 3 === 2) state = engine.guess(state, cities.find((c) => distanceKm(c.latlng, state.level.midpoint) > 5000)!.id).state;
       state = engine.nextLevel(engine.guess(state, state.level.fair.at(-1)!).state);
     }
-    while (state.status === 'playing') {
+    // Then a skip, and lost levels until the lives are gone.
+    state = engine.nextLevel(engine.skip(state));
+    while (state.status !== 'over') {
+      if (state.status === 'level-over') state = engine.nextLevel(state);
       state = engine.guess(state, cities.find((c) => distanceKm(c.latlng, state.level.midpoint) > 5000 && !state.level.guesses.some((g) => g.id === c.id))!.id).state;
     }
     const full = await replayGame(definition, settings, 41, state.moves);

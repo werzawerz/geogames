@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import {
   MIN_POOL_SIZE,
   describeSettings,
+  hasSettings,
   normalizeSettings,
   poolSizes,
   variantKey,
@@ -131,9 +132,11 @@ export function GamePage({ game }: { game: GameDefinition }) {
             <button className="btn btn-primary btn-lg" disabled={starting} onClick={() => start(phase.settings)}>
               Play again
             </button>
-            <button className="btn" onClick={() => setPhase({ name: 'setup' })}>
-              Change settings
-            </button>
+            {hasSettings(game) && (
+              <button className="btn" onClick={() => setPhase({ name: 'setup' })}>
+                Change settings
+              </button>
+            )}
             <a
               className="btn"
               href={href({ page: 'scores', gameId: game.id, variant: variantKey(phase.settings, game) })}
@@ -163,7 +166,7 @@ const RULES: Record<GameDefinition['kind'], string> = {
   'pin-drop':
     'A city is named: click where it is, zooming in for precision. Up to 100 points for a close pin. Every kilometre off comes out of your 5,000 km budget, and the run ends when it’s gone. Within 50 km costs nothing and earns 250 km back. Less famous cities come in as you go, and pay more.',
   halfway:
-    'Two cities are shown: name a real city near the point halfway between them, along the shortest route around the globe. A guess within the level’s radius clears it, and the closer, the more points. A guess further away costs one of your 3 lives, and shows how far off it was. A first guess within a third of the radius is flawless: half as many points again, and a lost life back (never more than 3). Twenty levels: famous cities first, then smaller radii, no line, and at the end no names, only the two dots.',
+    'Two cities are shown: name a real city near the point halfway between them, along the shortest route around the globe. A guess within the level’s radius clears it, and the closer, the more points. A guess further away shows how far off it was. Two misses in a level are free (one from level 26, none from level 40); the next, or a skip, costs one of your 3 lives and ends the level, showing the answer. A first guess within a third of the radius is flawless: half as many points again, and a lost life back (never more than 3). The run goes on until your lives are gone: famous cities first, then smaller radii, no line, and from level 16 no names, only the two dots.',
   'circle-arcade':
     'Name the top cities in each circle, anywhere in the world. Early circles are big and mostly about famous, much-visited cities; later ones get smaller and ask for more. Wrong guesses are free but spoil a perfect level; a skip costs a life. Hints (the country and every third letter) are limited and halve a city’s points. A perfect level, without misses, skips or hints, earns a life and a hint back.',
 };

@@ -6,8 +6,9 @@ import { routeScopes, type RouteScope } from './route.ts';
 /**
  * Halfway: two cities are shown, and you name a real city near the midpoint
  * of the great circle between them. A guess inside the level's radius clears
- * it; one outside costs a life. A run is up to 20 levels, with smaller radii
- * and less familiar cities, and ends when the lives are gone.
+ * it. Two wrong guesses are free (one from level 26, none from 40); the next,
+ * or a skip, costs a life and ends the level. The run has no end but the lives: the radii shrink and the cities
+ * get less familiar up to level 16, and the hardest band holds from there.
  *
  * Every level is checked for fairness when it's made: enough well-known
  * cities (famous, or 1M+) lie inside its radius, so no midpoint falls in the
@@ -43,16 +44,20 @@ export interface HalfwayPlan {
   showLine: boolean;
   /** The two cities' names are shown, not only their dots. */
   showNames: boolean;
+  /** Wrong guesses a level allows; the last of them costs a life and ends it. Fewer late on, so a run ends. */
+  misses: number;
 }
 
 export const HALFWAY_PLANS: readonly HalfwayPlan[] = [
-  { from: 1, radiusKm: 300, separationKm: [700, 3000], scope: 'known', sameContinent: true, endMinPopulation: Infinity, crowdedCountryMinPopulation: 20_000_000, minKnown: 3, minFamous: 1, wellKnownEnds: true, showLine: true, showNames: true },
-  { from: 6, radiusKm: 250, separationKm: [900, 4000], scope: 'no-africa', sameContinent: false, endMinPopulation: 3_000_000, crowdedCountryMinPopulation: 10_000_000, minKnown: 3, minFamous: 1, wellKnownEnds: true, showLine: true, showNames: true },
-  { from: 11, radiusKm: 200, separationKm: [800, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 3_000_000, minKnown: 3, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: true },
-  { from: 16, radiusKm: 120, separationKm: [600, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 2_000_000, minKnown: 2, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: false },
+  { from: 1, radiusKm: 300, separationKm: [700, 3000], scope: 'known', sameContinent: true, endMinPopulation: Infinity, crowdedCountryMinPopulation: 20_000_000, minKnown: 3, minFamous: 1, wellKnownEnds: true, showLine: true, showNames: true, misses: 3 },
+  { from: 6, radiusKm: 250, separationKm: [900, 4000], scope: 'no-africa', sameContinent: false, endMinPopulation: 3_000_000, crowdedCountryMinPopulation: 10_000_000, minKnown: 3, minFamous: 1, wellKnownEnds: true, showLine: true, showNames: true, misses: 3 },
+  { from: 11, radiusKm: 200, separationKm: [800, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 3_000_000, minKnown: 3, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: true, misses: 3 },
+  { from: 16, radiusKm: 120, separationKm: [600, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 2_000_000, minKnown: 2, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: false, misses: 3 },
+  { from: 26, radiusKm: 100, separationKm: [600, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 2_000_000, minKnown: 2, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: false, misses: 2 },
+  { from: 40, radiusKm: 100, separationKm: [600, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 2_000_000, minKnown: 2, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: false, misses: 1 },
 ];
 
-export const HALFWAY_LEVELS = 20;
+const SKIP = '>';
 /** Cities this big (or famous) count as well known; smaller ones can still be typed. */
 export const HALFWAY_KNOWN_POPULATION = 1_000_000;
 export const HALFWAY_START_LIVES = 3;
@@ -64,6 +69,8 @@ export const FAMOUS_END_MIN_POPULATION = 250_000;
 export const SATELLITE_KM = 50;
 /** At most this many midpoints per run in one subregion (East Asia, Western Europe…), never two in a row. */
 export const HALFWAY_SUBREGION_MAX = 4;
+/** …counted over this many levels in a row, so an endless run keeps moving. */
+export const HALFWAY_SUBREGION_WINDOW = 20;
 /** East and Southeast Asia have so many big cities that, counted apart, they still fill a run between them. */
 const spreadGroup = (subregion: string) => (subregion === 'Eastern Asia' || subregion === 'South-Eastern Asia' ? 'East and Southeast Asia' : subregion);
 /** Points for a level are up to this × its number, by how close the guess was. */
@@ -78,6 +85,8 @@ const MIN_SEPARATION_KM = 800;
 const SEPARATION_MEMORY = 4;
 /** At most this share of a level's fair cities may be fair cities of an earlier level (of the smaller set). */
 const MAX_SHARED = 0.5;
+/** How many levels back the no-repeat rules look. */
+const RUN_MEMORY = 60;
 
 /** Too many big cities in too small a part of most players' mental map (as in Pin Drop). */
 const CROWDED_COUNTRIES: ReadonlySet<string> = new Set(['CHN', 'IND']);
@@ -140,7 +149,7 @@ export interface HalfwayLevel {
 
 export type HalfwayGuessResult = 'inside' | 'outside' | 'repeat' | 'end' | 'unknown';
 
-/** One mark per level for a spoiler-free result. */
+/** One mark per level for a spoiler-free result; 'lost' is a level that cost a life. */
 export type HalfwayMark = 'flawless' | 'cleared' | 'missed' | 'lost';
 
 export interface HalfwayState {
@@ -149,9 +158,8 @@ export interface HalfwayState {
   readonly level: HalfwayLevel;
   readonly lives: number;
   readonly score: number;
-  readonly status: 'playing' | 'level-clear' | 'over';
-  /** True when every level of the run was cleared. */
-  readonly completed: boolean;
+  /** 'level-over': the level is done (cleared or not) and shows its answer, with lives left for the next. */
+  readonly status: 'playing' | 'level-over' | 'over';
   /** True when the level just cleared gave a life back. */
   readonly bonusLife: boolean;
   readonly marks: readonly HalfwayMark[];
@@ -169,7 +177,6 @@ export interface HalfwayOptions {
   tourismRank?: Readonly<Record<CityId, number>>;
   /** Every country and territory, so cities in Hong Kong or Puerto Rico have a continent. */
   countries: readonly Country[];
-  rounds?: number;
 }
 
 /** A pair of end cities that makes a fair level for a plan. */
@@ -182,7 +189,7 @@ interface Pair {
   subregion: string;
 }
 
-export function createHalfway({ cities, famous, tourismRank = {}, countries, rounds = HALFWAY_LEVELS }: HalfwayOptions) {
+export function createHalfway({ cities, famous, tourismRank = {}, countries }: HalfwayOptions) {
   const byId = new Map(cities.map((c) => [c.id, c]));
   const countryById = new Map(countries.map((c) => [c.id, c]));
   const continentOf = (c: CircleCity) => countryById.get(c.countryId)?.continent;
@@ -257,31 +264,36 @@ export function createHalfway({ cities, famous, tourismRank = {}, countries, rou
 
   function makeLevel(rng: Rng, number: number, past: HalfwayState['past']): HalfwayLevel {
     const plan = halfwayPlan(number);
-    // An end is never used twice in a run, nor (while possible) an earlier level's answer, and the reverse.
-    const ends = new Set(past.flatMap((p) => [p.from, p.to]));
-    const answers = new Set(past.flatMap((p) => p.fair));
+    // An end is never used twice in RUN_MEMORY levels, nor (while possible) an earlier level's answer, and
+    // the reverse. Only so many levels back: a run has no end, and would otherwise run out of cities.
+    const remembered = past.slice(-RUN_MEMORY);
+    const ends = new Set(remembered.flatMap((p) => [p.from, p.to]));
+    const answers = new Set(remembered.flatMap((p) => p.fair));
     const recent = past.slice(-SEPARATION_MEMORY);
     const africaRecently = past.slice(-(HALFWAY_AFRICA_SPACING - 1)).some((p) => p.region === 'Africa');
     const last = past.at(-1)?.subregion;
     const perSubregion = new Map<string, number>();
-    for (const p of past) perSubregion.set(p.subregion, (perSubregion.get(p.subregion) ?? 0) + 1);
+    for (const p of past.slice(-(HALFWAY_SUBREGION_WINDOW - 1))) perSubregion.set(p.subregion, (perSubregion.get(p.subregion) ?? 0) + 1);
     const fresh = pairsFor(plan).filter((p) => !ends.has(p.a.id) && !ends.has(p.b.id));
-    const spread = (p: Pair) =>
+    // Around the world: no subregion twice in a row or too often, Africa spaced out.
+    const varied = (p: Pair) =>
       p.subregion !== last &&
       (perSubregion.get(p.subregion) ?? 0) < HALFWAY_SUBREGION_MAX &&
-      !(africaRecently && p.region === 'Africa') &&
+      !(africaRecently && p.region === 'Africa');
+    // Nothing that echoes a recent level: a nearby midpoint, or a city that was an answer or an end.
+    const novel = (p: Pair) =>
       !recent.some((q) => distanceKm(q.midpoint, p.middle) < MIN_SEPARATION_KM) &&
       !answers.has(p.a.id) &&
       !answers.has(p.b.id) &&
       !p.fair.some((id) => ends.has(id));
-    // The first pass keeps every rule; the next drops the ones that spread a run around the world;
-    // the last, never needed in testing, allows answers an earlier level had.
-    for (const pass of [2, 1, 0]) {
-      let options = fresh.filter((p) => pass < 2 || spread(p));
+    // Each pass gives up a rule, only when nothing keeps it: first the echoes, then the spread around
+    // the world, then answers an earlier level had; the last, never needed in testing, reuses a recent end.
+    for (const pass of [3, 2, 1, 0, -1]) {
+      let options = (pass < 0 ? pairsFor(plan) : fresh).filter((p) => (pass < 3 || novel(p)) && (pass < 2 || varied(p)));
       while (options.length > 0) {
         // Any allowed pair, equally: the spreading rules, not weights, keep a run varied.
         const pair = pick(rng, options);
-        if (pass >= 1 && past.some((q) => sharesTooMany(pair.fair, q.fair))) {
+        if (pass >= 1 && remembered.some((q) => sharesTooMany(pair.fair, q.fair))) {
           options = options.filter((p) => p !== pair);
           continue;
         }
@@ -312,9 +324,22 @@ export function createHalfway({ cities, famous, tourismRank = {}, countries, rou
     return Math.round(base * (flawless ? 1.5 : 1));
   };
 
+  /** Ends a level, cleared or not, and the run with it when the lives are gone. */
+  function endLevel(state: HalfwayState, level: HalfwayLevel, lives: number, mark: HalfwayMark, move: string): HalfwayState {
+    return {
+      ...state,
+      level,
+      lives,
+      bonusLife: lives > state.lives,
+      score: state.score + level.points,
+      status: lives > 0 ? 'level-over' : 'over',
+      marks: [...state.marks, mark],
+      moves: [...state.moves, move],
+    };
+  }
+
   return {
     cities: byId,
-    rounds,
 
     start(seed: number): HalfwayState {
       const rng = createRng(seed);
@@ -326,13 +351,15 @@ export function createHalfway({ cities, famous, tourismRank = {}, countries, rou
         lives: HALFWAY_START_LIVES,
         score: 0,
         status: 'playing',
-        completed: false,
         bonusLife: false,
         marks: [],
         past: [level],
         moves: [],
       };
     },
+
+    /** Wrong guesses a level still allows before it costs a life. */
+    missesLeft: (level: HalfwayLevel) => halfwayPlan(level.number).misses - level.guesses.filter((g) => g.km > level.radiusKm).length,
 
     guess(state: HalfwayState, id: CityId): { state: HalfwayState; result: HalfwayGuessResult } {
       const { level } = state;
@@ -344,37 +371,29 @@ export function createHalfway({ cities, famous, tourismRank = {}, countries, rou
       if (level.guesses.some((g) => g.id === id)) return { state, result: 'repeat' };
       const km = distanceKm(city.latlng, level.midpoint);
       const guesses = [...level.guesses, { id, km }];
-      const moves = [...state.moves, id];
       if (km > level.radiusKm) {
-        const lives = state.lives - 1;
-        if (lives > 0) return { result: 'outside', state: { ...state, lives, level: { ...level, guesses }, moves } };
-        const lost = { ...level, guesses, status: 'lost' as const };
-        return { result: 'outside', state: { ...state, lives: 0, level: lost, status: 'over', marks: [...state.marks, 'lost'], moves } };
+        const misses = guesses.filter((g) => g.km > level.radiusKm).length;
+        // The first misses are free (they only spoil a flawless level); the last costs a life and ends the level.
+        if (misses < halfwayPlan(level.number).misses) {
+          return { result: 'outside', state: { ...state, level: { ...level, guesses }, moves: [...state.moves, id] } };
+        }
+        return { result: 'outside', state: endLevel(state, { ...level, guesses, status: 'lost' }, state.lives - 1, 'lost', id) };
       }
       const flawless = guesses.length === 1 && km <= level.radiusKm * HALFWAY_FLAWLESS_SHARE;
-      const points = levelPoints(level, km, flawless);
+      const cleared: HalfwayLevel = { ...level, guesses, points: levelPoints(level, km, flawless), flawless, status: 'cleared' };
       const lives = flawless ? Math.min(HALFWAY_MAX_LIVES, state.lives + 1) : state.lives;
-      const cleared: HalfwayLevel = { ...level, guesses, points, flawless, status: 'cleared' };
-      const last = level.number >= rounds;
-      return {
-        result: 'inside',
-        state: {
-          ...state,
-          level: cleared,
-          lives,
-          bonusLife: lives > state.lives,
-          score: state.score + points,
-          status: last ? 'over' : 'level-clear',
-          completed: last,
-          marks: [...state.marks, flawless ? 'flawless' : guesses.length === 1 ? 'cleared' : 'missed'],
-          moves,
-        },
-      };
+      return { result: 'inside', state: endLevel(state, cleared, lives, flawless ? 'flawless' : guesses.length === 1 ? 'cleared' : 'missed', id) };
     },
 
-    /** Starts the next level after a cleared one. */
+    /** Gives the level up for a life, like running out of guesses. */
+    skip(state: HalfwayState): HalfwayState {
+      if (state.status !== 'playing') return state;
+      return endLevel(state, { ...state.level, status: 'lost' }, state.lives - 1, 'lost', SKIP);
+    },
+
+    /** Starts the next level after one ends with lives left. */
     nextLevel(state: HalfwayState): HalfwayState {
-      if (state.status !== 'level-clear') return state;
+      if (state.status !== 'level-over') return state;
       const rng = createRng(state.rngState);
       const level = makeLevel(rng, state.level.number + 1, state.past);
       return { ...state, rngState: rng.state, level, status: 'playing', bonusLife: false, past: [...state.past, level] };
@@ -388,13 +407,16 @@ const sharesTooMany = (a: readonly CityId[], b: readonly CityId[]) =>
 
 export type Halfway = ReturnType<typeof createHalfway>;
 
+/** The move a skip is logged as. */
+export const HALFWAY_SKIP = SKIP;
+
 /** Replays a move log from a seed; this is what a server uses to verify a score. */
 export function replayHalfway(game: Halfway, seed: number, moves: readonly string[]): HalfwayState {
   let state = game.start(seed);
   for (const move of moves) {
-    if (state.status === 'level-clear') state = game.nextLevel(state);
+    if (state.status === 'level-over') state = game.nextLevel(state);
     if (state.status === 'over') break;
-    state = game.guess(state, move).state;
+    state = move === SKIP ? game.skip(state) : game.guess(state, move).state;
   }
   return state;
 }

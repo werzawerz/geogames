@@ -1192,7 +1192,7 @@ test('city search: absorbed cities, a country after the name, and misspellings',
   await expect(first).toContainText('Uzhhorod');
 });
 
-test('halfway: a far guess costs a life and says how far, a near one clears and shows the midpoint', async ({ page }) => {
+test('halfway: misses are free until the third, a skip costs a life, and the run ends with the lives', async ({ page }) => {
   await page.addInitScript(() => {
     Math.random = () => 0.5;
   });
@@ -1201,8 +1201,10 @@ test('halfway: a far guess costs a life and says how far, a near one clears and 
   const nameOf = (id: string) => engine.cities.get(id)!.name;
   let state = engine.start(Math.floor(0.5 * 2 ** 32));
   const { level } = state;
-  // Cities that can't be near any midpoint of the first levels, unique enough to type.
-  const far = ['Sydney', 'Lima', 'Santiago', 'Johannesburg', 'Auckland', 'Honolulu'].map(cityNamed);
+  // Cities far from most midpoints, unique enough to type.
+  const far = ['Sydney', 'Lima', 'Santiago', 'Johannesburg', 'Auckland', 'Honolulu', 'Anchorage', 'Perth'].map(cityNamed);
+  const farFrom = (s: typeof state) => far.filter((c) => distanceKm(c.latlng, s.level.midpoint) > 3000);
+  const lives = page.locator('.lives .life:not(.lost)');
 
   await openGame(page, 'halfway');
   await expect(page.getByRole('radio', { name: /Europe/ })).toHaveCount(0);
@@ -1218,14 +1220,16 @@ test('halfway: a far guess costs a life and says how far, a near one clears and 
   await expect(page.locator('.route-status')).toContainText('Within 300 km');
   expect(await page.content()).not.toContain(nameOf(level.fair[0]!));
 
-  // A far city: a life gone, how far it was, and its dot on the map.
-  const miss = far.find((c) => distanceKm(c.latlng, level.midpoint) > 3000)!;
+  // A far city: free, but it says how far it was and puts its dot on the map.
+  const miss = farFrom(state)[0]!;
   await input.fill(miss.name);
   await input.press('Enter');
   state = engine.guess(state, miss.id).state;
   const missKm = new Intl.NumberFormat('en').format(Math.round(state.level.guesses[0]!.km));
   await expect(page.locator('.route-message')).toContainText(`${miss.name} is ${missKm} km from the midpoint`);
-  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(2);
+  await expect(page.locator('.route-message')).toContainText('1 more free miss');
+  await expect(lives).toHaveCount(3);
+  await expect(page.locator('.halfway-misses')).toHaveText('1');
   await expect(page.locator('.marker-outside text')).toContainText(miss.name);
   await expect(page.locator('.halfway-guesses')).toContainText(miss.name);
 
@@ -1245,26 +1249,51 @@ test('halfway: a far guess costs a life and says how far, a near one clears and 
   await expect(page.locator('.route-status')).toContainText(`Score ${state.score}`);
   await page.getByRole('button', { name: 'Next level' }).click();
   state = engine.nextLevel(state);
-  await expect(page.locator('.route-status')).toContainText('Level 2 of 20');
+  await expect(page.locator('.route-status')).toContainText('Level 2');
   await expect(page.locator('.route-end')).toHaveText([nameOf(state.level.from), nameOf(state.level.to)]);
 
-  // Far guesses until the lives are gone.
-  for (const city of far.filter((c) => distanceKm(c.latlng, state.level.midpoint) > 3000)) {
-    if (state.status === 'over') break;
+  // A skip costs a life, ends the level and shows the answer.
+  await page.getByRole('button', { name: /Skip/ }).click();
+  state = engine.skip(state);
+  await expect(page.locator('.route-summary.failed')).toContainText('Skipped: −1 ♥');
+  await expect(page.locator('.route-summary.failed')).toContainText('You could have said');
+  await expect(page.locator('.halfway-mid')).toHaveCount(1);
+  await expect(lives).toHaveCount(state.lives);
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextLevel(state);
+
+  // Three misses cost one life between them, then the next level starts.
+  for (const city of farFrom(state).slice(0, 3)) {
     await input.fill(city.name);
     await input.press('Enter');
     state = engine.guess(state, city.id).state;
   }
-  expect(state.status).toBe('over');
+  expect(state.status).toBe('level-over');
+  await expect(page.locator('.route-summary.failed')).toContainText('3 misses: −1 ♥');
+  await expect(lives).toHaveCount(state.lives);
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextLevel(state);
+
+  // Skips until the lives are gone.
+  while (state.status !== 'over') {
+    if (state.status === 'level-over') {
+      await page.getByRole('button', { name: 'Next level' }).click();
+      state = engine.nextLevel(state);
+    }
+    await page.getByRole('button', { name: /Skip/ }).click();
+    state = engine.skip(state);
+  }
   await expect(page.locator('.route-summary.failed')).toContainText('Out of lives');
-  await expect(page.locator('.route-summary.failed')).toContainText('You could have said');
-  await expect(page.locator('.halfway-mid')).toHaveCount(1);
   await page.getByRole('button', { name: 'See final score' }).click();
   await expect(page.locator('.big-score')).toBeVisible();
-  await expect(page.getByText('You reached level 2 of 20.')).toBeVisible();
+  await expect(page.locator('.eyebrow')).toContainText('Game over');
+  await expect(page.getByText(`You reached level ${state.level.number}.`)).toBeVisible();
+  // Nothing to set up for Halfway, so no "Change settings".
+  await expect(page.getByRole('button', { name: 'Play again' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Change settings' })).toHaveCount(0);
 });
 
-test('halfway: with the names hidden, the two cities can be typed but cost a life like any far guess', async ({ page }) => {
+test('halfway: with the names hidden, the two cities can be typed but count as a plain miss, and the run goes past 20', async ({ page }) => {
   test.slow();
   await page.addInitScript(() => {
     Math.random = () => 0.5;
@@ -1288,27 +1317,24 @@ test('halfway: with the names hidden, the two cities can be typed but cost a lif
   await expect(page.locator('.route-end')).toHaveText(['?', '?']);
   const end = engine.cities.get(state.level.from)!;
   await expect(page.locator('.world-map')).not.toContainText(end.name);
-  // The hidden city is offered like any other, and naming it is a normal far guess.
+  // The hidden city is offered like any other, and naming it is a normal far guess: a free miss.
   await input.fill(end.name);
   await expect(page.getByRole('option').first()).toContainText(end.name);
   await input.fill(typed(end.id));
   await input.press('Enter');
-  const after = engine.guess(state, end.id).state;
+  state = engine.guess(state, end.id).state;
   await expect(page.locator('.route-message')).toContainText(`${end.name} is`);
-  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(after.lives);
+  await expect(page.locator('.halfway-misses')).toHaveText('1');
+  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(state.lives);
 
-  // Clearing the rest completes the run, and the end screen says so.
-  state = after;
-  while (state.status !== 'over') {
+  // No last level: the run goes on past 20.
+  while (state.level.number < 21) {
     await input.fill(typed(state.level.fair[0]!));
     await input.press('Enter');
-    state = engine.guess(state, state.level.fair[0]!).state;
-    if (state.status === 'level-clear') {
-      await page.getByRole('button', { name: 'Next level' }).click();
-      state = engine.nextLevel(state);
-    }
+    await page.getByRole('button', { name: 'Next level' }).click();
+    state = engine.nextLevel(engine.guess(state, state.level.fair[0]!).state);
   }
-  await page.getByRole('button', { name: 'See final score' }).click();
-  await expect(page.locator('.eyebrow')).toContainText('Run complete');
-  await expect(page.getByText('You found the middle of all 20!')).toBeVisible();
+  await expect(page.locator('.route-status')).toContainText('Level 21');
+  await expect(page.locator('.route-status')).toContainText('Within 120 km');
+  await expect(page.locator('.route-end')).toHaveText(['?', '?']);
 });

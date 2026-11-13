@@ -105,6 +105,10 @@ export const usesRouteMode = (game: GameDefinition) => game.kind === 'route';
 export const usesRegion = (game: GameDefinition) =>
   !['circle-arcade', 'route', 'pin-drop', 'halfway', 'great-circle', 'mystery-country', 'border-blitz'].includes(game.kind);
 
+/** Whether the game has an option to choose; games without any don't offer to change settings. */
+export const hasSettings = (game: GameDefinition) =>
+  [usesRegion, usesDifficulty, usesCircleOptions, usesCityData, usesRouteMode, usesCitySize].some((uses) => uses(game));
+
 /**
  * Smallest city size offered per region. World games stop at 300k: below that,
  * thousands of towns nobody outside their country could place. A single

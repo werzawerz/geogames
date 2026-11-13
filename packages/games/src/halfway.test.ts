@@ -6,7 +6,9 @@ import {
   HALFWAY_KNOWN_POPULATION,
   HALFWAY_SUBREGION_MAX,
   FAMOUS_END_MIN_POPULATION,
-  HALFWAY_LEVELS,
+  HALFWAY_PLANS,
+  HALFWAY_SKIP,
+  HALFWAY_SUBREGION_WINDOW,
   HALFWAY_MAX_LIVES,
   HALFWAY_START_LIVES,
   createHalfway,
@@ -27,13 +29,14 @@ const continent = new Map(countries.map((c) => [c.id, c.continent]));
 const crowded = (c: CircleCity) => c.countryId === 'CHN' || c.countryId === 'IND';
 const city = (id: string) => game.cities.get(id)!;
 
-/** The fair city nearest the midpoint clears every level. */
-const playPerfect = (seed: number) => {
+/** Clears `count` levels with the fair city nearest each midpoint: a run never ends by itself. */
+const playPerfect = (seed: number, count = 20) => {
   let state = game.start(seed);
   const levels: HalfwayState['level'][] = [];
-  while (state.status !== 'over') {
+  while (levels.length < count) {
     levels.push(state.level);
-    state = game.nextLevel(game.guess(state, state.level.fair[0]!).state);
+    state = game.guess(state, state.level.fair[0]!).state;
+    if (levels.length < count) state = game.nextLevel(state);
   }
   return { state, levels };
 };
@@ -43,6 +46,12 @@ const farAway = (state: HalfwayState) =>
   [...game.cities.values()].find(
     (c) => distanceKm(c.latlng, state.level.midpoint) > 10_000 && !state.level.guesses.some((g) => g.id === c.id),
   )!.id;
+
+/** Loses the level: three far guesses. */
+const loseLevel = (state: HalfwayState) => {
+  for (let i = halfwayPlan(state.level.number).misses; i > 0; i--) state = game.guess(state, farAway(state)).state;
+  return state;
+};
 
 describe('midpoint', () => {
   it('is halfway along the great circle, not on the flat map', () => {
@@ -68,9 +77,7 @@ describe('halfway', () => {
 
   it('makes only fair levels: enough well-known cities near every midpoint', () => {
     for (let seed = 1; seed <= 40; seed++) {
-      const { state, levels } = playPerfect(seed);
-      expect(state.completed, `seed ${seed}`).toBe(true);
-      expect(levels).toHaveLength(HALFWAY_LEVELS);
+      const { levels } = playPerfect(seed);
       for (const level of levels) {
         const plan = halfwayPlan(level.number);
         expect(level.radiusKm).toBe(plan.radiusKm);
@@ -156,7 +163,7 @@ describe('halfway', () => {
     expect(african / late).toBeLessThan(0.25);
   }, 60_000);
 
-  it('spreads a run: no subregion more than 4 times or twice in a row, and no end was an earlier answer', () => {
+  it('spreads a run: no subregion more than 4 times in 20 levels or twice in a row, and no end was an earlier answer', () => {
     for (let seed = 1; seed <= 100; seed++) {
       const { levels } = playPerfect(seed);
       const counts = new Map<string, number>();
@@ -191,7 +198,7 @@ describe('halfway', () => {
   it('never has more than 3 lives', () => {
     for (let seed = 1; seed <= 20; seed++) {
       let state = game.start(seed);
-      while (state.status !== 'over') {
+      for (let i = 0; i < 25; i++) {
         expect(state.lives).toBeLessThanOrEqual(3);
         state = game.nextLevel(game.guess(state, state.level.fair[0]!).state);
       }
@@ -238,7 +245,7 @@ describe('halfway', () => {
     const start = game.start(7);
     const { state: near, result } = game.guess(start, start.level.fair[0]!);
     expect(result).toBe('inside');
-    expect(near.status).toBe('level-clear');
+    expect(near.status).toBe('level-over');
     const km = near.level.guesses[0]!.km;
     expect(near.level.points).toBe(Math.round(10 * (1 - (0.5 * km) / 300) * (near.level.flawless ? 1.5 : 1)));
     // A fair city far from the midpoint isn't flawless, and earns less.
@@ -253,8 +260,7 @@ describe('halfway', () => {
   });
 
   it('gives a life back for a flawless level, up to the most', () => {
-    let state = game.start(8);
-    state = game.guess(state, farAway(state)).state;
+    let state = game.nextLevel(loseLevel(game.start(8)));
     expect(state.lives).toBe(HALFWAY_START_LIVES - 1);
     for (let i = 0; i < 10; i++) {
       const id = state.level.fair[0]!;
@@ -269,20 +275,105 @@ describe('halfway', () => {
     expect(state.lives).toBeLessThanOrEqual(HALFWAY_MAX_LIVES);
   });
 
-  it('costs a life for a guess outside the radius, and ends the run at none', () => {
+  it('lets two misses go free, and the third costs one life and ends the level', () => {
     let state = game.start(9);
-    for (let i = 1; i <= HALFWAY_START_LIVES; i++) {
+    const allowed = halfwayPlan(1).misses;
+    expect(allowed).toBe(3);
+    for (let i = 1; i < allowed; i++) {
       const { state: next, result } = game.guess(state, farAway(state));
       expect(result).toBe('outside');
-      expect(next.lives).toBe(HALFWAY_START_LIVES - i);
+      expect(next.lives).toBe(HALFWAY_START_LIVES);
+      expect(next.status).toBe('playing');
+      expect(game.missesLeft(next.level)).toBe(allowed - i);
       state = next;
     }
-    expect(state.status).toBe('over');
+    state = game.guess(state, farAway(state)).state;
+    expect(state.lives).toBe(HALFWAY_START_LIVES - 1);
+    expect(state.status).toBe('level-over');
     expect(state.level.status).toBe('lost');
+    expect(state.level.points).toBe(0);
     expect(state.marks).toEqual(['lost']);
-    expect(state.completed).toBe(false);
+    // The level is over: no more guesses in it.
     expect(game.guess(state, state.level.fair[0]!).result).toBe('unknown');
+    // One life per level at most, so the run lasts as many levels as lives.
+    for (let i = 1; i < HALFWAY_START_LIVES; i++) state = loseLevel(game.nextLevel(state));
+    expect(state.status).toBe('over');
+    expect(state.level.number).toBe(HALFWAY_START_LIVES);
+    expect(game.nextLevel(state)).toBe(state);
   });
+
+  it('keeps making levels long after every end city has been used', () => {
+    // About 1,000 cities can be an end late on: 300 levels use 600.
+    const { levels } = playPerfect(3, 300);
+    expect(levels.at(-1)!.number).toBe(300);
+  }, 60_000);
+
+  it('allows fewer free misses late on: one from level 26, none from level 40', async () => {
+    expect([1, 25, 26, 39, 40, 200].map((n) => halfwayPlan(n).misses)).toEqual([3, 3, 2, 2, 1, 1]);
+    for (const [from, misses] of [[26, 2], [40, 1]] as const) {
+      let state = playPerfect(16, from - 1).state;
+      state = game.nextLevel(state);
+      expect(state.level.number).toBe(from);
+      expect(game.missesLeft(state.level)).toBe(misses);
+      const lives = state.lives;
+      for (let i = 1; i < misses; i++) {
+        state = game.guess(state, farAway(state)).state;
+        expect(state.status).toBe('playing');
+        expect(state.lives).toBe(lives);
+      }
+      state = game.guess(state, farAway(state)).state;
+      expect(state.status).toBe(lives > 1 ? 'level-over' : 'over');
+      expect(state.lives).toBe(lives - 1);
+      expect(state.level.status).toBe('lost');
+      expect(replayHalfway(game, 16, state.moves)).toEqual(state);
+      const definition = getGame('halfway')!;
+      let over = state;
+      while (over.status !== 'over') over = loseLevel(game.nextLevel(over));
+      expect(await replayGame(definition, normalizeSettings({}, definition), 16, over.moves)).toEqual({ score: over.score, finished: true });
+    }
+  }, 60_000);
+
+  it('skips a level for a life, revealing it, and the skip replays', () => {
+    const start = game.start(14);
+    let state = game.skip(game.guess(start, farAway(start)).state);
+    expect(state.lives).toBe(HALFWAY_START_LIVES - 1);
+    expect(state.status).toBe('level-over');
+    expect(state.level.status).toBe('lost');
+    expect(state.moves.at(-1)).toBe(HALFWAY_SKIP);
+    expect(game.skip(state)).toBe(state);
+    state = game.skip(game.nextLevel(state));
+    state = game.skip(game.nextLevel(state));
+    expect(state.status).toBe('over');
+    expect(state.marks).toEqual(['lost', 'lost', 'lost']);
+    expect(replayHalfway(game, 14, state.moves)).toEqual(state);
+  });
+
+  it('has no last level: a 60-level run holds the hardest band, stays fair and replays', async () => {
+    const { state, levels } = playPerfect(15, 60);
+    expect(levels).toHaveLength(60);
+    expect(state.status).toBe('level-over');
+    // Past 20 the radius keeps shrinking a little, then holds at the hardest band.
+    const hardest = HALFWAY_PLANS.at(-1)!;
+    expect(levels.at(-1)!.radiusKm).toBe(hardest.radiusKm);
+    expect(levels[24]!.radiusKm).toBeGreaterThan(hardest.radiusKm);
+    expect(halfwayPlan(1000)).toBe(hardest);
+    expect(hardest.showNames || hardest.showLine).toBe(false);
+    for (const level of levels) expect(level.fair.length).toBeGreaterThanOrEqual(halfwayPlan(level.number).minKnown);
+    const ends = levels.flatMap((l) => [l.from, l.to]);
+    expect(new Set(ends).size).toBe(ends.length);
+    // The subregion cap holds in every 20 levels in a row.
+    for (let i = 0; i + HALFWAY_SUBREGION_WINDOW <= levels.length; i++) {
+      const counts = new Map<string, number>();
+      for (const l of levels.slice(i, i + HALFWAY_SUBREGION_WINDOW)) counts.set(l.subregion, (counts.get(l.subregion) ?? 0) + 1);
+      expect(Math.max(...counts.values())).toBeLessThanOrEqual(HALFWAY_SUBREGION_MAX);
+    }
+    let over = state;
+    while (over.status !== 'over') over = loseLevel(game.nextLevel(over));
+    expect(over.level.number).toBe(60 + HALFWAY_START_LIVES);
+    expect(replayHalfway(game, 15, over.moves)).toEqual(over);
+    const definition = getGame('halfway')!;
+    expect(await replayGame(definition, normalizeSettings({}, definition), 15, over.moves)).toEqual({ score: over.score, finished: true });
+  }, 60_000);
 
   it("doesn't charge for repeats, the two cities themselves, or unknown ids", () => {
     let state = game.start(10);
@@ -303,7 +394,7 @@ describe('halfway', () => {
     while (halfwayPlan(state.level.number).showNames) state = game.nextLevel(game.guess(state, state.level.fair[0]!).state);
     const { state: next, result } = game.guess(state, state.level.from);
     expect(result).toBe('outside');
-    expect(next.lives).toBe(state.lives - 1);
+    expect(game.missesLeft(next.level)).toBe(halfwayPlan(state.level.number).misses - 1);
     expect(next.moves.at(-1)).toBe(state.level.from);
     expect(replayHalfway(game, 13, next.moves)).toEqual(next);
     // With names shown, it's refused for free.
@@ -317,15 +408,17 @@ describe('halfway', () => {
       if (i % 2) state = game.guess(state, farAway(state)).state;
       state = game.nextLevel(game.guess(state, state.level.fair.at(-1)!).state);
     }
-    while (state.status !== 'over') state = game.guess(state, farAway(state)).state;
+    state = game.nextLevel(game.skip(state));
+    while (state.status !== 'over') state = game.nextLevel(loseLevel(state));
     expect(replayHalfway(game, 11, state.moves)).toEqual(state);
 
     const definition = getGame('halfway')!;
     const settings = normalizeSettings({}, definition);
     expect(await replayGame(definition, settings, 11, state.moves)).toEqual({ score: state.score, finished: true });
     expect(await replayGame(definition, settings, 11, state.moves.slice(0, 3))).toMatchObject({ finished: false });
-    const won = playPerfect(12).state;
-    expect(await replayGame(definition, settings, 12, won.moves)).toEqual({ score: won.score, finished: true });
+    // A run only finishes when its lives are gone.
+    const going = playPerfect(12).state;
+    expect(await replayGame(definition, settings, 12, going.moves)).toEqual({ score: going.score, finished: false });
   }, 30_000);
 
   it('has no region to pick, and one leaderboard', () => {

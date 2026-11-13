@@ -7,6 +7,7 @@ import {
   MIN_POOL_SIZE,
   REGIONS,
   citySizeStops,
+  hasSettings,
   normalizeSettings,
   settingsFromVariant,
   variantKey,
@@ -42,6 +43,12 @@ describe('game pools', () => {
 });
 
 describe('settings', () => {
+  it('knows which games have settings to change', () => {
+    const without = GAMES.filter((g) => !hasSettings(g)).map((g) => g.id).sort();
+    expect(without).toEqual(['great-circle', 'halfway', 'mystery-country', 'pin-drop']);
+    for (const id of ['capitals', 'city-circle', 'city-circle-arcade', 'border-route', 'higher-lower-population']) expect(hasSettings(getGame(id)!), id).toBe(true);
+  });
+
   const capitals = getGame('capitals')!;
   const countryGame = getGame('higher-lower-population')!;
 
