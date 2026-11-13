@@ -1756,6 +1756,12 @@ a {
 }
 .clock-greenwich { stroke: rgba(250, 204, 21, 0.65); stroke-dasharray: none; }
 .clock-prompt { text-align: center; margin: 0.25rem 0 0.5rem; }
+/* On a short screen the map shrinks, so the question above it and the input below fit together. */
+.clockwork-game .map-frame {
+  max-width: max(300px, min(100%, calc((100dvh - 400px) * 16 / 9)));
+  width: 100%;
+  margin-inline: auto;
+}
 .clock-prompt p { margin: 0.15rem 0; }
 .clock-given { font-size: 1.05rem; }
 .clock-utc { font-variant-numeric: tabular-nums; color: var(--accent); }

@@ -57,13 +57,14 @@ const placeName = (place: ClockPlace) => {
 
 /**
  * A view of the place with room around it, so the meridians either side show
- * where it lies. Big countries get a bigger view.
+ * where it lies. The view grows with the country, but a small one (Belgium,
+ * Senegal) still fills a good part of it, so the answer is clearly visible.
  */
 function frameFor(place: ClockPlace): GeoPermissibleObjects {
   const country = getCountry(place.country);
   const centre = place.city?.latlng ?? country?.latlng ?? [0, 0];
   const area = country?.metrics.area?.value ?? 0;
-  const radius = place.city ? 2400 : Math.max(2000, Math.sqrt(area) * 1.3);
+  const radius = place.city ? 2400 : 600 + Math.sqrt(area);
   return circleShape(centre, radius);
 }
 
@@ -115,6 +116,7 @@ function ClockworkPlay({
   const [message, setMessage] = useState<string | null>(null);
   const [text, setText] = useState('');
   const input = useRef<HTMLInputElement>(null);
+  const nextButton = useRef<HTMLButtonElement>(null);
   const { level } = state;
   const place = clockPlace(level.place);
   const plan = clockPlan(level.number);
@@ -127,6 +129,12 @@ function ClockworkPlay({
     setMessage(null);
     setText('');
   }, [level.number]);
+
+  // Keyboard play: the input while a level is on, the next button after it. Without
+  // scrolling, which would push the question off the top of a short screen.
+  useEffect(() => {
+    (playing ? input.current : nextButton.current)?.focus({ preventScroll: true });
+  }, [playing, level.number]);
 
   const frame = useMemo(() => frameFor(place), [place]);
   const countries = useMemo<MapCountry[]>(() => [{ id: place.country, tone: 'start' }], [place]);
@@ -185,11 +193,7 @@ function ClockworkPlay({
     setState(game.skip(state));
   };
 
-  const next = () => {
-    setState(game.nextLevel(state));
-    // The input comes back with the new level; focus it so play goes on from the keyboard.
-    setTimeout(() => input.current?.focus(), 0);
-  };
+  const next = () => setState(game.nextLevel(state));
 
   const finish = () =>
     onGameOver({
@@ -259,7 +263,6 @@ function ClockworkPlay({
               placeholder="17:30"
               inputMode="numeric"
               autoComplete="off"
-              autoFocus
               aria-label="Local time"
               aria-describedby="clock-preview"
             />
@@ -289,7 +292,7 @@ function ClockworkPlay({
           {level.flawless && (
             <p className="bonus-life">{state.bonusLife ? 'Flawless! +1 ♥' : `Flawless! Lives are full (${CLOCK_MAX_LIVES} at most).`}</p>
           )}
-          <button className="btn btn-primary btn-lg" autoFocus onClick={next}>
+          <button ref={nextButton} className="btn btn-primary btn-lg" onClick={next}>
             Next level
           </button>
         </div>
@@ -302,11 +305,11 @@ function ClockworkPlay({
           {answer}
           {place.note && <p className="clock-note">{place.note}</p>}
           {state.status === 'over' ? (
-            <button className="btn btn-primary btn-lg" autoFocus onClick={finish}>
+            <button ref={nextButton} className="btn btn-primary btn-lg" onClick={finish}>
               See final score
             </button>
           ) : (
-            <button className="btn btn-primary btn-lg" autoFocus onClick={next}>
+            <button ref={nextButton} className="btn btn-primary btn-lg" onClick={next}>
               Next level
             </button>
           )}

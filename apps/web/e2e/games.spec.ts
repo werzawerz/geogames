@@ -18,6 +18,7 @@ import {
   createPinDrop,
   createHalfway,
   createClockwork,
+  CLOCK_DATES,
   clockworkCountries,
   clockPlace,
   formatClock,
@@ -1366,7 +1367,7 @@ test('clockwork: type the local time; earlier or later after a miss, a skip cost
 
   // The question, the place lit up, and no answer in the page.
   const utc = formatClock(state.level.utcHour * 60);
-  await expect(page.locator('.clock-given')).toHaveText(`It’s ${utc} UTC on 15 January.`);
+  await expect(page.locator('.clock-given')).toHaveText(`It’s ${utc} UTC on ${CLOCK_DATES[state.level.date]!.label}.`);
   await expect(page.locator('.clock-question')).toContainText(nameOf(state));
   await expect(page.locator('.world-map .map-country')).toHaveCount(1);
   await expect(page.locator('.clock-meridian')).toHaveCount(24);
@@ -1433,4 +1434,38 @@ test('clockwork: type the local time; earlier or later after a miss, a skip cost
   await page.getByRole('button', { name: 'See final score' }).click();
   await expect(page.getByText('Game over')).toBeVisible();
   await expect(page.getByText('You reached level 4.')).toBeVisible();
+});
+
+test('clockwork: on a short desktop screen the question stays in view, at the start and after every level', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  const engine = createClockwork({ countries: clockworkCountries() });
+  let state = engine.start(Math.floor(0.5 * 2 ** 32));
+  await openGame(page, 'clockwork');
+  await page.getByRole('button', { name: 'Start game' }).click();
+  const input = page.getByRole('textbox', { name: 'Local time' });
+  await expect(input).toBeFocused({ timeout: 20_000 });
+  const inView = async () => {
+    await expect(page.locator('.clock-question')).toBeInViewport();
+    await expect(page.locator('.clock-given')).toBeInViewport();
+    await expect(page.locator('.route-status')).toBeInViewport();
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  };
+  await inView();
+  // The input is in view too, without scrolling.
+  await expect(input).toBeInViewport();
+  for (let i = 0; i < 3; i++) {
+    await input.fill(formatClock(state.level.answer));
+    await input.press('Enter');
+    state = engine.guess(state, state.level.answer).state;
+    const next = page.getByRole('button', { name: 'Next level' });
+    await expect(next).toBeFocused();
+    await inView();
+    await page.keyboard.press('Enter');
+    state = engine.nextLevel(state);
+    await expect(input).toBeFocused();
+    await inView();
+  }
 });
