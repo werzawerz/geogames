@@ -4,7 +4,6 @@ import { getCountry, type CityId } from '@geogames/geodata';
 import { loadWorldShapes, type WorldShapes } from '@geogames/geodata/shapes';
 import {
   HALFWAY_MAX_LIVES,
-  HALFWAY_MISSES,
   HALFWAY_SKIP,
   createHalfway,
   destination,
@@ -32,6 +31,12 @@ const km = new Intl.NumberFormat('en', { maximumFractionDigits: 0 });
 const LABEL_OFFSET = 10;
 /** How many of the cities near the midpoint to show after a level. */
 const SHOWN_NEARBY = 3;
+
+/** "2 misses are free; the third costs a life." and so on, for the level's plan. */
+const freeMisses = (allowed: number) =>
+  allowed === 1
+    ? 'No free misses now: a miss costs a life.'
+    : `${allowed - 1} ${allowed === 2 ? 'miss is' : 'misses are'} free; the ${allowed === 2 ? 'second' : allowed === 3 ? 'third' : 'next'} costs a life.`;
 
 const MARKS: Record<HalfwayMark, string> = { flawless: '🎯', cleared: '🟩', missed: '🟧', lost: '🟥' };
 
@@ -62,8 +67,9 @@ function messageFor(result: HalfwayGuessResult, city: CircleCity | undefined, st
       return null;
     case 'outside': {
       const off = `${city?.name} is ${km.format(guess!.km)} km from the midpoint: further than ${state.level.radiusKm} km.`;
-      if (state.level.status === 'lost') return `${off} That’s ${HALFWAY_MISSES} misses: −1 ♥`;
-      const left = HALFWAY_MISSES - 1 - state.level.guesses.filter((g) => g.km > state.level.radiusKm).length;
+      const allowed = halfwayPlan(state.level.number).misses;
+      if (state.level.status === 'lost') return `${off} ${allowed === 1 ? 'No free misses now' : `That’s ${allowed} misses`}: −1 ♥`;
+      const left = allowed - 1 - state.level.guesses.filter((g) => g.km > state.level.radiusKm).length;
       return left > 0 ? `${off} ${left} more free ${left === 1 ? 'miss' : 'misses'}.` : `${off} One more miss costs a life.`;
     }
     case 'repeat':
@@ -254,8 +260,8 @@ function HalfwayPlay({
         <span>
           Within <strong>{level.radiusKm}</strong> km
         </span>
-        <span aria-label={`${misses} of ${HALFWAY_MISSES} misses`}>
-          Misses <strong className="halfway-misses">{misses}</strong>/{HALFWAY_MISSES}
+        <span aria-label={`${misses} of ${plan.misses} misses`}>
+          Misses <strong className="halfway-misses">{misses}</strong>/{plan.misses}
         </span>
         <span aria-live="polite">
           Score <strong>{state.score}</strong>
@@ -297,7 +303,7 @@ function HalfwayPlay({
           />
           <p className="route-message" role="status">
             {message ??
-              `Halfway along the shortest route around the globe, so it can look off-centre on the map. ${HALFWAY_MISSES - 1} misses are free; the ${HALFWAY_MISSES === 3 ? 'third' : 'next'} costs a life.`}
+              `Halfway along the shortest route around the globe, so it can look off-centre on the map. ${freeMisses(plan.misses)}`}
           </p>
           <div className="arcade-actions">
             <button className="btn" onClick={skip}>
@@ -318,7 +324,7 @@ function HalfwayPlay({
         </div>
       ) : (
         <div className="route-summary failed" role="status">
-          <p className="route-summary-title">{skipped ? 'Skipped: −1 ♥' : `${HALFWAY_MISSES} misses: −1 ♥`}</p>
+          <p className="route-summary-title">{skipped ? 'Skipped: −1 ♥' : plan.misses === 1 ? 'A miss: −1 ♥' : `${plan.misses} misses: −1 ♥`}</p>
           {state.status === 'over' && <p className="route-summary-title">Out of lives</p>}
           {message && !skipped && <p className="muted">{message}</p>}
           {nearbyText && <p className="muted">You could have said: {nearbyText}.</p>}

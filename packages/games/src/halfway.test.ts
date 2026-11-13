@@ -6,7 +6,6 @@ import {
   HALFWAY_KNOWN_POPULATION,
   HALFWAY_SUBREGION_MAX,
   FAMOUS_END_MIN_POPULATION,
-  HALFWAY_MISSES,
   HALFWAY_PLANS,
   HALFWAY_SKIP,
   HALFWAY_SUBREGION_WINDOW,
@@ -50,7 +49,7 @@ const farAway = (state: HalfwayState) =>
 
 /** Loses the level: three far guesses. */
 const loseLevel = (state: HalfwayState) => {
-  for (let i = 0; i < HALFWAY_MISSES; i++) state = game.guess(state, farAway(state)).state;
+  for (let i = halfwayPlan(state.level.number).misses; i > 0; i--) state = game.guess(state, farAway(state)).state;
   return state;
 };
 
@@ -278,12 +277,14 @@ describe('halfway', () => {
 
   it('lets two misses go free, and the third costs one life and ends the level', () => {
     let state = game.start(9);
-    for (let i = 1; i < HALFWAY_MISSES; i++) {
+    const allowed = halfwayPlan(1).misses;
+    expect(allowed).toBe(3);
+    for (let i = 1; i < allowed; i++) {
       const { state: next, result } = game.guess(state, farAway(state));
       expect(result).toBe('outside');
       expect(next.lives).toBe(HALFWAY_START_LIVES);
       expect(next.status).toBe('playing');
-      expect(game.missesLeft(next.level)).toBe(HALFWAY_MISSES - i);
+      expect(game.missesLeft(next.level)).toBe(allowed - i);
       state = next;
     }
     state = game.guess(state, farAway(state)).state;
@@ -305,6 +306,31 @@ describe('halfway', () => {
     // About 1,000 cities can be an end late on: 300 levels use 600.
     const { levels } = playPerfect(3, 300);
     expect(levels.at(-1)!.number).toBe(300);
+  }, 60_000);
+
+  it('allows fewer free misses late on: one from level 26, none from level 40', async () => {
+    expect([1, 25, 26, 39, 40, 200].map((n) => halfwayPlan(n).misses)).toEqual([3, 3, 2, 2, 1, 1]);
+    for (const [from, misses] of [[26, 2], [40, 1]] as const) {
+      let state = playPerfect(16, from - 1).state;
+      state = game.nextLevel(state);
+      expect(state.level.number).toBe(from);
+      expect(game.missesLeft(state.level)).toBe(misses);
+      const lives = state.lives;
+      for (let i = 1; i < misses; i++) {
+        state = game.guess(state, farAway(state)).state;
+        expect(state.status).toBe('playing');
+        expect(state.lives).toBe(lives);
+      }
+      state = game.guess(state, farAway(state)).state;
+      expect(state.status).toBe(lives > 1 ? 'level-over' : 'over');
+      expect(state.lives).toBe(lives - 1);
+      expect(state.level.status).toBe('lost');
+      expect(replayHalfway(game, 16, state.moves)).toEqual(state);
+      const definition = getGame('halfway')!;
+      let over = state;
+      while (over.status !== 'over') over = loseLevel(game.nextLevel(over));
+      expect(await replayGame(definition, normalizeSettings({}, definition), 16, over.moves)).toEqual({ score: over.score, finished: true });
+    }
   }, 60_000);
 
   it('skips a level for a life, revealing it, and the skip replays', () => {
@@ -368,7 +394,7 @@ describe('halfway', () => {
     while (halfwayPlan(state.level.number).showNames) state = game.nextLevel(game.guess(state, state.level.fair[0]!).state);
     const { state: next, result } = game.guess(state, state.level.from);
     expect(result).toBe('outside');
-    expect(game.missesLeft(next.level)).toBe(HALFWAY_MISSES - 1);
+    expect(game.missesLeft(next.level)).toBe(halfwayPlan(state.level.number).misses - 1);
     expect(next.moves.at(-1)).toBe(state.level.from);
     expect(replayHalfway(game, 13, next.moves)).toEqual(next);
     // With names shown, it's refused for free.

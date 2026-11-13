@@ -6,8 +6,8 @@ import { routeScopes, type RouteScope } from './route.ts';
 /**
  * Halfway: two cities are shown, and you name a real city near the midpoint
  * of the great circle between them. A guess inside the level's radius clears
- * it. Two wrong guesses are free; the third, or a skip, costs a life and ends
- * the level. The run has no end but the lives: the radii shrink and the cities
+ * it. Two wrong guesses are free (one from level 26, none from 40); the next,
+ * or a skip, costs a life and ends the level. The run has no end but the lives: the radii shrink and the cities
  * get less familiar up to level 16, and the hardest band holds from there.
  *
  * Every level is checked for fairness when it's made: enough well-known
@@ -44,18 +44,19 @@ export interface HalfwayPlan {
   showLine: boolean;
   /** The two cities' names are shown, not only their dots. */
   showNames: boolean;
+  /** Wrong guesses a level allows; the last of them costs a life and ends it. Fewer late on, so a run ends. */
+  misses: number;
 }
 
 export const HALFWAY_PLANS: readonly HalfwayPlan[] = [
-  { from: 1, radiusKm: 300, separationKm: [700, 3000], scope: 'known', sameContinent: true, endMinPopulation: Infinity, crowdedCountryMinPopulation: 20_000_000, minKnown: 3, minFamous: 1, wellKnownEnds: true, showLine: true, showNames: true },
-  { from: 6, radiusKm: 250, separationKm: [900, 4000], scope: 'no-africa', sameContinent: false, endMinPopulation: 3_000_000, crowdedCountryMinPopulation: 10_000_000, minKnown: 3, minFamous: 1, wellKnownEnds: true, showLine: true, showNames: true },
-  { from: 11, radiusKm: 200, separationKm: [800, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 3_000_000, minKnown: 3, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: true },
-  { from: 16, radiusKm: 120, separationKm: [600, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 2_000_000, minKnown: 2, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: false },
-  { from: 26, radiusKm: 100, separationKm: [600, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 2_000_000, minKnown: 2, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: false },
+  { from: 1, radiusKm: 300, separationKm: [700, 3000], scope: 'known', sameContinent: true, endMinPopulation: Infinity, crowdedCountryMinPopulation: 20_000_000, minKnown: 3, minFamous: 1, wellKnownEnds: true, showLine: true, showNames: true, misses: 3 },
+  { from: 6, radiusKm: 250, separationKm: [900, 4000], scope: 'no-africa', sameContinent: false, endMinPopulation: 3_000_000, crowdedCountryMinPopulation: 10_000_000, minKnown: 3, minFamous: 1, wellKnownEnds: true, showLine: true, showNames: true, misses: 3 },
+  { from: 11, radiusKm: 200, separationKm: [800, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 3_000_000, minKnown: 3, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: true, misses: 3 },
+  { from: 16, radiusKm: 120, separationKm: [600, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 2_000_000, minKnown: 2, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: false, misses: 3 },
+  { from: 26, radiusKm: 100, separationKm: [600, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 2_000_000, minKnown: 2, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: false, misses: 2 },
+  { from: 40, radiusKm: 100, separationKm: [600, 6000], scope: 'any', sameContinent: false, endMinPopulation: 1_000_000, crowdedCountryMinPopulation: 2_000_000, minKnown: 2, minFamous: 0, wellKnownEnds: false, showLine: false, showNames: false, misses: 1 },
 ];
 
-/** Wrong guesses in a level; the last of them costs a life and ends it. */
-export const HALFWAY_MISSES = 3;
 const SKIP = '>';
 /** Cities this big (or famous) count as well known; smaller ones can still be typed. */
 export const HALFWAY_KNOWN_POPULATION = 1_000_000;
@@ -358,7 +359,7 @@ export function createHalfway({ cities, famous, tourismRank = {}, countries }: H
     },
 
     /** Wrong guesses a level still allows before it costs a life. */
-    missesLeft: (level: HalfwayLevel) => HALFWAY_MISSES - level.guesses.filter((g) => g.km > level.radiusKm).length,
+    missesLeft: (level: HalfwayLevel) => halfwayPlan(level.number).misses - level.guesses.filter((g) => g.km > level.radiusKm).length,
 
     guess(state: HalfwayState, id: CityId): { state: HalfwayState; result: HalfwayGuessResult } {
       const { level } = state;
@@ -373,7 +374,7 @@ export function createHalfway({ cities, famous, tourismRank = {}, countries }: H
       if (km > level.radiusKm) {
         const misses = guesses.filter((g) => g.km > level.radiusKm).length;
         // The first misses are free (they only spoil a flawless level); the last costs a life and ends the level.
-        if (misses < HALFWAY_MISSES) {
+        if (misses < halfwayPlan(level.number).misses) {
           return { result: 'outside', state: { ...state, level: { ...level, guesses }, moves: [...state.moves, id] } };
         }
         return { result: 'outside', state: endLevel(state, { ...level, guesses, status: 'lost' }, state.lives - 1, 'lost', id) };
