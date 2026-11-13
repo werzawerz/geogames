@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import {
   MIN_POOL_SIZE,
   describeSettings,
+  hasSettings,
   normalizeSettings,
   poolSizes,
   variantKey,
@@ -131,9 +132,11 @@ export function GamePage({ game }: { game: GameDefinition }) {
             <button className="btn btn-primary btn-lg" disabled={starting} onClick={() => start(phase.settings)}>
               Play again
             </button>
-            <button className="btn" onClick={() => setPhase({ name: 'setup' })}>
-              Change settings
-            </button>
+            {hasSettings(game) && (
+              <button className="btn" onClick={() => setPhase({ name: 'setup' })}>
+                Change settings
+              </button>
+            )}
             <a
               className="btn"
               href={href({ page: 'scores', gameId: game.id, variant: variantKey(phase.settings, game) })}
