@@ -5,7 +5,7 @@ import type { SearchItem } from './search.ts';
 /** Everyday names the source data doesn't list. */
 const NICKNAMES: Record<CountryId, readonly string[]> = {
   USA: ['America', 'United States', 'U.S.', 'U.S.A.'],
-  GBR: ['Britain', 'Great Britain', 'England', 'Scotland', 'Wales', 'Northern Ireland'],
+  GBR: ['UK', 'U.K.', 'Britain', 'Great Britain', 'England', 'Scotland', 'Wales', 'Northern Ireland'],
   NLD: ['Holland'],
   CZE: ['Czech Republic'],
   MMR: ['Burma'],
@@ -14,6 +14,7 @@ const NICKNAMES: Record<CountryId, readonly string[]> = {
   COD: ['DRC', 'Congo-Kinshasa'],
   COG: ['Congo-Brazzaville'],
   KOR: ['Korea'],
+  PRK: ['DPRK'],
   TUR: ['Türkiye'],
   SWZ: ['Swaziland'],
   MKD: ['Macedonia'],

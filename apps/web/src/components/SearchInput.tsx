@@ -30,6 +30,8 @@ export function SearchInput({
   const listId = useId();
   const [text, setText] = useState('');
   const [active, setActive] = useState(0);
+  // Set by the arrow keys only: a pointer resting on the list mustn't change what Enter picks.
+  const [arrowed, setArrowed] = useState(false);
 
   const index = useMemo(() => buildIndex(items), [items]);
   const suggestions = useMemo(() => search(index, text, exclude, MAX_SUGGESTIONS), [index, text, exclude]);
@@ -38,16 +40,17 @@ export function SearchInput({
     onPick(item.id);
     setText('');
     setActive(0);
+    setArrowed(false);
   };
 
-  // A single exact name wins over fuzzy suggestions, unless the player arrowed
-  // to one. That includes excluded items, so the game can say why it can't take
+  // A single exact name (or short form: UK, UAE, DRC) wins over fuzzy and prefix
+  // suggestions, unless the player arrowed to one. That includes excluded items, so the game can say why it can't take
   // them (instead of "Mali" quietly picking Somalia). Several exact matches
   // (Hyderabad, India / Pakistan) use the highlighted suggestion instead.
   const submit = () => {
     if (!normalize(text)) return;
-    const exact = active === 0 ? exactMatch(index, text) : null;
-    const chosen = exact ?? suggestions[active]?.item;
+    const exact = arrowed ? null : exactMatch(index, text);
+    const chosen = exact ?? (arrowed ? suggestions[active] : suggestions[0])?.item;
     if (chosen) pick(chosen);
     else onNoMatch();
   };
@@ -68,14 +71,17 @@ export function SearchInput({
         onChange={(e) => {
           setText(e.currentTarget.value);
           setActive(0);
+          setArrowed(false);
         }}
         onKeyDown={(e) => {
           if (e.key === 'ArrowDown') {
             e.preventDefault();
             setActive((a) => Math.min(a + 1, suggestions.length - 1));
+            setArrowed(true);
           } else if (e.key === 'ArrowUp') {
             e.preventDefault();
             setActive((a) => Math.max(a - 1, 0));
+            setArrowed(true);
           } else if (e.key === 'Enter') {
             e.preventDefault();
             submit();

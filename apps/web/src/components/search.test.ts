@@ -62,4 +62,22 @@ describe('search', () => {
     expect(exactMatch(cities, 'Hyderabad, Pakistan')?.detail).toBe('Pakistan');
     expect(exactMatch(cities, 'Kiev')?.label).toBe('Kyiv');
   });
+
+  it('puts exact names and short forms above prefix and fuzzy matches', () => {
+    const resolve = (text: string) => (exactMatch(countries, text) ?? search(countries, text, none, 1)[0]?.item)?.label;
+    expect(resolve('UK')).toBe('United Kingdom');
+    expect(resolve('US')).toBe('United States');
+    expect(resolve('UAE')).toBe('United Arab Emirates');
+    expect(resolve('DRC')).toBe('DR Congo');
+    expect(resolve('North Kor')).toBe('North Korea');
+    expect(resolve('South Kor')).toBe('South Korea');
+    expect(top(countries, 'UK', 1)[0]).toMatch(/^United Kingdom/);
+  });
+
+  it('resolves every country by its own name, multi-word ones included', () => {
+    for (const c of queryCountries()) {
+      const resolved = exactMatch(countries, c.name) ?? search(countries, c.name, none, 1)[0]?.item;
+      expect(resolved?.id, c.name).toBe(c.id);
+    }
+  });
 });
