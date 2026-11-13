@@ -58,24 +58,42 @@ describe('clockwork data', () => {
   });
 
   it('knows the textbook offsets', () => {
-    const at = (id: string, date: number) => clockOffset(clockPlace(id), date);
-    expect(at('jpn', 0)).toBe(540);
-    expect(at('ind', 0)).toBe(330);
-    expect(at('npl', 1)).toBe(345);
-    expect(at('chn', 1)).toBe(480);
-    expect(at('esp-madrid', 0)).toBe(60);
-    expect(at('esp-madrid', 1)).toBe(120);
+    const day = (label: string) => CLOCK_DATES.findIndex((d) => d.label === label);
+    const at = (id: string, label: string) => clockOffset(clockPlace(id), day(label));
+    expect(at('jpn', '12 January')).toBe(540);
+    expect(at('ind', '12 January')).toBe(330);
+    expect(at('npl', '14 July')).toBe(345);
+    expect(at('chn', '14 July')).toBe(480);
+    expect(at('esp-madrid', '12 January')).toBe(60);
+    expect(at('esp-madrid', '14 July')).toBe(120);
     // The south does it the other way round.
-    expect(at('nzl-auckland', 0)).toBe(780);
-    expect(at('nzl-auckland', 1)).toBe(720);
-    // 15 March: New York has changed its clock, London hasn't.
-    expect(at('usa-new-york', 2)).toBe(-240);
-    expect(at('gbr', 2)).toBe(0);
-    // 28 October: London has changed back, New York hasn't.
-    expect(at('gbr', 3)).toBe(0);
-    expect(at('usa-new-york', 3)).toBe(-240);
-    expect(at('usa-phoenix', 1)).toBe(-420);
-    expect(at('pry', 0)).toBe(-180);
+    expect(at('nzl-auckland', '12 January')).toBe(780);
+    expect(at('nzl-auckland', '14 July')).toBe(720);
+    expect(at('usa-phoenix', '14 July')).toBe(-420);
+    expect(at('pry', '12 January')).toBe(-180);
+    expect(at('chl-easter', '14 July')).toBe(-360);
+  });
+
+  it('picks dates for what they test', () => {
+    const on = (season: string) => CLOCK_DATES.map((d, i) => [d, i] as const).filter(([d]) => d.season === season).map(([, i]) => i);
+    const at = (id: string, date: number) => clockOffset(clockPlace(id), date);
+    expect(new Set(CLOCK_DATES.map((d) => d.label)).size).toBe(CLOCK_DATES.length);
+    for (const d of on('winter')) expect([at('gbr', d), at('usa-new-york', d), at('aus-sydney', d)], CLOCK_DATES[d]!.label).toEqual([0, -300, 660]);
+    for (const d of on('summer')) expect([at('gbr', d), at('usa-new-york', d), at('aus-sydney', d)], CLOCK_DATES[d]!.label).toEqual([60, -240, 600]);
+    // The US has changed its clocks, Europe hasn't, the south is still on summer time.
+    for (const d of on('us-first')) expect([at('gbr', d), at('usa-new-york', d), at('chl-santiago', d)], CLOCK_DATES[d]!.label).toEqual([0, -240, -180]);
+    // Europe has changed back, the US hasn't.
+    for (const d of on('eu-first')) expect([at('deu', d), at('usa-chicago', d), at('nzl-auckland', d)], CLOCK_DATES[d]!.label).toEqual([60, -300, 780]);
+    // Around the south's changes: Europe on summer time throughout.
+    const south = on('south-change').map((d) => [CLOCK_DATES[d]!.label, at('aus-sydney', d), at('nzl-auckland', d), at('egy', d), at('fra', d)]);
+    expect(south).toEqual([
+      ['1 April', 660, 780, 120, 120],
+      ['9 April', 600, 720, 120, 120],
+      ['16 April', 600, 720, 120, 120],
+      ['28 April', 600, 720, 180, 120],
+      ['29 September', 600, 780, 180, 120],
+      ['1 October', 600, 780, 180, 120],
+    ]);
   });
 
   it('asks only about countries big enough to see, each in the data', () => {
@@ -150,18 +168,20 @@ describe('clockwork', () => {
           // Famous places whose clock follows longitude, on standard time, outside Africa and the Caribbean.
           expect(place.kind, place.id).toBe('longitude');
           expect(place.tier).toBe(1);
-          expect(level.date).toBe(0);
+          expect(CLOCK_DATES[level.date]!.season).toBe('winter');
           expect(level.offset).toBe(Math.min(...CLOCK_OFFSETS[place.zone]!));
           expect(byId.get(place.country)!.continent).not.toBe('Africa');
           expect(Math.abs(level.offset % 60)).toBe(0);
           seen.band1.add(place.id);
         } else if (band === 2) {
-          expect(level.date).toBe(0);
+          expect(CLOCK_DATES[level.date]!.season).toBe('winter');
           expect(level.offset).toBe(Math.min(...CLOCK_OFFSETS[place.zone]!));
           expect(['longitude', 'exception']).toContain(place.kind);
+          // Belgium and the Netherlands aren't exceptions, and band 2 doesn't fall back on Europe.
+          if (place.kind === 'longitude') expect(byId.get(place.country)!.continent, place.id).not.toBe('Europe');
           seen.band2.push(place.kind);
         } else if (band === 3) {
-          expect([0, 1]).toContain(level.date);
+          expect(['winter', 'summer']).toContain(CLOCK_DATES[level.date]!.season);
           expect(place.kind).not.toBe('odd');
           seen.band3.push(hasDaylightSaving(place) || place.kind === 'seasons' ? 'seasonal' : 'plain');
         } else seen.band4.push(level);
@@ -170,10 +190,14 @@ describe('clockwork', () => {
     // Many different openings, not the same few.
     expect(seen.band1.size).toBeGreaterThan(25);
     const share = (list: string[], kind: string) => list.filter((k) => k === kind).length / list.length;
-    expect(share(seen.band2, 'exception')).toBeGreaterThan(0.55);
-    expect(share(seen.band3, 'seasonal')).toBeGreaterThan(0.45);
-    // Band 4 uses all four dates and asks the oddities.
-    expect(new Set(seen.band4.map((l) => l.date))).toEqual(new Set([0, 1, 2, 3]));
+    expect(share(seen.band2, 'exception')).toBeGreaterThan(0.75);
+    expect(share(seen.band3, 'seasonal')).toBeGreaterThan(0.75);
+    // Band 4 uses every kind of date, many dates in all, and asks the oddities.
+    expect(new Set(seen.band4.map((l) => CLOCK_DATES[l.date]!.season)).size).toBe(5);
+    expect(new Set(seen.band4.map((l) => l.date)).size).toBeGreaterThan(20);
+    // Not just Europe, North America and the big names.
+    const continents = new Set(seen.band4.map((l) => byId.get(clockPlace(l.place).country)!.continent));
+    expect(continents.size).toBeGreaterThanOrEqual(6);
     expect(seen.band4.some((l) => clockPlace(l.place).kind === 'odd')).toBe(true);
     // In band 3, places really are asked on their summer time.
     expect(seen.band4.some((l) => l.offset > Math.min(...CLOCK_OFFSETS[clockPlace(l.place).zone]!))).toBe(true);
@@ -246,10 +270,17 @@ describe('clockwork', () => {
     expect(game.guess(state, 1.5).result).toBe('invalid');
   });
 
-  it('allows fewer free misses late on: one from level 30, none from level 45', () => {
-    expect(clockPlan(29).misses).toBe(3);
-    expect(clockPlan(30).misses).toBe(2);
+  it('allows fewer free misses once dates matter: one from level 15, none from level 45', () => {
+    expect(clockPlan(14).misses).toBe(3);
+    expect(clockPlan(15).misses).toBe(2);
+    expect(clockPlan(44).misses).toBe(2);
     expect(clockPlan(45).misses).toBe(1);
+    const mid = game.nextLevel(playPerfect(10, 15).state);
+    const once = game.guess(mid, wrong(mid)).state;
+    expect(once.status).toBe('playing');
+    const twice = game.guess(once, wrong(once)).state;
+    expect(twice.level.status).toBe('lost');
+    expect(twice.lives).toBe(mid.lives - 1);
     let { state } = playPerfect(8, 45);
     state = game.nextLevel(state);
     expect(state.level.number).toBe(46);

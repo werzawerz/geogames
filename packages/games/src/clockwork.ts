@@ -1,9 +1,10 @@
 import { queryCountries, type Country } from '@geogames/geodata';
+import { CLOCK_DATES, type ClockSeason } from './clockwork-dates.ts';
 import { CLOCK_OFFSETS } from './clockwork-offsets.ts';
 import { CLOCK_PLACES, type ClockPlace } from './clockwork-places.ts';
 import { createRng, pick, type Rng } from './rng.ts';
 
-export { CLOCK_DATES } from './clockwork-dates.ts';
+export { CLOCK_DATES, type ClockSeason } from './clockwork-dates.ts';
 export { CLOCK_TZDB } from './clockwork-offsets.ts';
 export { CLOCK_PLACES, type ClockKind, type ClockPlace } from './clockwork-places.ts';
 
@@ -11,18 +12,18 @@ export { CLOCK_PLACES, type ClockKind, type ClockPlace } from './clockwork-place
  * Clockwork: it's a given time in UTC on a given date, and a country (or a
  * named city in a country with several zones) lights up. Type the local time
  * there. A wrong time says whether the answer is earlier or later. Two wrong
- * times are free; the third, or a skip, costs a life and ends the level. The
- * run has no end but the lives.
+ * times are free (one from level 15, none from level 45); the next, or a skip,
+ * costs a life and ends the level. The run has no end but the lives.
  *
  * Each band adds a skill rather than making the last one more obscure:
- * 1. Clocks that follow longitude, on a winter date with no daylight saving.
+ * 1. Clocks that follow longitude, on winter dates, on standard time.
  * 2. Clocks that don't: China on one zone, Spain on Central European Time,
  *    India's half hour.
  * 3. Winter or summer dates, so daylight saving matters, the south doing it the
  *    other way round, and the places that dropped it.
  * 4. Dates between one country's clock change and another's, and the oddities
- *    (Nepal's quarter hour, the Chatham Islands). This band holds from there,
- *    with fewer free misses late on so a run ends.
+ *    (Nepal's quarter hour, the Chatham Islands, Easter Island). This band
+ *    holds from there, with no free misses late on so a run ends.
  *
  * Offsets come from a table generated from the IANA database for fixed dates
  * (clockwork-offsets.ts), never from the runtime's time zone data, so a server
@@ -39,13 +40,20 @@ export interface ClockPlan {
   misses: number;
 }
 
+/** Every date of these seasons, as indexes into CLOCK_DATES. */
+const datesIn = (...seasons: ClockSeason[]) => CLOCK_DATES.flatMap((d, i) => (seasons.includes(d.season) ? [i] : []));
+const ALL_DATES = CLOCK_DATES.map((_, i) => i);
+
+/**
+ * Once dates matter, an hour off is the typical mistake, and "earlier or later"
+ * finds it at once: so from band 3 only one miss is free.
+ */
 export const CLOCK_PLANS: readonly ClockPlan[] = [
-  { from: 1, band: 1, dates: [0], misses: 3 },
-  { from: 7, band: 2, dates: [0], misses: 3 },
-  { from: 15, band: 3, dates: [0, 1], misses: 3 },
-  { from: 25, band: 4, dates: [0, 1, 2, 3], misses: 3 },
-  { from: 30, band: 4, dates: [0, 1, 2, 3], misses: 2 },
-  { from: 45, band: 4, dates: [0, 1, 2, 3], misses: 1 },
+  { from: 1, band: 1, dates: datesIn('winter'), misses: 3 },
+  { from: 7, band: 2, dates: datesIn('winter'), misses: 3 },
+  { from: 15, band: 3, dates: datesIn('winter', 'summer'), misses: 2 },
+  { from: 25, band: 4, dates: ALL_DATES, misses: 2 },
+  { from: 45, band: 4, dates: ALL_DATES, misses: 1 },
 ];
 
 export const clockPlan = (level: number): ClockPlan => [...CLOCK_PLANS].reverse().find((p) => level >= p.from)!;
@@ -58,7 +66,7 @@ export const CLOCK_POINTS_PER_LEVEL = 10;
 const MISS_SHARE = [1, 0.6, 0.3];
 /** A flawless level earns this share of its points again, and a life. */
 export const CLOCK_FLAWLESS_SHARE = 0.5;
-/** A place isn't asked again within this many levels. */
+/** A place isn't asked again within this many levels, while the band has others left. */
 export const CLOCK_REPEAT_GAP = 30;
 const DAY = 24 * 60;
 const SKIP = 'skip';
@@ -166,27 +174,31 @@ export function createClockwork({ countries }: { countries: readonly Country[] }
       case 1:
         return [{ share: 1, places: standard.filter((p) => p.kind === 'longitude' && p.tier === 1 && !remote(p)) }];
       case 2:
+        // The exceptions, now and then a place from a part of the world band 1 left out.
         return [
-          { share: 0.7, places: standard.filter((p) => p.kind === 'exception') },
-          { share: 0.3, places: standard.filter((p) => p.kind === 'longitude') },
+          { share: 0.85, places: standard.filter((p) => p.kind === 'exception') },
+          { share: 0.15, places: standard.filter((p) => p.kind === 'longitude' && p.tier === 2 && byId.get(p.country)?.continent !== 'Europe') },
         ];
       case 3:
+        // Daylight saving and its traps; a place without it only now and then, to keep you honest.
         return [
-          { share: 0.6, places: places.filter((p) => p.kind !== 'odd' && seasonal(p)) },
-          { share: 0.4, places: places.filter((p) => p.kind !== 'odd' && !seasonal(p)) },
+          { share: 0.85, places: places.filter((p) => p.kind !== 'odd' && seasonal(p)) },
+          { share: 0.15, places: places.filter((p) => p.kind !== 'odd' && !seasonal(p)) },
         ];
-      case 4:
+      case 4: {
+        const season = CLOCK_DATES[date]!.season;
         // Between two clock changes, the clock changes are the point.
-        return date >= 2
+        return season !== 'winter' && season !== 'summer'
           ? [
-              { share: 0.75, places: places.filter(seasonal) },
-              { share: 0.25, places: places.filter((p) => !seasonal(p)) },
+              { share: 0.85, places: places.filter(seasonal) },
+              { share: 0.15, places: places.filter((p) => !seasonal(p)) },
             ]
           : [
-              { share: 0.2, places: places.filter((p) => p.kind === 'odd') },
-              { share: 0.45, places: places.filter(seasonal) },
-              { share: 0.35, places: places.filter((p) => !seasonal(p) && p.kind !== 'odd') },
+              { share: 0.25, places: places.filter((p) => p.kind === 'odd') },
+              { share: 0.6, places: places.filter((p) => p.kind !== 'odd' && seasonal(p)) },
+              { share: 0.15, places: places.filter((p) => !seasonal(p) && p.kind !== 'odd') },
             ];
+      }
     }
   }
 
@@ -200,16 +212,18 @@ export function createClockwork({ countries }: { countries: readonly Country[] }
     let sum = 0;
     const ordered = groups(plan.band, date);
     const chosen = ordered.find((g) => (sum += g.share) > roll) ?? ordered[ordered.length - 1]!;
-    // The chosen group first; if the run has used it up, the band's others, then any place,
+    // The chosen group first; if the run has used it up, the band's others,
     // and only then a repeat of the country or answer just asked.
     const all = ordered.flatMap((g) => g.places);
     for (const fits of [(p: ClockPlace) => !recent.has(p.id) && apart(p), (p: ClockPlace) => !recent.has(p.id)]) {
-      for (const pool of [chosen.places, all, places]) {
+      for (const pool of [chosen.places, all]) {
         const candidates = pool.filter(fits);
         if (candidates.length) return pick(rng, candidates);
       }
     }
-    return pick(rng, places);
+    // The band has asked every place within the gap: the one asked longest ago.
+    const oldest = [...all].sort((a, b) => past.lastIndexOf(a.id) - past.lastIndexOf(b.id) || a.id.localeCompare(b.id));
+    return oldest.find(apart) ?? oldest[0]!;
   }
 
   function makeLevel(rng: Rng, number: number, past: readonly string[]): ClockLevel {
