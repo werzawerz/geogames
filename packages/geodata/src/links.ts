@@ -12,6 +12,19 @@ export const FIXED_LINKS: readonly (readonly [CountryId, CountryId, string])[] =
 ];
 
 /**
+ * Who runs each territory that has a land border; the country data has no
+ * owner field. Western Sahara is left out: who it belongs to is disputed.
+ */
+export const TERRITORY_OWNERS: Readonly<Record<CountryId, CountryId>> = {
+  GUF: 'FRA',
+  GIB: 'GBR',
+  HKG: 'CHN',
+  MAC: 'CHN',
+  MAF: 'FRA',
+  SXM: 'NLD',
+};
+
+/**
  * Parts of a country cut off from the rest of it by land. Its `borders` are
  * the countries the exclave touches; `mainlandToo` lists those the main part
  * borders as well. Every other border of the country belongs to the main part.

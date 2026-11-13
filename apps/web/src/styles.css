@@ -1648,3 +1648,95 @@ a {
 
 .halfway-guesses .guess-in { color: var(--correct); font-weight: 600; }
 .halfway-guesses .guess-out { color: var(--wrong); }
+
+/* Border Blitz */
+.blitz-prompt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.blitz-count {
+  flex-basis: 100%;
+  font-size: 0.9rem;
+}
+
+.blitz-clock {
+  position: relative;
+  height: 1.6rem;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.blitz-clock-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: rgb(56 189 248 / 0.35);
+  transition: width 0.1s linear;
+}
+
+.blitz-clock-low .blitz-clock-bar {
+  background: rgb(220 38 38 / 0.45);
+}
+
+.blitz-clock-text {
+  position: relative;
+  display: block;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6rem;
+}
+
+.blitz-slots {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  align-content: start;
+}
+
+.blitz-timer-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.blitz-timer-row .blitz-clock {
+  flex: 1;
+}
+
+/* Map, then the input, then the answers; on wide screens the answers sit beside
+   the map, so they stay in view above the fold. */
+.blitz-board {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-areas: 'map' 'controls' 'slots';
+}
+
+.blitz-map { grid-area: map; min-width: 0; }
+.blitz-controls { grid-area: controls; display: flex; flex-direction: column; gap: 0.75rem; }
+.blitz-board .blitz-slots { grid-area: slots; }
+
+@media (min-width: 900px) {
+  .blitz-board {
+    grid-template-columns: minmax(0, 1fr) 12.5rem;
+    grid-template-areas: 'map slots' 'controls slots';
+    align-items: start;
+  }
+
+  .blitz-board .blitz-slots {
+    /* minmax: a long name is cut short with an ellipsis instead of widening the column. */
+    grid-template-columns: minmax(0, 1fr);
+    max-height: 32rem;
+    overflow-y: auto;
+  }
+}
+
+.blitz-end-label {
+  pointer-events: none;
+}

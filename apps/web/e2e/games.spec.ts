@@ -13,6 +13,7 @@ import {
   createHigherLowerGame,
   loadPool,
   createGreatCircle,
+  createBorderBlitz,
   createMysteryCountry,
   createPinDrop,
   createHalfway,
@@ -931,6 +932,176 @@ test('mystery country: wrong guesses give clues, and running out ends the run', 
   await page.getByRole('button', { name: 'See final score' }).click();
   await expect(page.locator('.big-score')).toHaveText(String(state.score));
   await expect(page.getByText('You reached level 2 of 20.')).toBeVisible();
+});
+
+test('border blitz: name every neighbour against the clock; a wrong answer costs a life for the run, and time', async ({ page }) => {
+  test.slow();
+  await page.clock.install();
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  const engine = createBorderBlitz({ countries: routeCountries(), rounds: 20 });
+  const nameOf = (id: string) => getCountry(id)!.name;
+  let state = engine.start(Math.floor(0.5 * 2 ** 32));
+  const target = state.target;
+
+  await openGame(page, 'border-blitz');
+  await expect(page.getByRole('radio', { name: /Europe/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Start game' }).click();
+  const input = page.getByRole('combobox');
+  await expect(input).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('.route-status')).toContainText('Level 1 of 20');
+  await expect(page.locator('.blitz-prompt')).toContainText(`Name every neighbour of ${nameOf(target)}`);
+  await expect(page.locator('.blitz-prompt')).toContainText(`0 of ${state.neighbours.length} found`);
+  // Only the country itself is drawn: no borders, and no neighbour named anywhere.
+  await expect(page.locator('.world-map .map-country')).toHaveCount(1);
+  await expect(page.locator('.map-label')).toHaveText([nameOf(target)]);
+  await expect(page.locator('.blitz-slots li')).toHaveCount(state.neighbours.length);
+  await expect(page.locator('.blitz-slots')).toHaveText(/^\?+$/);
+
+  const guess = async (id: string) => {
+    await input.fill(nameOf(id));
+    await input.press('Enter');
+    state = engine.guess(state, id).state;
+  };
+  const seconds = async () => Number((await page.locator('.blitz-clock-text').textContent())!.replace(' s', ''));
+
+  // A wrong country costs a life and two seconds; the country itself is free.
+  const wrong = queryCountries().find((c) => c.id !== target && !state.neighbours.includes(c.id) && !engine.throughTerritory(target, c.id))!;
+  const before = await seconds();
+  await guess(wrong.id);
+  await expect(page.locator('.route-message')).toContainText(`${wrong.name} doesn't border ${nameOf(target)}`);
+  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(2);
+  expect(await seconds()).toBeLessThanOrEqual(before - 2);
+  await input.fill(nameOf(target));
+  await input.press('Enter');
+  await expect(page.locator('.route-message')).toContainText('itself');
+  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(2);
+
+  // Every neighbour, in any order: each is drawn as it's found.
+  for (const id of [...state.neighbours].reverse()) await guess(id);
+  await expect(page.locator('.route-summary.solved')).toContainText('Level 1 cleared!');
+  await expect(page.locator('.blitz-slots .slot-found')).toHaveCount(state.neighbours.length);
+  // Not flawless, so no bonus; the seconds left are banked as points.
+  await expect(page.locator('.bonus-life')).toHaveCount(0);
+  const spare = Number((await page.locator('.route-summary').getByText(/s to spare/).textContent())!.match(/(\d+) s to spare/)![1]);
+  state = engine.claimTime(state, spare);
+  await expect(page.locator('.route-summary')).toContainText(`+${spare * 2}`);
+  await expect(page.locator('.route-status')).toContainText(`Score ${state.score}`);
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextLevel(state);
+  await expect(page.locator('.route-status')).toContainText('Level 2 of 20');
+  // Lives carry over: the one lost on level 1 stays lost.
+  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(2);
+
+  // One neighbour, then the clock runs out: the run ends and shows what was missed.
+  await guess(state.neighbours[0]!);
+  await expect(page.locator('.blitz-prompt')).toContainText(`1 of ${state.neighbours.length} found`);
+  await page.clock.fastForward('02:00');
+  state = engine.timeout(state);
+  await expect(page.locator('.route-summary.failed')).toContainText("Time's up!");
+  await expect(page.locator('.route-summary')).toContainText(nameOf(state.neighbours[1]!));
+  // Every missed neighbour is named on the map, however close the names sit.
+  const missed = state.neighbours.slice(1).map(nameOf);
+  await expect(page.locator('.blitz-missed-label, .city-marker.marker-outside')).toHaveCount(missed.length);
+  expect((await page.locator('.blitz-missed-label, .city-marker.marker-outside').allTextContents()).sort()).toEqual([...missed].sort());
+  await page.getByRole('button', { name: 'See final score' }).click();
+  await expect(page.locator('.big-score')).toHaveText(String(state.score));
+  await expect(page.getByText('You reached level 2 of 20.')).toBeVisible();
+});
+
+test('border blitz: lives earned back, the count hidden from level 11, giving up, and the answers in view', async ({ page }) => {
+  test.slow();
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.clock.install();
+  await page.addInitScript(() => {
+    Math.random = () => 0.25;
+  });
+  const engine = createBorderBlitz({ countries: routeCountries(), rounds: 20 });
+  const nameOf = (id: string) => getCountry(id)!.name;
+  let state = engine.start(Math.floor(0.25 * 2 ** 32));
+
+  await openGame(page, 'border-blitz');
+  await page.getByRole('button', { name: 'Start game' }).click();
+  const input = page.getByRole('combobox');
+  await expect(input).toBeVisible({ timeout: 20_000 });
+  // The answers sit beside the map, above the fold.
+  const slots = (await page.locator('.blitz-slots').boundingBox())!;
+  expect(slots.y + 40).toBeLessThan(900);
+
+  // Ten flawless levels: lives grow from 3 to the cap of 5.
+  for (let level = 1; level <= 10; level++) {
+    for (const id of state.neighbours) {
+      await input.fill(nameOf(id));
+      await input.press('Enter');
+      state = engine.guess(state, id).state;
+    }
+    await expect(page.locator('.route-summary.solved')).toContainText(`Level ${level} cleared!`);
+    await expect(page.locator('.bonus-life')).toContainText('Flawless!');
+    await page.getByRole('button', { name: 'Next level' }).click();
+    state = engine.nextLevel(state);
+  }
+  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(5);
+
+  // Level 11: no count and no blank tiles, only what's found.
+  await expect(page.locator('.route-status')).toContainText('Level 11 of 20');
+  await expect(page.locator('.blitz-count')).not.toContainText(/\d+ of \d+/);
+  await expect(page.locator('.blitz-slots li')).toHaveCount(0);
+  await input.fill(nameOf(state.neighbours[0]!));
+  await input.press('Enter');
+  await expect(page.locator('.blitz-slots li')).toHaveCount(1);
+
+  // Giving up ends the run at once and shows what was missed.
+  await page.getByRole('button', { name: 'Give up' }).click();
+  await expect(page.locator('.route-summary.failed')).toContainText('You gave up.');
+  await expect(page.locator('.blitz-slots li')).toHaveCount(state.neighbours.length);
+});
+
+test('border blitz: territory owners are free, microstates get a dot, and a saved clock carries on', async ({ page }) => {
+  test.slow();
+  const engine = createBorderBlitz({ countries: routeCountries(), rounds: 20 });
+  /** A seed whose first level asks `id`; Math.random is pinned so the game picks it. */
+  const seedFor = (id: string) => {
+    for (let s = 1; ; s++) if (engine.start(s).target === id) return s;
+  };
+  const startWith = async (seed: number, before?: string) => {
+    await page.addInitScript(
+      ([r, clock]) => {
+        Math.random = () => r;
+        // Not on about:blank, which has no storage.
+        if (clock && location.protocol.startsWith('http')) localStorage.setItem('geogames:border-blitz-clock', clock);
+      },
+      [seed / 2 ** 32, before ?? ''] as const,
+    );
+    // A fresh page load each time: going to the same hash wouldn't reload the app.
+    await page.goto('about:blank');
+    await openGame(page, 'border-blitz');
+    await page.getByRole('button', { name: 'Start game' }).click();
+    // The prompt, not the input: with a deadline already passed, the level ends at once.
+    await expect(page.locator('.blitz-prompt')).toBeVisible({ timeout: 20_000 });
+  };
+  const name = async (country: string) => {
+    await page.getByRole('combobox').fill(country);
+    await page.getByRole('combobox').press('Enter');
+  };
+
+  // Spain: the UK meets it only at Gibraltar, so naming it is a free pass.
+  await startWith(seedFor('ESP'));
+  await expect(page.locator('.blitz-prompt')).toContainText('Spain');
+  await name('United Kingdom');
+  await expect(page.locator('.route-message')).toContainText('only through Gibraltar');
+  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(3);
+
+  // Switzerland: Liechtenstein is too small to see, so it's drawn as a labelled dot.
+  await startWith(seedFor('CHE'));
+  await name('Liechtenstein');
+  await expect(page.locator('.city-marker.marker-found')).toHaveText('Liechtenstein');
+  await expect(page.locator('.map-label')).not.toContainText(['Liechtenstein']);
+
+  // A deadline saved for this level that has already passed: time's up at once, no fresh clock.
+  const seed = seedFor('BEL');
+  await startWith(seed, JSON.stringify({ seed, level: 1, at: Date.now() - 1000 }));
+  await expect(page.locator('.route-summary.failed')).toContainText("Time's up!");
 });
 
 test('daily challenge: mystery country resumes after a reload and shares without spoilers', async ({ page, context }) => {

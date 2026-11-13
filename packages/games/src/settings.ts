@@ -102,7 +102,8 @@ export const usesCircleOptions = (game: GameDefinition) => game.kind === 'circle
 export const usesCityData = (game: GameDefinition) => game.kind === 'circle-arcade';
 export const usesRouteMode = (game: GameDefinition) => game.kind === 'route';
 /** Arcade games follow a fixed progression around the world, so there's no region to pick. */
-export const usesRegion = (game: GameDefinition) => !['circle-arcade', 'route', 'pin-drop', 'halfway', 'great-circle', 'mystery-country'].includes(game.kind);
+export const usesRegion = (game: GameDefinition) =>
+  !['circle-arcade', 'route', 'pin-drop', 'halfway', 'great-circle', 'mystery-country', 'border-blitz'].includes(game.kind);
 
 /**
  * Smallest city size offered per region. World games stop at 300k: below that,

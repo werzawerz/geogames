@@ -11,6 +11,7 @@ export * from './pin-drop.ts';
 export * from './halfway.ts';
 export * from './great-circle.ts';
 export * from './mystery-country.ts';
+export * from './border-blitz.ts';
 export * from './replay.ts';
 export * from './daily.ts';
 export type * from './api-contract.ts';

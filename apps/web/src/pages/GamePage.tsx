@@ -158,6 +158,8 @@ const RULES: Record<GameDefinition['kind'], string> = {
     'A straight line runs between two cities, the shortest way around the globe (so it can look curved on the map). The map shows no borders, only the countries at each end and the ones you find. Name every country the line crosses, in any order. A wrong country or a skip costs one of your 5 lives; a perfect level earns one back. Twenty levels, with longer lines through less familiar places.',
   'mystery-country':
     'Guess the hidden country. Every wrong guess shows how far it is from the mystery country (centre to centre), which way to go, whether it’s on the same continent, and whether the mystery country has more people and land (▲▲ means over 3 times more, ▼▼ under a third). More clues appear as you run out of guesses. The fewer guesses you need and the higher the level, the more points you get. Twenty levels, with less familiar countries and fewer guesses as you go; running out of guesses ends your run.',
+  'border-blitz':
+    'A country lights up on a map without borders: name all its neighbours, in any order, before the clock runs out. Neighbours share a land border; bridges and tunnels count too (Denmark–Sweden, the Channel Tunnel), but sea crossings don’t, and nor do territories: naming France for Brazil (they meet only in French Guiana) or the UK for Spain (only at Gibraltar) costs nothing but doesn’t count. You have 3 lives for the whole run: a wrong country costs one, and 2 seconds; a flawless level earns one back, up to 5. Every neighbour scores 10 points times the level, a flawless level half as much again, and every second left on the clock 2 points times the level. Running out of lives or time ends your run, and so does giving up on a level. Twenty levels, from famous countries with famous neighbours to obscure ones, with less time per neighbour as you go; from level 11 you aren’t told how many neighbours there are.',
   'pin-drop':
     'A city is named: click where it is, zooming in for precision. Up to 100 points for a close pin. Every kilometre off comes out of your 5,000 km budget, and the run ends when it’s gone. Within 50 km costs nothing and earns 250 km back. Less famous cities come in as you go, and pay more.',
   halfway:
@@ -183,7 +185,7 @@ function GameSetup({
   const inPlay = sizes[settings.region];
   const unit = game.subject === 'city' ? 'cities' : 'countries';
   // City Circle counts possible circle centres, which isn't a useful number to show.
-  const showCount = !['circle', 'circle-arcade', 'pin-drop', 'halfway', 'great-circle', 'mystery-country'].includes(game.kind);
+  const showCount = !['circle', 'circle-arcade', 'pin-drop', 'halfway', 'great-circle', 'mystery-country', 'border-blitz'].includes(game.kind);
 
   return (
     <div className="panel center">

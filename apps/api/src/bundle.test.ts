@@ -7,6 +7,7 @@ import {
   DATASET_VERSION,
   GAMES,
   arcadePools,
+  createBorderBlitz,
   createChoiceQuiz,
   createCircleArcade,
   createHalfway,
@@ -18,6 +19,7 @@ import {
   quizItems,
   replayGame,
   routeCountries,
+  type BlitzState,
   type CircleArcade,
   type GameDefinition,
   type QuizDefinition,
@@ -130,6 +132,30 @@ describe('the server bundle', () => {
     expect(await server.replayGame(definition, settings, 41, state.moves)).toEqual(full);
     console.log(`replaying Halfway: ${(performance.now() - started).toFixed(0)} ms`);
   }, 30_000);
+
+  it('scores Border Blitz the same: wrong answers, time bonuses, timeouts, give-ups and lost lives', async () => {
+    const definition = GAMES.find((g) => g.kind === 'border-blitz')!;
+    const settings = normalizeSettings({}, definition);
+    const engine = createBorderBlitz({ countries: routeCountries(settings), rounds: 20 });
+    const wrongFor = (s: BlitzState) =>
+      queryCountries().find(
+        (c) => c.id !== s.target && !s.neighbours.includes(c.id) && !s.wrong.includes(c.id) && !engine.throughTerritory(s.target, c.id),
+      )!.id;
+    let state = engine.start(41);
+    for (let i = 0; i < 10; i++) {
+      if (i % 3 === 0) state = engine.guess(state, wrongFor(state)).state;
+      for (const id of state.neighbours) state = engine.guess(state, id).state;
+      state = engine.nextLevel(engine.claimTime(state, i + 2));
+    }
+    const midLevel = engine.guess(state, state.neighbours[0]!).state;
+    let lostLives = state;
+    while (lostLives.status === 'playing') lostLives = engine.guess(lostLives, wrongFor(lostLives)).state;
+    for (const end of [engine.timeout(midLevel), engine.giveUp(midLevel), lostLives]) {
+      const full = await replayGame(definition, settings, 41, end.moves);
+      expect(full).toEqual({ score: end.score, finished: true });
+      expect(await server.replayGame(definition, settings, 41, end.moves)).toEqual(full);
+    }
+  });
 
   it('replays hard Border Route with its fixed guesses', async () => {
     const route = GAMES.find((g) => g.kind === 'route') as RouteDefinition;

@@ -211,6 +211,15 @@ const ART: Record<string, () => ReactNode> = {
       <Dot at={art.halfway.answer} className="art-dot art-found" />
     </>
   ),
+  'border-blitz': () => (
+    <>
+      <Land d={art.blitz.land} />
+      {art.blitz.found.map((d) => (
+        <Area key={d} d={d} tone="optimal" />
+      ))}
+      <Area d={art.blitz.target} tone="start" />
+    </>
+  ),
   'mystery-country': () => (
     <>
       <Land d={art.mystery.land} />

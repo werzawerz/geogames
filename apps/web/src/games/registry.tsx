@@ -8,6 +8,7 @@ const RouteScreen = lazy(() => import('./route/RouteScreen.tsx').then((m) => ({ 
 const CircleScreen = lazy(() => import('./circle/CircleScreen.tsx').then((m) => ({ default: m.CircleScreen })));
 const GreatCircleScreen = lazy(() => import('./great-circle/GreatCircleScreen.tsx').then((m) => ({ default: m.GreatCircleScreen })));
 const MysteryScreen = lazy(() => import('./mystery/MysteryScreen.tsx').then((m) => ({ default: m.MysteryScreen })));
+const BorderBlitzScreen = lazy(() => import('./border-blitz/BorderBlitzScreen.tsx').then((m) => ({ default: m.BorderBlitzScreen })));
 const PinDropScreen = lazy(() => import('./pin/PinDropScreen.tsx').then((m) => ({ default: m.PinDropScreen })));
 const HalfwayScreen = lazy(() => import('./halfway/HalfwayScreen.tsx').then((m) => ({ default: m.HalfwayScreen })));
 const ArcadeScreen = lazy(() => import('./circle/ArcadeScreen.tsx').then((m) => ({ default: m.ArcadeScreen })));
@@ -42,6 +43,12 @@ export function GameScreen(props: GameScreenProps) {
       return (
         <Suspense fallback={<p className="panel center muted">Loading…</p>}>
           <MysteryScreen {...props} game={game} />
+        </Suspense>
+      );
+    case 'border-blitz':
+      return (
+        <Suspense fallback={<p className="panel center muted">Loading…</p>}>
+          <BorderBlitzScreen {...props} game={game} />
         </Suspense>
       );
     case 'pin-drop':
