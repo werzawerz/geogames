@@ -17,6 +17,11 @@ import {
   createMysteryCountry,
   createPinDrop,
   createHalfway,
+  createClockwork,
+  clockworkCountries,
+  clockPlace,
+  formatClock,
+  type ClockState,
   halfwayPools,
   distanceKm,
   createRouteGame,
@@ -1337,4 +1342,95 @@ test('halfway: with the names hidden, the two cities can be typed but count as a
   await expect(page.locator('.route-status')).toContainText('Level 21');
   await expect(page.locator('.route-status')).toContainText('Within 120 km');
   await expect(page.locator('.route-end')).toHaveText(['?', '?']);
+});
+
+test('clockwork: type the local time; earlier or later after a miss, a skip costs a life, and the run ends with the lives', async ({ page }) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  const engine = createClockwork({ countries: clockworkCountries() });
+  let state = engine.start(Math.floor(0.5 * 2 ** 32));
+  const nameOf = (s: ClockState) => {
+    const place = clockPlace(s.level.place);
+    return place.city ? `${place.city.name}, ${getCountry(place.country)!.name}` : getCountry(place.country)!.name;
+  };
+  const lives = page.locator('.lives .life:not(.lost)');
+
+  await openGame(page, 'clockwork');
+  await expect(page.getByRole('radio', { name: /Europe/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Change settings/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Start game' }).click();
+  const input = page.getByRole('textbox', { name: 'Local time' });
+  await expect(input).toBeVisible({ timeout: 20_000 });
+  await expect(input).toBeFocused();
+
+  // The question, the place lit up, and no answer in the page.
+  const utc = formatClock(state.level.utcHour * 60);
+  await expect(page.locator('.clock-given')).toHaveText(`It’s ${utc} UTC on 15 January.`);
+  await expect(page.locator('.clock-question')).toContainText(nameOf(state));
+  await expect(page.locator('.world-map .map-country')).toHaveCount(1);
+  await expect(page.locator('.clock-meridian')).toHaveCount(24);
+  await expect(page.locator('.clock-answer')).toHaveCount(0);
+
+  // Arrow keys step from the UTC time, an hour at a time.
+  await input.press('ArrowUp');
+  await expect(input).toHaveValue(formatClock(state.level.utcHour * 60 + 60));
+  await input.press('Shift+ArrowDown');
+  await expect(input).toHaveValue(formatClock(state.level.utcHour * 60 + 45));
+
+  // An hour late, typed as plain digits: free, and it says the answer is earlier.
+  const late = (state.level.answer + 60) % 1440;
+  await input.fill(formatClock(late).replace(':', ''));
+  await expect(page.locator('.clock-preview')).toHaveText(`= ${formatClock(late)}`);
+  await input.press('Enter');
+  state = engine.guess(state, late).state;
+  await expect(page.locator('.route-message')).toContainText(`It’s earlier than ${formatClock(late)}. 1 more free miss.`);
+  await expect(page.locator('.clock-misses')).toHaveText('1');
+  await expect(page.locator('.clock-guesses')).toContainText('↓ earlier');
+  await expect(lives).toHaveCount(3);
+  await expect(input).toHaveValue('');
+
+  // Nonsense costs nothing.
+  await input.fill('noon');
+  await input.press('Enter');
+  await expect(page.locator('.route-message')).toContainText('isn’t a time');
+
+  // The right time clears it, not flawless after a miss.
+  await input.fill(formatClock(state.level.answer));
+  await input.press('Enter');
+  state = engine.guess(state, state.level.answer).state;
+  await expect(page.locator('.route-summary.solved')).toContainText(`Right! ${formatClock(state.level.answer)}`);
+  await expect(page.locator('.route-status')).toContainText(`Score ${state.score}`);
+  await expect(page.locator('.bonus-life')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextLevel(state);
+
+  // A skip costs a life and shows the answer.
+  await expect(input).toBeFocused();
+  await expect(page.locator('.clock-question')).toContainText(nameOf(state));
+  await page.getByRole('button', { name: /Skip/ }).click();
+  state = engine.skip(state);
+  await expect(page.locator('.route-summary.failed')).toContainText('Skipped: −1 ♥');
+  await expect(page.locator('.clock-answer')).toContainText(`It’s ${formatClock(state.level.answer)} in ${nameOf(state)}`);
+  await expect(lives).toHaveCount(2);
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextLevel(state);
+
+  // Three misses cost one life, no more.
+  for (let i = 1; i <= 3; i++) {
+    const wrong = (state.level.answer + 120 * i) % 1440;
+    await input.fill(formatClock(wrong));
+    await input.press('Enter');
+    state = engine.guess(state, wrong).state;
+  }
+  await expect(page.locator('.route-summary.failed')).toContainText('3 misses: −1 ♥');
+  await expect(lives).toHaveCount(1);
+  await page.getByRole('button', { name: 'Next level' }).click();
+
+  // The last life goes, and the run ends.
+  await page.getByRole('button', { name: /Skip/ }).click();
+  await expect(page.locator('.route-summary.failed')).toContainText('Out of lives');
+  await page.getByRole('button', { name: 'See final score' }).click();
+  await expect(page.getByText('Game over')).toBeVisible();
+  await expect(page.getByText('You reached level 4.')).toBeVisible();
 });

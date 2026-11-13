@@ -14,4 +14,4 @@ Brief: idea #3 in docs/ideas/scout-round-2.md. Branch game/clockwork, worktree g
 - Screen apps/web/src/games/clockwork/ClockworkScreen.tsx: WorldMap, country highlighted, city dot for
   multi-zone countries, 15° meridian lines, time input (type 1730/17:30, arrows ±1h, shift ±15min, Enter).
 - registry.tsx, GamePage RULES + showCount list, GameCardArt, styles.
-- bundle.test.ts case, e2e test in apps/web/e2e/games.spec.ts, screenshots.
+- Done: bundle.test.ts case, e2e test (passes dev+build). Next: screenshots, full vitest, final commit.
