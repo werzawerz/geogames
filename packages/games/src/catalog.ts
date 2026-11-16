@@ -5,8 +5,20 @@ export type GameKind = GameDefinition['kind'];
 /** What the game's items are; decides which pool is loaded and how cards are drawn. */
 export type Subject = 'country' | 'city' | 'feature';
 
+/** Sections of the home page and the Games menu, in display order. */
+export const GROUPS = [
+  { id: 'map', title: 'Map games' },
+  { id: 'routes', title: 'Routes & borders' },
+  { id: 'cities', title: 'Cities' },
+  { id: 'quizzes', title: 'Quick quizzes' },
+] as const;
+
+export type GroupId = (typeof GROUPS)[number]['id'];
+
 interface BaseDefinition {
   id: string;
+  /** Which home page section the game is listed in. Every new game declares one. */
+  group: GroupId;
   subject: Subject;
   title: string;
   tagline: string;
@@ -118,44 +130,35 @@ export type GameDefinition =
 
 export const GAMES: readonly GameDefinition[] = [
   {
-    id: 'higher-lower-population',
-    kind: 'higher-lower',
-    subject: 'country',
-    title: 'Higher or Lower: Population',
-    tagline: 'Does the next country have more or fewer people?',
-    status: 'live',
-    metric: 'population',
-  },
-  {
-    id: 'higher-lower-area',
-    kind: 'higher-lower',
-    subject: 'country',
-    title: 'Higher or Lower: Area',
-    tagline: 'Is the next country bigger or smaller?',
-    status: 'live',
-    metric: 'area',
-  },
-  {
-    id: 'higher-lower-gdp-per-capita',
-    kind: 'higher-lower',
-    subject: 'country',
-    title: 'Higher or Lower: Wealth',
-    tagline: 'Is the next country richer or poorer per person?',
-    status: 'live',
-    metric: 'gdpPerCapita',
-  },
-  {
-    id: 'higher-lower-city-population',
-    kind: 'higher-lower',
+    id: 'pin-drop',
+    group: 'map',
+    kind: 'pin-drop',
     subject: 'city',
-    title: 'Higher or Lower: Cities',
-    tagline: 'Do more people live in the next city?',
+    title: 'Pin Drop',
+    tagline: 'Click where the city is. Every kilometre off eats into your budget.',
     status: 'live',
-    metric: 'population',
-    valueNote: 'Metro area · UN estimate for 2025',
+  },
+  {
+    id: 'blank-atlas',
+    group: 'map',
+    kind: 'blank-atlas',
+    subject: 'feature',
+    title: 'Blank Atlas',
+    tagline: 'A sea, a mountain range or a desert lights up on a map with no labels. Name it.',
+    status: 'live',
+  },
+  {
+    id: 'river-run',
+    group: 'map',
+    kind: 'river-run',
+    subject: 'country',
+    title: 'River Run',
+    tagline: 'A river draws itself from its source to the sea. Name it before it gets there.',
+    status: 'live',
   },
   {
     id: 'border-route',
+    group: 'routes',
     kind: 'route',
     subject: 'country',
     title: 'Border Route',
@@ -164,43 +167,8 @@ export const GAMES: readonly GameDefinition[] = [
     rounds: 20,
   },
   {
-    id: 'capitals',
-    kind: 'quiz',
-    subject: 'country',
-    quiz: 'capital',
-    title: 'Capitals',
-    tagline: 'Name the capital, from Paris to Paramaribo.',
-    status: 'live',
-    lives: 3,
-  },
-  {
-    id: 'flags',
-    kind: 'quiz',
-    subject: 'country',
-    quiz: 'flag',
-    title: 'Flags',
-    tagline: 'Whose flag is it?',
-    status: 'live',
-    lives: 3,
-  },
-  {
-    id: 'city-circle-arcade',
-    kind: 'circle-arcade',
-    subject: 'city',
-    title: 'City Circle Arcade',
-    tagline: 'Endless circles, getting smaller and harder. How far can you get?',
-    status: 'live',
-  },
-  {
-    id: 'blank-atlas',
-    kind: 'blank-atlas',
-    subject: 'feature',
-    title: 'Blank Atlas',
-    tagline: 'A sea, a mountain range or a desert lights up on a map with no labels. Name it.',
-    status: 'live',
-  },
-  {
     id: 'border-blitz',
+    group: 'routes',
     kind: 'border-blitz',
     subject: 'country',
     title: 'Border Blitz',
@@ -209,16 +177,8 @@ export const GAMES: readonly GameDefinition[] = [
     rounds: 20,
   },
   {
-    id: 'mystery-country',
-    kind: 'mystery-country',
-    subject: 'country',
-    title: 'Mystery Country',
-    tagline: 'Every wrong guess gives a clue: how far, which way, how big. Work out the country.',
-    status: 'live',
-    rounds: 20,
-  },
-  {
     id: 'great-circle',
+    group: 'routes',
     kind: 'great-circle',
     subject: 'country',
     title: 'Great Circle',
@@ -227,31 +187,8 @@ export const GAMES: readonly GameDefinition[] = [
     rounds: 20,
   },
   {
-    id: 'clockwork',
-    kind: 'clockwork',
-    subject: 'country',
-    title: 'Clockwork',
-    tagline: 'It’s 12:00 UTC. A country lights up. What time is it there?',
-    status: 'live',
-  },
-  {
-    id: 'pin-drop',
-    kind: 'pin-drop',
-    subject: 'city',
-    title: 'Pin Drop',
-    tagline: 'Click where the city is. Every kilometre off eats into your budget.',
-    status: 'live',
-  },
-  {
-    id: 'river-run',
-    kind: 'river-run',
-    subject: 'country',
-    title: 'River Run',
-    tagline: 'A river draws itself from its source to the sea. Name it before it gets there.',
-    status: 'live',
-  },
-  {
     id: 'halfway',
+    group: 'routes',
     kind: 'halfway',
     subject: 'city',
     title: 'Halfway',
@@ -259,7 +196,17 @@ export const GAMES: readonly GameDefinition[] = [
     status: 'live',
   },
   {
+    id: 'city-circle-arcade',
+    group: 'cities',
+    kind: 'circle-arcade',
+    subject: 'city',
+    title: 'City Circle Arcade',
+    tagline: 'Endless circles, getting smaller and harder. How far can you get?',
+    status: 'live',
+  },
+  {
     id: 'city-circle',
+    group: 'cities',
     kind: 'circle',
     subject: 'city',
     title: 'City Circle: Free Play',
@@ -269,8 +216,95 @@ export const GAMES: readonly GameDefinition[] = [
     target: 5,
     misses: 5,
   },
+  {
+    id: 'higher-lower-population',
+    group: 'quizzes',
+    kind: 'higher-lower',
+    subject: 'country',
+    title: 'Higher or Lower: Population',
+    tagline: 'Does the next country have more or fewer people?',
+    status: 'live',
+    metric: 'population',
+  },
+  {
+    id: 'higher-lower-area',
+    group: 'quizzes',
+    kind: 'higher-lower',
+    subject: 'country',
+    title: 'Higher or Lower: Area',
+    tagline: 'Is the next country bigger or smaller?',
+    status: 'live',
+    metric: 'area',
+  },
+  {
+    id: 'higher-lower-gdp-per-capita',
+    group: 'quizzes',
+    kind: 'higher-lower',
+    subject: 'country',
+    title: 'Higher or Lower: Wealth',
+    tagline: 'Is the next country richer or poorer per person?',
+    status: 'live',
+    metric: 'gdpPerCapita',
+  },
+  {
+    id: 'higher-lower-city-population',
+    group: 'quizzes',
+    kind: 'higher-lower',
+    subject: 'city',
+    title: 'Higher or Lower: Cities',
+    tagline: 'Do more people live in the next city?',
+    status: 'live',
+    metric: 'population',
+    valueNote: 'Metro area · UN estimate for 2025',
+  },
+  {
+    id: 'flags',
+    group: 'quizzes',
+    kind: 'quiz',
+    subject: 'country',
+    quiz: 'flag',
+    title: 'Flags',
+    tagline: 'Whose flag is it?',
+    status: 'live',
+    lives: 3,
+  },
+  {
+    id: 'capitals',
+    group: 'quizzes',
+    kind: 'quiz',
+    subject: 'country',
+    quiz: 'capital',
+    title: 'Capitals',
+    tagline: 'Name the capital, from Paris to Paramaribo.',
+    status: 'live',
+    lives: 3,
+  },
+  {
+    id: 'mystery-country',
+    group: 'quizzes',
+    kind: 'mystery-country',
+    subject: 'country',
+    title: 'Mystery Country',
+    tagline: 'Every wrong guess gives a clue: how far, which way, how big. Work out the country.',
+    status: 'live',
+    rounds: 20,
+  },
+  {
+    id: 'clockwork',
+    group: 'quizzes',
+    kind: 'clockwork',
+    subject: 'country',
+    title: 'Clockwork',
+    tagline: 'It’s 12:00 UTC. A country lights up. What time is it there?',
+    status: 'live',
+  },
 ];
 
 export function getGame(id: string): GameDefinition | undefined {
   return GAMES.find((g) => g.id === id);
+}
+
+/** Live games per group, in group order. Groups with no live game are left out. */
+export function gamesByGroup(): { id: GroupId; title: string; games: GameDefinition[] }[] {
+  return GROUPS.map((g) => ({ ...g, games: GAMES.filter((x) => x.group === g.id && x.status === 'live') })).filter((g) => g.games.length > 0);
 }

@@ -1,14 +1,16 @@
 name: Keep alive
 
-# Supabase pauses free projects after a week without activity.
+# Supabase pauses free projects after a week without activity. The health endpoint
+# runs a database query, so one ping every 3 days keeps the project awake.
 on:
   schedule:
-    - cron: '17 6 * * *'
+    - cron: '17 6 */3 * *'
   workflow_dispatch:
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+    # Uses the SUPABASE_PROJECT_ID repository variable that deploy.yml already uses; nothing secret is needed.
     if: vars.SUPABASE_PROJECT_ID != ''
     steps:
-      - run: curl --fail --silent --show-error --retry 3 "https://${{ vars.SUPABASE_PROJECT_ID }}.supabase.co/functions/v1/api/health"
+      - run: curl --fail --silent --show-error --retry 3 --retry-delay 10 "https://${{ vars.SUPABASE_PROJECT_ID }}.supabase.co/functions/v1/api/health"
