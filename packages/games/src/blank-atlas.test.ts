@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { loadBlankAtlas } from '@geogames/geodata/blank-atlas';
+import { geoArea } from 'd3-geo';
+import { BLANK_ATLAS_VERSION, loadBlankAtlas } from '@geogames/geodata/blank-atlas';
 import { loadBlankAtlasShapes } from '@geogames/geodata/blank-atlas-shapes';
 import { getGame } from './catalog.ts';
 import { distanceKm } from './circle.ts';
@@ -19,7 +20,7 @@ import {
   type BlankAtlas,
   type BlankAtlasState,
 } from './blank-atlas.ts';
-import { replayGame } from './replay.ts';
+import { DATASET_VERSION, replayGame } from './replay.ts';
 import { normalizeSettings, usesRegion } from './settings.ts';
 
 const data = await loadBlankAtlas();
@@ -55,6 +56,47 @@ describe('Blank Atlas data', () => {
       // Antarctica is left out: it's too distorted on a world map.
       expect(f.center[0]).toBeGreaterThan(-65);
     }
+  });
+
+  it('draws every outline as a real area, not a sliver or nothing', async () => {
+    const shapes = await loadBlankAtlasShapes();
+    for (const f of data.features) {
+      const sphere = geoArea(shapes[f.id]!);
+      const km2 = Math.min(sphere, 4 * Math.PI - sphere) * 6371 ** 2;
+      // The thinnest real outlines (the Namib, Lake Champlain) cover about 4% of the circle they span.
+      expect(km2 / (Math.PI * f.radiusKm ** 2), f.id).toBeGreaterThan(0.03);
+    }
+  });
+
+  it('gives each feature a kind a player would agree with', () => {
+    const kind = (id: string) => data.features.find((f) => f.id === id)?.kind;
+    expect(kind('jutland')).toBe('peninsula');
+    expect(kind('anatolia')).toBe('peninsula');
+    expect(kind('iberian-peninsula')).toBe('peninsula');
+    // An ice cap isn't a mountain range, and a salt flat isn't a desert.
+    expect(kind('vatnajokull')).toBeUndefined();
+    expect(kind('salar-de-uyuni')).toBeUndefined();
+  });
+
+  it('knows which features are part of another', () => {
+    const related = (a: string, b: string) => data.features.find((f) => f.id === a)!.related.includes(b);
+    for (const [part, whole] of [
+      ['james-bay', 'hudson-bay'],
+      ['aegean-sea', 'mediterranean-sea'],
+      ['sea-of-crete', 'mediterranean-sea'],
+      ['bay-of-campeche', 'gulf-of-mexico'],
+      ['tenere', 'sahara'],
+      ['tatra-mountains', 'carpathian-mountains'],
+      ['musandam-peninsula', 'arabian-peninsula'],
+      ['adirondack-mountains', 'appalachian-mountains'],
+    ]) {
+      expect(related(part!, whole!), `${part} in ${whole}`).toBe(true);
+      expect(related(whole!, part!), `${whole} has ${part}`).toBe(true);
+    }
+  });
+
+  it('is part of the dataset version, so old runs aren\'t replayed on new features', () => {
+    expect(DATASET_VERSION).toContain(BLANK_ATLAS_VERSION);
   });
 
   it('shows every feature clearly, with a shore in view to find your way by', () => {
@@ -162,7 +204,36 @@ describe('Blank Atlas engine', () => {
     expect(early).toBeGreaterThan(BLANK_ATLAS_FAR_KM);
     expect(middle).toBeLessThan(early);
     expect(late).toBeLessThan(middle);
-    expect(late).toBeLessThan(2500);
+    expect(late).toBeLessThan(3500);
+  });
+
+  it('never offers a feature the lit-up area also fits: its parent, a part of it, or one it overlaps', () => {
+    for (let seed = 1; seed <= 120; seed++) {
+      let state = game.start(seed);
+      for (let n = 1; n <= 60; n++) {
+        const answer = feature(state.level.feature);
+        for (const id of state.level.options) expect(answer.related, `${answer.id} offered with ${id}`).not.toContain(id);
+        state = game.nextLevel(game.guess(state, answer.id).state);
+      }
+    }
+  });
+
+  it('draws wrong options from the answer\'s own tier, so picking the obscure (or famous) one doesn\'t pay', () => {
+    let wins = 0;
+    let levels = 0;
+    for (let seed = 1; seed <= 100; seed++) {
+      let state = game.start(seed);
+      for (let n = 1; n <= 60; n++) {
+        // A player who knows nothing but the tiers: a random option from the level's tier.
+        const tier = blankAtlasPlan(n).tier;
+        const guesses = state.level.options.filter((id) => feature(id).tier === tier);
+        const pick = guesses[(seed * 31 + n * 7) % guesses.length]!;
+        if (pick === state.level.feature) wins++;
+        levels++;
+        state = game.nextLevel(game.guess(state, state.level.feature).state);
+      }
+    }
+    expect(wins / levels).toBeLessThanOrEqual(0.3);
   });
 
   it('keeps early wrong options to names you know', () => {

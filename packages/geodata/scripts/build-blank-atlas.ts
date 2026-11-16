@@ -9,9 +9,9 @@
 // The features and their tiers are picked by hand in blank-atlas-features.ts.
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { geoArea, geoBounds, geoCentroid, geoDistance } from 'd3-geo';
+import { geoArea, geoBounds, geoCentroid, geoCircle, geoContains, geoDistance } from 'd3-geo';
 import type { Geometry, MultiPolygon, Polygon, Position } from 'geojson';
-import { BLANK_ATLAS_ROWS, type BlankAtlasLayer } from './blank-atlas-features.ts';
+import { BLANK_ATLAS_PART_OF, BLANK_ATLAS_ROWS, type BlankAtlasLayer } from './blank-atlas-features.ts';
 import { cachedJson, ROOT, round } from './lib/fetch.ts';
 import { loadWorldShapes } from '../src/shapes.ts';
 import { isContextLake, type BlankAtlasData, type BlankAtlasFeature, type BlankAtlasKind } from '../src/blank-atlas.ts';
@@ -52,7 +52,9 @@ function kindOf(layer: BlankAtlasLayer, featurecla: string): BlankAtlasKind {
   if (c === 'delta') return 'delta';
   if (c === 'coast') return 'coast';
   if (c === 'gorge' || c === 'valley') return 'valley';
-  return 'lowland';
+  if (['plain', 'basin', 'lowland', 'wetlands', 'depression'].includes(c)) return 'lowland';
+  // A vague class (Geoarea: Patagonia, Anatolia) needs a kind in the feature list, not a guess.
+  throw new Error(`no kind for Natural Earth class "${featurecla}": give the row one`);
 }
 
 /** Douglas–Peucker on one ring, in degrees. */
@@ -107,6 +109,62 @@ function rewind(polygon: Position[][]): Position[][] {
   return geoArea(g) > 2 * Math.PI ? polygon.map((r) => [...r].reverse()) : polygon;
 }
 
+/** A strait whose outline covers less than this share of the circle it spans is a sliver… */
+const SLIVER_SHARE = 0.02;
+/** …and is drawn as a circle this share of its reach, and at least this wide. */
+const STRAIT_CIRCLE_SHARE = 0.7;
+const MIN_STRAIT_KM = 25;
+/** Two features overlap when this share of either lies inside the other. */
+const OVERLAP_SHARE = 0.25;
+
+const areaKm2 = (g: Polygon | MultiPolygon) => {
+  const a = geoArea(g);
+  return Math.min(a, 4 * Math.PI - a) * EARTH_KM * EARTH_KM;
+};
+
+/** About 400 points spread over a feature's outline, for measuring overlaps. */
+function samplePoints(f: BlankAtlasFeature, shape: Geometry): [number, number][] {
+  const [west, south, east, north] = f.bounds;
+  const span = (east - west + 360) % 360 || 360;
+  const points: [number, number][] = [];
+  for (let i = 0; i < 20; i++) {
+    for (let j = 0; j < 20; j++) {
+      const p: [number, number] = [west + ((i + 0.5) / 20) * span, south + ((j + 0.5) / 20) * (north - south)];
+      if (geoContains(shape, p)) points.push(p);
+    }
+  }
+  return points;
+}
+
+/**
+ * Marks the features that mustn't be each other's wrong options: same-kind pairs whose
+ * outlines overlap by more than OVERLAP_SHARE of either (the Aegean and the Mediterranean),
+ * and the hand-kept BLANK_ATLAS_PART_OF pairs.
+ */
+function relate(features: BlankAtlasFeature[], shapes: Record<string, Geometry>) {
+  const byId = new Map(features.map((f) => [f.id, f]));
+  const link = (a: string, b: string) => {
+    const [fa, fb] = [byId.get(a), byId.get(b)];
+    if (!fa || !fb) throw new Error(`part-of pair ${a} / ${b}: no such feature`);
+    if (!fa.related.includes(b)) fa.related.push(b);
+    if (!fb.related.includes(a)) fb.related.push(a);
+  };
+  const samples = new Map(features.map((f) => [f.id, samplePoints(f, shapes[f.id]!)]));
+  const share = (from: BlankAtlasFeature, into: BlankAtlasFeature) => {
+    const points = samples.get(from.id)!;
+    return points.length ? points.filter((p) => geoContains(shapes[into.id]!, p)).length / points.length : 0;
+  };
+  for (const a of features) {
+    for (const b of features) {
+      if (a.id >= b.id || a.kind !== b.kind) continue;
+      if (geoDistance([a.center[1], a.center[0]], [b.center[1], b.center[0]]) * EARTH_KM > a.radiusKm + b.radiusKm) continue;
+      if (Math.max(share(a, b), share(b, a)) > OVERLAP_SHARE) link(a.id, b.id);
+    }
+  }
+  for (const [part, whole] of BLANK_ATLAS_PART_OF) link(part, whole);
+  for (const f of features) f.related.sort();
+}
+
 const polygonsOf = (g: Polygon | MultiPolygon): Position[][][] => (g.type === 'Polygon' ? [g.coordinates] : g.coordinates);
 
 async function main() {
@@ -122,7 +180,7 @@ async function main() {
   const features: BlankAtlasFeature[] = [];
   const shapes: Record<string, Geometry> = {};
   const problems: string[] = [];
-  for (const [layer, neNames, name, tier, aliases = []] of BLANK_ATLAS_ROWS) {
+  for (const [layer, neNames, name, tier, aliases = [], kindOverride] of BLANK_ATLAS_ROWS) {
     const wanted = new Set(neNames.split('|').map(key));
     const found = layers[layer].filter((f) => wanted.has(key(String(f.properties.NAME ?? f.properties.name ?? ''))));
     if (found.length === 0) {
@@ -134,9 +192,17 @@ async function main() {
     // How far the feature reaches from its centre, for framing it.
     const radiusKm = Math.max(...raw.coordinates.flat(2).map((p) => geoDistance(center, p as [number, number]) * EARTH_KM));
     const tolerance = Math.min(0.15, Math.max(0.005, radiusKm / 111 / 120));
-    const coordinates = raw.coordinates
+    let coordinates = raw.coordinates
       .map((polygon) => rewind(polygon.map((ring) => simplifyRing(ring, tolerance))))
       .filter((polygon) => polygon[0]!.length >= 4);
+    // Natural Earth draws some straits as slivers along their axis (Gibraltar, Bab-el-Mandeb) or
+    // as nothing at all (Drake Passage): they're label lines, not water. Those become a circle
+    // of water around the strait; the map masks it by the land, so what lights up is the strait.
+    if (layer === 'marine' && areaKm2({ type: 'MultiPolygon', coordinates }) < SLIVER_SHARE * Math.PI * radiusKm ** 2) {
+      const circle = geoCircle().center(center).radius((Math.max(MIN_STRAIT_KM, radiusKm * STRAIT_CIRCLE_SHARE) / EARTH_KM) * (180 / Math.PI)).precision(3)();
+      coordinates = [circle.coordinates.map((ring) => ring.map(([x, y]) => [round(x!, 2), round(y!, 2)]))];
+      console.log(`  ${name}: drawn as a circle of water (Natural Earth's outline is a sliver)`);
+    }
     const id = name
       .normalize('NFD')
       .replace(/[̀-ͯ]/g, '')
@@ -151,19 +217,21 @@ async function main() {
       name,
       aliases: aliases.filter((a) => a !== name),
       // Natural Earth files the Iberian Peninsula as a plateau and Labrador as an island.
-      kind: / Peninsula$/.test(name) ? 'peninsula' : kindOf(layer, featurecla),
+      kind: kindOverride ?? (/ Peninsula$/.test(name) ? 'peninsula' : kindOf(layer, featurecla)),
       tier,
       center: [round(center[1], 2), round(center[0], 2)],
       radiusKm: Math.round(radiusKm),
       coastKm: 0,
+      related: [],
       bounds: [round(west, 2), round(south, 2), round(east, 2), round(north, 2)],
     });
     shapes[id] = coordinates.length === 1 ? { type: 'Polygon', coordinates: coordinates[0]! } : { type: 'MultiPolygon', coordinates };
   }
   if (problems.length) throw new Error(problems.join('\n'));
 
-  // Every shore the game's map draws: the 1:50m coast (the Caspian included) and the big lakes,
-  // which the screen draws as water. An inland feature is framed to show one, so you can find your way.
+  relate(features, shapes);
+
+  // Every shore the game's map draws: the 1:50m coast (the Caspian included) and the big lakes. An inland feature is framed to show one, so you can find your way.
   const { land } = await loadWorldShapes();
   const shore = [
     ...land.geometry.coordinates.flat(2),
@@ -183,6 +251,8 @@ async function main() {
   };
   await writeFile(join(ROOT, 'data', 'blank-atlas.json'), JSON.stringify(data, null, 1) + '\n');
   await writeFile(join(ROOT, 'data', 'blank-atlas-shapes.json'), JSON.stringify(shapes));
+  // Its own small file, so the dataset version can name it without loading the features.
+  await writeFile(join(ROOT, 'data', 'blank-atlas-version.json'), JSON.stringify({ generatedAt: data.generatedAt }) + '\n');
   const byTier = [1, 2, 3].map((t) => features.filter((f) => f.tier === t).length);
   console.log(`blank-atlas: ${features.length} features (tiers ${byTier.join('/')})`);
 }

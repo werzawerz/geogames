@@ -9,15 +9,17 @@
 // Left out on purpose: islands named like their country (Iceland, Cuba, Sri Lanka) and
 // Florida or Korea, which the coastline gives away; coasts, isthmuses and reefs, too few
 // of a kind for four options; outlines with straight open-sea edges (Yellow Sea, Ionian
-// Sea); Antarctica (badly distorted on a world map), oceans
+// Sea), and the Drake Passage (only a label line in Natural Earth, beside Antarctica); Antarctica (badly distorted on a world map), oceans
 // (too easy, too big to frame), duplicates in the source (several "Cordillera
 // Occidental"s), names a fan wouldn't use, and features whose outline a
 // geography fan would dispute (the "Northern European Plain", "Siberia").
 //
-// Each row: [layer, name in Natural Earth (several joined by |), name shown, tier, aliases].
+
+import type { BlankAtlasKind } from '../src/blank-atlas.ts';
 
 export type BlankAtlasLayer = 'region' | 'marine' | 'lake';
-export type BlankAtlasRow = readonly [BlankAtlasLayer, string, string, 1 | 2 | 3, (readonly string[])?];
+/** Each row: [layer, name(s) in Natural Earth, name shown, tier, aliases, kind when Natural Earth's class is wrong or vague]. */
+export type BlankAtlasRow = readonly [BlankAtlasLayer, string, string, 1 | 2 | 3, (readonly string[])?, BlankAtlasKind?];
 
 export const BLANK_ATLAS_ROWS: readonly BlankAtlasRow[] = [
   // ── Tier 1: the headline features ──────────────────────────────────────
@@ -150,7 +152,7 @@ export const BLANK_ATLAS_ROWS: readonly BlankAtlasRow[] = [
   ['region', 'CONGO BASIN', 'Congo Basin', 2],
   ['region', 'GREAT PLAINS', 'Great Plains', 2],
   ['region', 'PAMPAS', 'Pampas', 2, ['The Pampas']],
-  ['region', 'PATAGONIA', 'Patagonia', 2],
+  ['region', 'PATAGONIA', 'Patagonia', 2, [], 'plateau'],
   ['region', 'SAHEL', 'Sahel', 2],
   ['region', 'PEN. DE YUCATÁN', 'Yucatán Peninsula', 2, ['Yucatan Peninsula', 'Yucatán', 'Yucatan']],
   ['region', 'BAJA CALIFORNIA', 'Baja California', 2, ['Baja California Peninsula', 'Baja']],
@@ -158,8 +160,8 @@ export const BLANK_ATLAS_ROWS: readonly BlankAtlasRow[] = [
   ['region', 'MALAY PENINSULA', 'Malay Peninsula', 2],
   ['region', 'KOLA PENINSULA', 'Kola Peninsula', 2],
   ['region', 'SOMALI PENINSULA', 'Horn of Africa', 2, ['Somali Peninsula']],
-  ['region', 'JUTLAND', 'Jutland', 2, ['Jutland Peninsula', 'Jylland']],
-  ['region', 'ANATOLIA', 'Anatolia', 2, ['Asia Minor']],
+  ['region', 'JUTLAND', 'Jutland', 2, ['Jutland Peninsula', 'Jylland'], 'peninsula'],
+  ['region', 'ANATOLIA', 'Anatolia', 2, ['Asia Minor'], 'peninsula'],
   ['region', 'HONSHÜ', 'Honshu', 2, ['Honshū']],
   ['region', 'HOKKAIDÖ', 'Hokkaido', 2, ['Hokkaidō']],
   ['region', 'LUZON', 'Luzon', 2],
@@ -221,7 +223,6 @@ export const BLANK_ATLAS_ROWS: readonly BlankAtlasRow[] = [
   ['marine', 'Straits of Florida', 'Straits of Florida', 3, ['Florida Straits', 'Strait of Florida']],
   ['marine', 'Yucatan Channel', 'Yucatán Channel', 3, ['Yucatan Channel']],
   ['marine', 'Estrecho de Magellanes', 'Strait of Magellan', 3, ['Magellan Strait', 'Estrecho de Magallanes']],
-  ['marine', 'Drake Passage', 'Drake Passage', 3],
   ['marine', 'Bristol Channel', 'Bristol Channel', 3],
   ['marine', 'Skagerrak', 'Skagerrak', 3],
   ['marine', 'Kattegat', 'Kattegat', 3],
@@ -304,7 +305,6 @@ export const BLANK_ATLAS_ROWS: readonly BlankAtlasRow[] = [
   ['region', 'Sierra Madre del Sur', 'Sierra Madre del Sur', 3],
   ['region', 'GUIANA HIGHLANDS', 'Guiana Highlands', 3],
   ['region', 'Serra do Mar', 'Serra do Mar', 3],
-  ['region', 'Vatnajökull', 'Vatnajökull', 3, ['Vatnajokull']],
   ['region', 'Negev Desert', 'Negev', 3, ['Negev Desert']],
   ['region', 'Simpson Desert', 'Simpson Desert', 3],
   ['region', 'Gibson Desert', 'Gibson Desert', 3],
@@ -315,7 +315,6 @@ export const BLANK_ATLAS_ROWS: readonly BlankAtlasRow[] = [
   ['region', 'Ténéré', 'Ténéré', 3, ['Tenere']],
   ['region', 'Grand Erg Oriental', 'Grand Erg Oriental', 3],
   ['region', 'Grand Erg Occidental', 'Grand Erg Occidental', 3],
-  ['region', 'Salar de Uyuni', 'Salar de Uyuni', 3, ['Uyuni Salt Flat']],
   ['region', 'Loess Plateau', 'Loess Plateau', 3],
   ['region', 'Ustyurt Plateau', 'Ustyurt Plateau', 3, ['Ustyurt']],
   ['region', 'TARIM BASIN', 'Tarim Basin', 3],
@@ -325,7 +324,7 @@ export const BLANK_ATLAS_ROWS: readonly BlankAtlasRow[] = [
   ['region', 'GRAN CHACO', 'Gran Chaco', 3, ['Chaco']],
   ['region', 'LLANOS', 'Llanos', 3, ['Los Llanos']],
   ['region', 'PANTANAL', 'Pantanal', 3],
-  ['region', 'SUDD', 'Sudd', 3, ['The Sudd']],
+  ['region', 'SUDD', 'Sudd', 3, ['The Sudd'], 'lowland'],
   ['region', 'Fergana Valley', 'Fergana Valley', 3, ['Ferghana Valley']],
   ['region', 'Central Valley', 'Central Valley', 3, ['California Central Valley']],
   ['region', 'Grand Canyon', 'Grand Canyon', 3],
@@ -409,4 +408,25 @@ export const BLANK_ATLAS_ROWS: readonly BlankAtlasRow[] = [
   ['lake', 'Lake Tahoe', 'Lake Tahoe', 3],
   ['lake', 'Khövsgöl Nuur', 'Lake Khövsgöl', 3, ['Khövsgöl', 'Khuvsgul', 'Lake Khuvsgul', 'Hovsgol']],
   ['lake', 'Lake Zaysan', 'Lake Zaysan', 3, ['Zaysan', 'Zaisan']],
+];
+
+/**
+ * Features that are part of another, by id: [part, whole]. Neither is ever a wrong option
+ * when the other is the answer, since the lit-up area would be right for both. Pairs whose
+ * outlines overlap are found by the build too; these are the ones Natural Earth draws apart.
+ */
+export const BLANK_ATLAS_PART_OF: readonly (readonly [string, string])[] = [
+  ['james-bay', 'hudson-bay'],
+  ['sea-of-crete', 'mediterranean-sea'],
+  ['bay-of-campeche', 'gulf-of-mexico'],
+  ['cook-inlet', 'gulf-of-alaska'],
+  ['bay-of-fundy', 'gulf-of-maine'],
+  ['tenere', 'sahara'],
+  ['grand-erg-oriental', 'sahara'],
+  ['grand-erg-occidental', 'sahara'],
+  ['nubian-desert', 'sahara'],
+  ['tatra-mountains', 'carpathian-mountains'],
+  ['transylvanian-alps', 'carpathian-mountains'],
+  ['musandam-peninsula', 'arabian-peninsula'],
+  ['adirondack-mountains', 'appalachian-mountains'],
 ];

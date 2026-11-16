@@ -28,6 +28,11 @@ const km = new Intl.NumberFormat('en');
 const roughKm = (d: number) => km.format(Math.max(100, Math.round(d / 100) * 100));
 /** A feature this much smaller than the view gets a ring around it, so it can't be missed. */
 const RING_SHARE = 1 / 10;
+/** Water narrower than this (map units) is drawn unmasked, with an edge and a ring. */
+const NARROW_UNITS = 10;
+/** The blur softening a sea's open-water edge, in map units: at most this, and none below the least. */
+const MAX_BLUR = 6;
+const MIN_BLUR = 1;
 /** Phones show the map narrower: the view closes in, so small features stay big enough to see. */
 const PHONE_VIEW_SHARE = 0.6;
 const isPhone = () => typeof matchMedia !== 'undefined' && matchMedia('(max-width: 640px)').matches;
@@ -100,24 +105,39 @@ function BlankAtlasPlay({
   const frame = useMemo<GeoPermissibleObjects>(() => circleShape(target.center, frameKm), [target, frameKm]);
 
   const overlay = useMemo(() => {
-    const ring = target.radiusKm < frameKm * RING_SHARE ? circleShape(target.center, Math.max(target.radiusKm * 2.5, frameKm * 0.12)) : null;
     const tone = level.status === 'lost' ? 'lost' : level.status === 'cleared' ? 'found' : 'target';
     const shown = [...(wrong ? [{ f: wrong, tone: 'guess' }] : []), { f: target, tone }];
     let landPath: { projection: GeoProjection; d: string } | null = null;
     return (projection: GeoProjection) => {
       const path = geoPath(projection);
       if (landPath?.projection !== projection) landPath = { projection, d: path(shapes.land) ?? '' };
+      // About how wide each feature is on this map, in map units: its area over its length.
+      const widthOf = (f: BlankAtlasFeature) => {
+        const [[x0, y0], [x1, y1]] = path.bounds(outlines[f.id]!);
+        return path.area(outlines[f.id]!) / Math.max(1, Math.hypot(x1 - x0, y1 - y0));
+      };
+      // Water narrower than the 1:50m coast can show (the Dardanelles) would vanish under the
+      // land mask: it's drawn whole, with an edge, instead.
+      const narrow = (f: BlankAtlasFeature) => isWater(f) && widthOf(f) < NARROW_UNITS;
       // Water is masked by the land, so a sea's rough outline stops at the coast, and blurred,
-      // so where it meets open sea there's no hard, straight edge.
-      const draw = ({ f, tone }: { f: BlankAtlasFeature; tone: string }) => (
-        <path
-          key={`${tone}-${f.id}`}
-          className={`atlas-feature atlas-${tone}${f.kind === 'lake' ? ' atlas-lake' : ''}${isWater(f) ? ' atlas-sea' : ''}`}
-          d={path(outlines[f.id]!) ?? ''}
-          mask={isWater(f) ? 'url(#atlas-sea-mask)' : undefined}
-          filter={isWater(f) ? 'url(#atlas-soft)' : undefined}
-        />
-      );
+      // so where it meets open sea there's no hard, straight edge. The blur scales with the
+      // feature, and narrow water (the Dardanelles) isn't blurred at all, or it would vanish.
+      const blurOf = (f: BlankAtlasFeature) => (isWater(f) && !narrow(f) ? Math.min(MAX_BLUR, widthOf(f) / 8) : 0);
+      const draw = ({ f, tone }: { f: BlankAtlasFeature; tone: string }) => {
+        const blur = blurOf(f);
+        return (
+          <path
+            key={`${tone}-${f.id}`}
+            className={`atlas-feature atlas-${tone}${f.kind === 'lake' ? ' atlas-lake' : ''}${isWater(f) && !narrow(f) ? ' atlas-sea' : ''}`}
+            d={path(outlines[f.id]!) ?? ''}
+            mask={isWater(f) && !narrow(f) ? 'url(#atlas-sea-mask)' : undefined}
+            filter={blur >= MIN_BLUR ? `url(#atlas-soft-${f.id})` : undefined}
+          />
+        );
+      };
+      // A ring marks a feature small for the view, every strait (narrow by nature), and narrow water.
+      const small = target.radiusKm < frameKm * RING_SHARE || target.kind === 'strait' || narrow(target);
+      const ring = small ? circleShape(target.center, Math.max(target.radiusKm * 2.5, frameKm * 0.12)) : null;
       return (
         <>
           <defs>
@@ -125,9 +145,11 @@ function BlankAtlasPlay({
               <rect x={-1e4} y={-1e4} width={2e4} height={2e4} fill="white" />
               <path d={landPath.d} fill="black" />
             </mask>
-            <filter id="atlas-soft" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation={6} />
-            </filter>
+            {shown.map(({ f }) => (
+              <filter key={f.id} id={`atlas-soft-${f.id}`} x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation={blurOf(f)} />
+              </filter>
+            ))}
           </defs>
           {shown.map(draw)}
           {ring && <path className="atlas-ring" d={path(ring) ?? ''} />}

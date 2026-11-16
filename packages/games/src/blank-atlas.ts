@@ -172,25 +172,33 @@ export function createBlankAtlas(features: readonly BlankAtlasFeature[]) {
   /**
    * Three wrong options of the same kind, as alike as the plan asks: far-off
    * ones first, then a few thousand km away, then the answer's neighbours.
-   * Never a more obscure tier than the next one up, so early options are names you know.
+   * They come from the answer's own tier while there are enough, so "pick the
+   * obscure one" (or the famous one) doesn't work; never a more obscure tier
+   * than the next one up; and never one the lit-up area also fits, because it's
+   * part of the answer, or the answer part of it (`related`).
    */
   function distractors(rng: Rng, target: BlankAtlasFeature, plan: BlankAtlasPlan): BlankAtlasFeature[] {
+    const related = new Set(target.related);
     const alike = features
-      .filter((f) => f.kind === target.kind && f.id !== target.id && f.tier <= plan.tier + 1)
+      .filter((f) => f.kind === target.kind && f.id !== target.id && !related.has(f.id) && f.tier <= Math.max(plan.tier, target.tier) + 1)
       .map((f) => ({ f, km: distanceKm(f.center, target.center) }))
       .sort((a, b) => a.km - b.km);
     const need = BLANK_ATLAS_OPTIONS - 1;
-    const from = (pool: typeof alike) => shuffled(rng, pool).slice(0, need);
-    const band = {
-      far: () => from(alike.filter((a) => a.km >= BLANK_ATLAS_FAR_KM)),
-      mid: () => from(alike.filter((a) => a.km >= BLANK_ATLAS_MID_KM[0] && a.km <= BLANK_ATLAS_MID_KM[1])),
-      near: () => from(alike.slice(0, NEAR_POOL)),
-      nearest: () => alike.slice(0, need),
-    }[plan.distractors]();
-    // Too few in the band: the ones nearest to it.
     const aim = { far: Infinity, mid: 2500, near: 0, nearest: 0 }[plan.distractors];
-    const rest = alike.filter((a) => !band.includes(a)).sort((a, b) => Math.abs(a.km - aim) - Math.abs(b.km - aim));
-    return [...band, ...rest].slice(0, need).map((a) => a.f);
+    /** The pool's options in the plan's band (shuffled), then the rest, nearest the band first. */
+    const ranked = (pool: typeof alike) => {
+      const band = {
+        far: () => shuffled(rng, pool.filter((a) => a.km >= BLANK_ATLAS_FAR_KM)),
+        mid: () => shuffled(rng, pool.filter((a) => a.km >= BLANK_ATLAS_MID_KM[0] && a.km <= BLANK_ATLAS_MID_KM[1])),
+        near: () => shuffled(rng, pool.slice(0, NEAR_POOL)),
+        nearest: () => pool.slice(0, need),
+      }[plan.distractors]().slice(0, need);
+      const rest = pool.filter((a) => !band.includes(a)).sort((a, b) => Math.abs(a.km - aim) - Math.abs(b.km - aim));
+      return [...band, ...rest];
+    };
+    const sameTier = ranked(alike.filter((a) => a.f.tier === target.tier));
+    const otherTiers = ranked(alike.filter((a) => a.f.tier !== target.tier));
+    return [...sameTier, ...otherTiers].slice(0, need).map((a) => a.f);
   }
 
   function makeLevel(rng: Rng, number: number, past: readonly string[]): BlankAtlasLevel {

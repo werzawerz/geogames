@@ -1,7 +1,7 @@
 import { dataset, queryCountries } from '@geogames/geodata';
 import { cityIndex, loadGreatCircles } from '@geogames/geodata/cities';
 import type { GameDefinition } from './catalog.ts';
-import { loadBlankAtlas } from '@geogames/geodata/blank-atlas';
+import { BLANK_ATLAS_VERSION, loadBlankAtlas } from '@geogames/geodata/blank-atlas';
 import { createBlankAtlas, replayBlankAtlas, type BlankAtlas } from './blank-atlas.ts';
 import { createBorderBlitz, replayBorderBlitz } from './border-blitz.ts';
 import { createChoiceQuiz, replayChoiceQuiz } from './choice-quiz.ts';
@@ -22,7 +22,8 @@ import type { GameSettings } from './settings.ts';
  * player had, so a server only accepts sessions from clients on its version.
  */
 // The tz release too: Clockwork's offsets come from it, so a rebuild of them must ask clients to update.
-export const DATASET_VERSION = `${dataset.generatedAt}|${cityIndex.generatedAt}|tz${CLOCK_TZDB}`;
+// And Blank Atlas's features: a rebuild can change which options a seed gives.
+export const DATASET_VERSION = `${dataset.generatedAt}|${cityIndex.generatedAt}|tz${CLOCK_TZDB}|atlas${BLANK_ATLAS_VERSION}`;
 
 export interface ReplayResult {
   score: number;

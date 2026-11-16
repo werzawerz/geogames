@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-16T08:54:38.104Z",
+ "generatedAt": "2026-11-16T09:51:19.793Z",
  "source": "Natural Earth 1:10m physical vectors (public domain), v5.1.2",
  "features": [
   {
@@ -16,6 +16,14 @@
    ],
    "radiusKm": 1747,
    "coastKm": 144,
+   "related": [
+    "adriatic-sea",
+    "aegean-sea",
+    "balearic-sea",
+    "ligurian-sea",
+    "sea-of-crete",
+    "tyrrhenian-sea"
+   ],
    "bounds": [
     -2.09,
     30.83,
@@ -35,6 +43,7 @@
    ],
    "radiusKm": 640,
    "coastKm": 125,
+   "related": [],
    "bounds": [
     27.48,
     40.92,
@@ -56,6 +65,7 @@
    ],
    "radiusKm": 614,
    "coastKm": 135,
+   "related": [],
    "bounds": [
     46.71,
     36.61,
@@ -75,6 +85,7 @@
    ],
    "radiusKm": 984,
    "coastKm": 85,
+   "related": [],
    "bounds": [
     33.83,
     12.46,
@@ -96,6 +107,7 @@
    ],
    "radiusKm": 1656,
    "coastKm": 297,
+   "related": [],
    "bounds": [
     -88.35,
     8.49,
@@ -117,6 +129,9 @@
    ],
    "radiusKm": 1012,
    "coastKm": 389,
+   "related": [
+    "bay-of-campeche"
+   ],
    "bounds": [
     -97.86,
     20.8,
@@ -139,6 +154,7 @@
    ],
    "radiusKm": 533,
    "coastKm": 86,
+   "related": [],
    "bounds": [
     47.72,
     23.97,
@@ -160,6 +176,7 @@
    ],
    "radiusKm": 446,
    "coastKm": 18,
+   "related": [],
    "bounds": [
     12.06,
     53.92,
@@ -179,6 +196,7 @@
    ],
    "radiusKm": 603,
    "coastKm": 290,
+   "related": [],
    "bounds": [
     -4.13,
     50.91,
@@ -198,6 +216,9 @@
    ],
    "radiusKm": 723,
    "coastKm": 266,
+   "related": [
+    "james-bay"
+   ],
    "bounds": [
     -94.96,
     54.7,
@@ -217,6 +238,7 @@
    ],
    "radiusKm": 1230,
    "coastKm": 566,
+   "related": [],
    "bounds": [
     79.69,
     5.52,
@@ -236,6 +258,7 @@
    ],
    "radiusKm": 1858,
    "coastKm": 908,
+   "related": [],
    "bounds": [
     51.03,
     -0.68,
@@ -255,6 +278,7 @@
    ],
    "radiusKm": 1742,
    "coastKm": 338,
+   "related": [],
    "bounds": [
     102.35,
     -3.22,
@@ -276,6 +300,7 @@
    ],
    "radiusKm": 1290,
    "coastKm": 235,
+   "related": [],
    "bounds": [
     128.31,
     34.28,
@@ -295,6 +320,7 @@
    ],
    "radiusKm": 1149,
    "coastKm": 432,
+   "related": [],
    "bounds": [
     162.76,
     50.99,
@@ -317,6 +343,7 @@
    ],
    "radiusKm": 1013,
    "coastKm": 845,
+   "related": [],
    "bounds": [
     75.52,
     26.86,
@@ -339,6 +366,7 @@
    ],
    "radiusKm": 4306,
    "coastKm": 44,
+   "related": [],
    "bounds": [
     -80.6,
     -55.29,
@@ -360,6 +388,7 @@
    ],
    "radiusKm": 1835,
    "coastKm": 437,
+   "related": [],
    "bounds": [
     -127.19,
     35.27,
@@ -382,6 +411,7 @@
    ],
    "radiusKm": 485,
    "coastKm": 199,
+   "related": [],
    "bounds": [
     5.16,
     43.67,
@@ -404,6 +434,7 @@
    ],
    "radiusKm": 1143,
    "coastKm": 1025,
+   "related": [],
    "bounds": [
     56.22,
     51.57,
@@ -425,6 +456,9 @@
    ],
    "radiusKm": 1517,
    "coastKm": 226,
+   "related": [
+    "adirondack-mountains"
+   ],
    "bounds": [
     -88.54,
     32.61,
@@ -446,6 +480,7 @@
    ],
    "radiusKm": 1109,
    "coastKm": 165,
+   "related": [],
    "bounds": [
     -10.99,
     28.31,
@@ -468,6 +503,7 @@
    ],
    "radiusKm": 575,
    "coastKm": 197,
+   "related": [],
    "bounds": [
     37.21,
     40.37,
@@ -490,6 +526,7 @@
    ],
    "radiusKm": 247,
    "coastKm": 189,
+   "related": [],
    "bounds": [
     -2.29,
     41.96,
@@ -511,6 +548,12 @@
    ],
    "radiusKm": 3080,
    "coastKm": 1111,
+   "related": [
+    "grand-erg-occidental",
+    "grand-erg-oriental",
+    "nubian-desert",
+    "tenere"
+   ],
    "bounds": [
     -17.07,
     9.34,
@@ -532,6 +575,7 @@
    ],
    "radiusKm": 1019,
    "coastKm": 932,
+   "related": [],
    "bounds": [
     94.46,
     37.84,
@@ -553,6 +597,7 @@
    ],
    "radiusKm": 1188,
    "coastKm": 567,
+   "related": [],
    "bounds": [
     13.15,
     -30.53,
@@ -574,6 +619,9 @@
    ],
    "radiusKm": 1406,
    "coastKm": 485,
+   "related": [
+    "musandam-peninsula"
+   ],
    "bounds": [
     34.62,
     12.61,
@@ -595,6 +643,7 @@
    ],
    "radiusKm": 1022,
    "coastKm": 149,
+   "related": [],
    "bounds": [
     4.8,
     55.35,
@@ -616,6 +665,7 @@
    ],
    "radiusKm": 658,
    "coastKm": 346,
+   "related": [],
    "bounds": [
     -9.48,
     36.03,
@@ -637,6 +687,7 @@
    ],
    "radiusKm": 788,
    "coastKm": 207,
+   "related": [],
    "bounds": [
     13.52,
     36.45,
@@ -658,6 +709,7 @@
    ],
    "radiusKm": 746,
    "coastKm": 155,
+   "related": [],
    "bounds": [
     155.6,
     50.98,
@@ -679,6 +731,7 @@
    ],
    "radiusKm": 755,
    "coastKm": 290,
+   "related": [],
    "bounds": [
     108.91,
     -4.17,
@@ -700,6 +753,7 @@
    ],
    "radiusKm": 1222,
    "coastKm": 282,
+   "related": [],
    "bounds": [
     131,
     -10.65,
@@ -719,6 +773,7 @@
    ],
    "radiusKm": 215,
    "coastKm": 96,
+   "related": [],
    "bounds": [
     144.65,
     -43.62,
@@ -740,6 +795,7 @@
    ],
    "radiusKm": 153,
    "coastKm": 49,
+   "related": [],
    "bounds": [
     12.44,
     36.69,
@@ -763,6 +819,7 @@
    ],
    "radiusKm": 1593,
    "coastKm": 1103,
+   "related": [],
    "bounds": [
     73.04,
     26.86,
@@ -786,6 +843,7 @@
    ],
    "radiusKm": 1935,
    "coastKm": 1188,
+   "related": [],
    "bounds": [
     -78.77,
     -20.12,
@@ -805,6 +863,7 @@
    ],
    "radiusKm": 340,
    "coastKm": 9,
+   "related": [],
    "bounds": [
     -92.11,
     46.42,
@@ -824,6 +883,7 @@
    ],
    "radiusKm": 267,
    "coastKm": 22,
+   "related": [],
    "bounds": [
     -88.04,
     41.63,
@@ -843,6 +903,7 @@
    ],
    "radiusKm": 225,
    "coastKm": 51,
+   "related": [],
    "bounds": [
     -84.78,
     43.02,
@@ -862,6 +923,7 @@
    ],
    "radiusKm": 217,
    "coastKm": 43,
+   "related": [],
    "bounds": [
     -83.47,
     41.39,
@@ -881,6 +943,7 @@
    ],
    "radiusKm": 182,
    "coastKm": 36,
+   "related": [],
    "bounds": [
     -79.77,
     43.19,
@@ -902,6 +965,7 @@
    ],
    "radiusKm": 234,
    "coastKm": 80,
+   "related": [],
    "bounds": [
     31.61,
     -3.01,
@@ -923,6 +987,7 @@
    ],
    "radiusKm": 326,
    "coastKm": 7,
+   "related": [],
    "bounds": [
     103.71,
     51.47,
@@ -944,6 +1009,9 @@
    ],
    "radiusKm": 462,
    "coastKm": 52,
+   "related": [
+    "mediterranean-sea"
+   ],
    "bounds": [
     12.23,
     39.74,
@@ -965,6 +1033,9 @@
    ],
    "radiusKm": 330,
    "coastKm": 47,
+   "related": [
+    "mediterranean-sea"
+   ],
    "bounds": [
     22.57,
     36.51,
@@ -984,6 +1055,9 @@
    ],
    "radiusKm": 483,
    "coastKm": 145,
+   "related": [
+    "mediterranean-sea"
+   ],
    "bounds": [
     8.9,
     37.73,
@@ -1003,6 +1077,7 @@
    ],
    "radiusKm": 214,
    "coastKm": 22,
+   "related": [],
    "bounds": [
     -6.62,
     51.68,
@@ -1022,6 +1097,7 @@
    ],
    "radiusKm": 1022,
    "coastKm": 406,
+   "related": [],
    "bounds": [
     -13.85,
     60.4,
@@ -1041,6 +1117,7 @@
    ],
    "radiusKm": 928,
    "coastKm": 355,
+   "related": [],
    "bounds": [
     17.04,
     66.8,
@@ -1060,6 +1137,7 @@
    ],
    "radiusKm": 331,
    "coastKm": 20,
+   "related": [],
    "bounds": [
     31.9,
     63.81,
@@ -1081,6 +1159,7 @@
    ],
    "radiusKm": 1042,
    "coastKm": 330,
+   "related": [],
    "bounds": [
     137.22,
     43.28,
@@ -1100,6 +1179,7 @@
    ],
    "radiusKm": 705,
    "coastKm": 303,
+   "related": [],
    "bounds": [
     119.14,
     23.65,
@@ -1119,6 +1199,7 @@
    ],
    "radiusKm": 1914,
    "coastKm": 1034,
+   "related": [],
    "bounds": [
     120.82,
     2.62,
@@ -1138,6 +1219,7 @@
    ],
    "radiusKm": 834,
    "coastKm": 102,
+   "related": [],
    "bounds": [
     104.61,
     -7.77,
@@ -1157,6 +1239,7 @@
    ],
    "radiusKm": 620,
    "coastKm": 281,
+   "related": [],
    "bounds": [
     92.2,
     5.57,
@@ -1176,6 +1259,7 @@
    ],
    "radiusKm": 556,
    "coastKm": 240,
+   "related": [],
    "bounds": [
     122.9,
     -13.81,
@@ -1195,6 +1279,7 @@
    ],
    "radiusKm": 732,
    "coastKm": 177,
+   "related": [],
    "bounds": [
     130.77,
     -12.44,
@@ -1214,6 +1299,7 @@
    ],
    "radiusKm": 1799,
    "coastKm": 344,
+   "related": [],
    "bounds": [
     142.78,
     -29.91,
@@ -1233,6 +1319,7 @@
    ],
    "radiusKm": 1300,
    "coastKm": 799,
+   "related": [],
    "bounds": [
     146.36,
     -50.79,
@@ -1252,6 +1339,7 @@
    ],
    "radiusKm": 969,
    "coastKm": 286,
+   "related": [],
    "bounds": [
     -64.77,
     47.46,
@@ -1271,6 +1359,7 @@
    ],
    "radiusKm": 617,
    "coastKm": 273,
+   "related": [],
    "bounds": [
     -82.07,
     69.92,
@@ -1290,6 +1379,7 @@
    ],
    "radiusKm": 1118,
    "coastKm": 183,
+   "related": [],
    "bounds": [
     -32.03,
     65.27,
@@ -1309,6 +1399,7 @@
    ],
    "radiusKm": 868,
    "coastKm": 162,
+   "related": [],
    "bounds": [
     55.3,
     68.31,
@@ -1328,6 +1419,7 @@
    ],
    "radiusKm": 749,
    "coastKm": 235,
+   "related": [],
    "bounds": [
     96.19,
     70.74,
@@ -1347,6 +1439,7 @@
    ],
    "radiusKm": 578,
    "coastKm": 185,
+   "related": [],
    "bounds": [
     175.62,
     65.66,
@@ -1366,6 +1459,7 @@
    ],
    "radiusKm": 421,
    "coastKm": 26,
+   "related": [],
    "bounds": [
     17.13,
     59.66,
@@ -1385,6 +1479,7 @@
    ],
    "radiusKm": 212,
    "coastKm": 43,
+   "related": [],
    "bounds": [
     22.94,
     59.07,
@@ -1406,6 +1501,7 @@
    ],
    "radiusKm": 354,
    "coastKm": 226,
+   "related": [],
    "bounds": [
     -8,
     43.32,
@@ -1425,6 +1521,7 @@
    ],
    "radiusKm": 1153,
    "coastKm": 357,
+   "related": [],
    "bounds": [
     -7.53,
     -0.71,
@@ -1444,6 +1541,7 @@
    ],
    "radiusKm": 566,
    "coastKm": 127,
+   "related": [],
    "bounds": [
     42.52,
     10.43,
@@ -1463,6 +1561,7 @@
    ],
    "radiusKm": 304,
    "coastKm": 101,
+   "related": [],
    "bounds": [
     56.3,
     22.46,
@@ -1484,6 +1583,7 @@
    ],
    "radiusKm": 458,
    "coastKm": 189,
+   "related": [],
    "bounds": [
     99.16,
     6.16,
@@ -1503,6 +1603,9 @@
    ],
    "radiusKm": 928,
    "coastKm": 145,
+   "related": [
+    "cook-inlet"
+   ],
    "bounds": [
     -163.38,
     54.05,
@@ -1525,6 +1628,7 @@
    ],
    "radiusKm": 661,
    "coastKm": 64,
+   "related": [],
    "bounds": [
     -114.93,
     23.27,
@@ -1544,6 +1648,7 @@
    ],
    "radiusKm": 392,
    "coastKm": 216,
+   "related": [],
    "bounds": [
     135.41,
     -17.7,
@@ -1563,6 +1668,7 @@
    ],
    "radiusKm": 1370,
    "coastKm": 389,
+   "related": [],
    "bounds": [
     118.04,
     -43.42,
@@ -1585,6 +1691,7 @@
    ],
    "radiusKm": 461,
    "coastKm": 80,
+   "related": [],
    "bounds": [
     -66.7,
     45.62,
@@ -1607,6 +1714,7 @@
    ],
    "radiusKm": 335,
    "coastKm": 29,
+   "related": [],
    "bounds": [
     -6.57,
     48.42,
@@ -1626,6 +1734,7 @@
    ],
    "radiusKm": 1180,
    "coastKm": 315,
+   "related": [],
    "bounds": [
     32.59,
     -26.57,
@@ -1647,6 +1756,7 @@
    ],
    "radiusKm": 541,
    "coastKm": 249,
+   "related": [],
    "bounds": [
     117.06,
     0.84,
@@ -1668,6 +1778,7 @@
    ],
    "radiusKm": 716,
    "coastKm": 130,
+   "related": [],
    "bounds": [
     46.12,
     26.77,
@@ -1687,6 +1798,7 @@
    ],
    "radiusKm": 434,
    "coastKm": 1044,
+   "related": [],
    "bounds": [
     66.67,
     34.08,
@@ -1708,6 +1820,7 @@
    ],
    "radiusKm": 307,
    "coastKm": 1088,
+   "related": [],
    "bounds": [
     74.92,
     33.34,
@@ -1730,6 +1843,7 @@
    ],
    "radiusKm": 296,
    "coastKm": 728,
+   "related": [],
    "bounds": [
     71.2,
     37.08,
@@ -1751,6 +1865,7 @@
    ],
    "radiusKm": 1097,
    "coastKm": 495,
+   "related": [],
    "bounds": [
     72.98,
     39.66,
@@ -1774,6 +1889,7 @@
    ],
    "radiusKm": 852,
    "coastKm": 887,
+   "related": [],
    "bounds": [
     81.93,
     43.25,
@@ -1795,6 +1911,7 @@
    ],
    "radiusKm": 1047,
    "coastKm": 1336,
+   "related": [],
    "bounds": [
     77.96,
     35.09,
@@ -1816,6 +1933,10 @@
    ],
    "radiusKm": 466,
    "coastKm": 528,
+   "related": [
+    "tatra-mountains",
+    "transylvanian-alps"
+   ],
    "bounds": [
     17.48,
     44.6,
@@ -1838,6 +1959,7 @@
    ],
    "radiusKm": 415,
    "coastKm": 77,
+   "related": [],
    "bounds": [
     8.94,
     39.9,
@@ -1861,6 +1983,7 @@
    ],
    "radiusKm": 841,
    "coastKm": 22,
+   "related": [],
    "bounds": [
     5.59,
     58.52,
@@ -1882,6 +2005,7 @@
    ],
    "radiusKm": 1557,
    "coastKm": 383,
+   "related": [],
    "bounds": [
     142.68,
     -38.03,
@@ -1901,6 +2025,7 @@
    ],
    "radiusKm": 687,
    "coastKm": 162,
+   "related": [],
    "bounds": [
     -110.76,
     20.77,
@@ -1920,6 +2045,7 @@
    ],
    "radiusKm": 641,
    "coastKm": 339,
+   "related": [],
    "bounds": [
     -103.41,
     20.16,
@@ -1939,6 +2065,7 @@
    ],
    "radiusKm": 625,
    "coastKm": 177,
+   "related": [],
    "bounds": [
     -166.79,
     66.61,
@@ -1958,6 +2085,7 @@
    ],
    "radiusKm": 343,
    "coastKm": 153,
+   "related": [],
    "bounds": [
     -154.61,
     60.88,
@@ -1979,6 +2107,7 @@
    ],
    "radiusKm": 697,
    "coastKm": 123,
+   "related": [],
    "bounds": [
     -123.08,
     40.11,
@@ -1998,6 +2127,7 @@
    ],
    "radiusKm": 345,
    "coastKm": 162,
+   "related": [],
    "bounds": [
     -121.79,
     34.87,
@@ -2017,6 +2147,7 @@
    ],
    "radiusKm": 793,
    "coastKm": 217,
+   "related": [],
    "bounds": [
     23.53,
     -33.51,
@@ -2038,6 +2169,7 @@
    ],
    "radiusKm": 903,
    "coastKm": 522,
+   "related": [],
    "bounds": [
     33.95,
     4.1,
@@ -2061,6 +2193,7 @@
    ],
    "radiusKm": 339,
    "coastKm": 13,
+   "related": [],
    "bounds": [
     48.18,
     35.38,
@@ -2080,6 +2213,7 @@
    ],
    "radiusKm": 603,
    "coastKm": 85,
+   "related": [],
    "bounds": [
     72.85,
     10.55,
@@ -2099,6 +2233,7 @@
    ],
    "radiusKm": 699,
    "coastKm": 56,
+   "related": [],
    "bounds": [
     77.68,
     11.29,
@@ -2118,6 +2253,7 @@
    ],
    "radiusKm": 403,
    "coastKm": 41,
+   "related": [],
    "bounds": [
     166.77,
     -46.02,
@@ -2139,6 +2275,7 @@
    ],
    "radiusKm": 184,
    "coastKm": 100,
+   "related": [],
    "bounds": [
     31.27,
     36.1,
@@ -2160,6 +2297,7 @@
    ],
    "radiusKm": 578,
    "coastKm": 87,
+   "related": [],
    "bounds": [
     -70.91,
     -28,
@@ -2181,6 +2319,7 @@
    ],
    "radiusKm": 970,
    "coastKm": 37,
+   "related": [],
    "bounds": [
     11.72,
     -27,
@@ -2204,6 +2343,7 @@
    ],
    "radiusKm": 677,
    "coastKm": 443,
+   "related": [],
    "bounds": [
     44.77,
     16.54,
@@ -2226,6 +2366,7 @@
    ],
    "radiusKm": 414,
    "coastKm": 887,
+   "related": [],
    "bounds": [
     78.28,
     37.24,
@@ -2248,6 +2389,7 @@
    ],
    "radiusKm": 468,
    "coastKm": 502,
+   "related": [],
    "bounds": [
     68.36,
     24.41,
@@ -2267,6 +2409,7 @@
    ],
    "radiusKm": 320,
    "coastKm": 458,
+   "related": [],
    "bounds": [
     36.86,
     30.47,
@@ -2286,6 +2429,7 @@
    ],
    "radiusKm": 434,
    "coastKm": 395,
+   "related": [],
    "bounds": [
     123.76,
     -29.76,
@@ -2305,6 +2449,7 @@
    ],
    "radiusKm": 379,
    "coastKm": 373,
+   "related": [],
    "bounds": [
     121.3,
     -22.62,
@@ -2328,6 +2473,7 @@
    ],
    "radiusKm": 658,
    "coastKm": 535,
+   "related": [],
    "bounds": [
     55.85,
     36.22,
@@ -2351,6 +2497,7 @@
    ],
    "radiusKm": 496,
    "coastKm": 388,
+   "related": [],
    "bounds": [
     59.03,
     39.12,
@@ -2370,6 +2517,7 @@
    ],
    "radiusKm": 551,
    "coastKm": 77,
+   "related": [],
    "bounds": [
     -116.72,
     27.57,
@@ -2389,6 +2537,7 @@
    ],
    "radiusKm": 686,
    "coastKm": 545,
+   "related": [],
    "bounds": [
     -111.02,
     24.25,
@@ -2408,6 +2557,9 @@
    ],
    "radiusKm": 385,
    "coastKm": 353,
+   "related": [
+    "sahara"
+   ],
    "bounds": [
     30.37,
     17.78,
@@ -2429,6 +2581,7 @@
    ],
    "radiusKm": 512,
    "coastKm": 349,
+   "related": [],
    "bounds": [
     74.2,
     12.46,
@@ -2448,6 +2601,7 @@
    ],
    "radiusKm": 440,
    "coastKm": 457,
+   "related": [],
    "bounds": [
     -113.96,
     33.63,
@@ -2467,6 +2621,7 @@
    ],
    "radiusKm": 781,
    "coastKm": 205,
+   "related": [],
    "bounds": [
     -71.5,
     -27.04,
@@ -2488,6 +2643,7 @@
    ],
    "radiusKm": 1821,
    "coastKm": 767,
+   "related": [],
    "bounds": [
     -57.74,
     -29.98,
@@ -2507,6 +2663,7 @@
    ],
    "radiusKm": 1225,
    "coastKm": 893,
+   "related": [],
    "bounds": [
     11.98,
     -11.8,
@@ -2526,6 +2683,7 @@
    ],
    "radiusKm": 1576,
    "coastKm": 800,
+   "related": [],
    "bounds": [
     -114.17,
     28.16,
@@ -2547,6 +2705,7 @@
    ],
    "radiusKm": 941,
    "coastKm": 413,
+   "related": [],
    "bounds": [
     -68.03,
     -39.87,
@@ -2558,7 +2717,7 @@
    "id": "patagonia",
    "name": "Patagonia",
    "aliases": [],
-   "kind": "lowland",
+   "kind": "plateau",
    "tier": 2,
    "center": [
     -43.66,
@@ -2566,6 +2725,7 @@
    ],
    "radiusKm": 1355,
    "coastKm": 257,
+   "related": [],
    "bounds": [
     -75.71,
     -55.78,
@@ -2585,6 +2745,7 @@
    ],
    "radiusKm": 3312,
    "coastKm": 1448,
+   "related": [],
    "bounds": [
     -16.49,
     9.31,
@@ -2608,6 +2769,7 @@
    ],
    "radiusKm": 388,
    "coastKm": 117,
+   "related": [],
    "bounds": [
     -91.89,
     15.9,
@@ -2630,6 +2792,7 @@
    ],
    "radiusKm": 642,
    "coastKm": 51,
+   "related": [],
    "bounds": [
     -116.69,
     22.89,
@@ -2651,6 +2814,7 @@
    ],
    "radiusKm": 176,
    "coastKm": 62,
+   "related": [],
    "bounds": [
     32.51,
     44.39,
@@ -2670,6 +2834,7 @@
    ],
    "radiusKm": 573,
    "coastKm": 113,
+   "related": [],
    "bounds": [
     98.23,
     1.27,
@@ -2689,6 +2854,7 @@
    ],
    "radiusKm": 230,
    "coastKm": 112,
+   "related": [],
    "bounds": [
     32.48,
     66.06,
@@ -2710,6 +2876,7 @@
    ],
    "radiusKm": 1011,
    "coastKm": 371,
+   "related": [],
    "bounds": [
     38.14,
     -2.51,
@@ -2724,7 +2891,7 @@
     "Jutland Peninsula",
     "Jylland"
    ],
-   "kind": "lowland",
+   "kind": "peninsula",
    "tier": 2,
    "center": [
     56.04,
@@ -2732,6 +2899,7 @@
    ],
    "radiusKm": 204,
    "coastKm": 41,
+   "related": [],
    "bounds": [
     8.12,
     54.29,
@@ -2745,7 +2913,7 @@
    "aliases": [
     "Asia Minor"
    ],
-   "kind": "lowland",
+   "kind": "peninsula",
    "tier": 2,
    "center": [
     39.07,
@@ -2753,6 +2921,7 @@
    ],
    "radiusKm": 795,
    "coastKm": 249,
+   "related": [],
    "bounds": [
     26.1,
     36.04,
@@ -2774,6 +2943,7 @@
    ],
    "radiusKm": 699,
    "coastKm": 47,
+   "related": [],
    "bounds": [
     130.89,
     33.49,
@@ -2795,6 +2965,7 @@
    ],
    "radiusKm": 298,
    "coastKm": 94,
+   "related": [],
    "bounds": [
     139.82,
     41.42,
@@ -2814,6 +2985,7 @@
    ],
    "radiusKm": 474,
    "coastKm": 20,
+   "related": [],
    "bounds": [
     119.76,
     12.57,
@@ -2833,6 +3005,7 @@
    ],
    "radiusKm": 331,
    "coastKm": 77,
+   "related": [],
    "bounds": [
     121.9,
     5.6,
@@ -2854,6 +3027,7 @@
    ],
    "radiusKm": 539,
    "coastKm": 43,
+   "related": [],
    "bounds": [
     105.24,
     -8.77,
@@ -2875,6 +3049,7 @@
    ],
    "radiusKm": 967,
    "coastKm": 137,
+   "related": [],
    "bounds": [
     95.21,
     -5.91,
@@ -2896,6 +3071,7 @@
    ],
    "radiusKm": 606,
    "coastKm": 26,
+   "related": [],
    "bounds": [
     118.78,
     -5.69,
@@ -2915,6 +3091,7 @@
    ],
    "radiusKm": 484,
    "coastKm": 40,
+   "related": [],
    "bounds": [
     141.66,
     45.92,
@@ -2936,6 +3113,7 @@
    ],
    "radiusKm": 135,
    "coastKm": 48,
+   "related": [],
    "bounds": [
     8.18,
     38.91,
@@ -2957,6 +3135,7 @@
    ],
    "radiusKm": 99,
    "coastKm": 34,
+   "related": [],
    "bounds": [
     8.57,
     41.38,
@@ -2976,6 +3155,7 @@
    ],
    "radiusKm": 341,
    "coastKm": 75,
+   "related": [],
    "bounds": [
     -74.45,
     17.66,
@@ -2997,6 +3177,7 @@
    ],
    "radiusKm": 319,
    "coastKm": 65,
+   "related": [],
    "bounds": [
     -59.36,
     46.65,
@@ -3016,6 +3197,7 @@
    ],
    "radiusKm": 792,
    "coastKm": 3,
+   "related": [],
    "bounds": [
     -89.99,
     61.87,
@@ -3035,6 +3217,7 @@
    ],
    "radiusKm": 242,
    "coastKm": 27,
+   "related": [],
    "bounds": [
     -72.21,
     -55.88,
@@ -3056,6 +3239,7 @@
    ],
    "radiusKm": 534,
    "coastKm": 96,
+   "related": [],
    "bounds": [
     172.71,
     -41.61,
@@ -3077,6 +3261,7 @@
    ],
    "radiusKm": 446,
    "coastKm": 61,
+   "related": [],
    "bounds": [
     166.48,
     -46.63,
@@ -3099,6 +3284,7 @@
    ],
    "radiusKm": 295,
    "coastKm": 19,
+   "related": [],
    "bounds": [
     -18.5,
     27.21,
@@ -3121,6 +3307,7 @@
    ],
    "radiusKm": 174,
    "coastKm": 6,
+   "related": [],
    "bounds": [
     1.01,
     38.42,
@@ -3142,6 +3329,7 @@
    ],
    "radiusKm": 1496,
    "coastKm": 570,
+   "related": [],
    "bounds": [
     -179.19,
     18.15,
@@ -3163,6 +3351,7 @@
    ],
    "radiusKm": 1014,
    "coastKm": 98,
+   "related": [],
    "bounds": [
     172.41,
     50.9,
@@ -3182,6 +3371,7 @@
    ],
    "radiusKm": 482,
    "coastKm": 10,
+   "related": [],
    "bounds": [
     51.18,
     70.22,
@@ -3201,6 +3391,7 @@
    ],
    "radiusKm": 124,
    "coastKm": 59,
+   "related": [],
    "bounds": [
     29.76,
     30.08,
@@ -3223,6 +3414,7 @@
    ],
    "radiusKm": 97,
    "coastKm": 16,
+   "related": [],
    "bounds": [
     -70.04,
     -16.6,
@@ -3244,6 +3436,7 @@
    ],
    "radiusKm": 328,
    "coastKm": 19,
+   "related": [],
    "bounds": [
     29.04,
     -8.8,
@@ -3266,6 +3459,7 @@
    ],
    "radiusKm": 283,
    "coastKm": 25,
+   "related": [],
    "bounds": [
     33.9,
     -14.4,
@@ -3287,6 +3481,7 @@
    ],
    "radiusKm": 109,
    "coastKm": 46,
+   "related": [],
    "bounds": [
     29.8,
     59.9,
@@ -3308,6 +3503,7 @@
    ],
    "radiusKm": 135,
    "coastKm": 11,
+   "related": [],
    "bounds": [
     33.93,
     60.85,
@@ -3329,6 +3525,7 @@
    ],
    "radiusKm": 283,
    "coastKm": 19,
+   "related": [],
    "bounds": [
     73.42,
     44.96,
@@ -3348,6 +3545,7 @@
    ],
    "radiusKm": 189,
    "coastKm": 14,
+   "related": [],
    "bounds": [
     -125.12,
     64.81,
@@ -3367,6 +3565,7 @@
    ],
    "radiusKm": 252,
    "coastKm": 34,
+   "related": [],
    "bounds": [
     -117.69,
     60.83,
@@ -3386,6 +3585,7 @@
    ],
    "radiusKm": 256,
    "coastKm": 14,
+   "related": [],
    "bounds": [
     -99.25,
     50.39,
@@ -3408,6 +3608,7 @@
    ],
    "radiusKm": 81,
    "coastKm": 1,
+   "related": [],
    "bounds": [
     12.3,
     58.36,
@@ -3427,6 +3628,7 @@
    ],
    "radiusKm": 64,
    "coastKm": 7,
+   "related": [],
    "bounds": [
     -113.03,
     40.69,
@@ -3449,6 +3651,7 @@
    ],
    "radiusKm": 84,
    "coastKm": 10,
+   "related": [],
    "bounds": [
     -85.94,
     11.03,
@@ -3470,6 +3673,7 @@
    ],
    "radiusKm": 140,
    "coastKm": 6,
+   "related": [],
    "bounds": [
     35.83,
     2.39,
@@ -3491,6 +3695,7 @@
    ],
    "radiusKm": 187,
    "coastKm": 30,
+   "related": [],
    "bounds": [
     58.22,
     44.42,
@@ -3512,6 +3717,7 @@
    ],
    "radiusKm": 42,
    "coastKm": 7,
+   "related": [],
    "bounds": [
     -6.03,
     35.78,
@@ -3534,6 +3740,7 @@
    ],
    "radiusKm": 14,
    "coastKm": 2,
+   "related": [],
    "bounds": [
     28.96,
     41.01,
@@ -3556,6 +3763,7 @@
    ],
    "radiusKm": 33,
    "coastKm": 2,
+   "related": [],
    "bounds": [
     26.18,
     39.99,
@@ -3577,6 +3785,7 @@
    ],
    "radiusKm": 141,
    "coastKm": 27,
+   "related": [],
    "bounds": [
     26.68,
     40.32,
@@ -3599,6 +3808,7 @@
    ],
    "radiusKm": 63,
    "coastKm": 15,
+   "related": [],
    "bounds": [
     43,
     12.18,
@@ -3620,6 +3830,7 @@
    ],
    "radiusKm": 626,
    "coastKm": 110,
+   "related": [],
    "bounds": [
     95.45,
     0.69,
@@ -3641,6 +3852,7 @@
    ],
    "radiusKm": 64,
    "coastKm": 10,
+   "related": [],
    "bounds": [
     103.37,
     1.05,
@@ -3660,6 +3872,7 @@
    ],
    "radiusKm": 328,
    "coastKm": 36,
+   "related": [],
    "bounds": [
     143.55,
     -41.17,
@@ -3679,6 +3892,7 @@
    ],
    "radiusKm": 72,
    "coastKm": 6,
+   "related": [],
    "bounds": [
     174.04,
     -41.75,
@@ -3700,6 +3914,7 @@
    ],
    "radiusKm": 202,
    "coastKm": 83,
+   "related": [],
    "bounds": [
     117.43,
     23.05,
@@ -3721,6 +3936,7 @@
    ],
    "radiusKm": 239,
    "coastKm": 44,
+   "related": [],
    "bounds": [
     126.36,
     32.45,
@@ -3740,6 +3956,7 @@
    ],
    "radiusKm": 60,
    "coastKm": 7,
+   "related": [],
    "bounds": [
     140.14,
     40.83,
@@ -3762,6 +3979,7 @@
    ],
    "radiusKm": 54,
    "coastKm": 8,
+   "related": [],
    "bounds": [
     141.69,
     45.39,
@@ -3783,6 +4001,7 @@
    ],
    "radiusKm": 90,
    "coastKm": 18,
+   "related": [],
    "bounds": [
     140.84,
     51.91,
@@ -3802,6 +4021,7 @@
    ],
    "radiusKm": 471,
    "coastKm": 98,
+   "related": [],
    "bounds": [
     116.15,
     -5.32,
@@ -3821,6 +4041,7 @@
    ],
    "radiusKm": 91,
    "coastKm": 25,
+   "related": [],
    "bounds": [
     78.92,
     8.91,
@@ -3840,6 +4061,7 @@
    ],
    "radiusKm": 813,
    "coastKm": 237,
+   "related": [],
    "bounds": [
     -69.34,
     60.17,
@@ -3859,6 +4081,7 @@
    ],
    "radiusKm": 272,
    "coastKm": 134,
+   "related": [],
    "bounds": [
     -30.99,
     64.87,
@@ -3878,6 +4101,7 @@
    ],
    "radiusKm": 467,
    "coastKm": 58,
+   "related": [],
    "bounds": [
     -80.98,
     60.29,
@@ -3897,6 +4121,7 @@
    ],
    "radiusKm": 72,
    "coastKm": 14,
+   "related": [],
    "bounds": [
     -57.03,
     51.27,
@@ -3919,6 +4144,7 @@
    ],
    "radiusKm": 333,
    "coastKm": 50,
+   "related": [],
    "bounds": [
     -83.04,
     23,
@@ -3940,6 +4166,7 @@
    ],
    "radiusKm": 221,
    "coastKm": 9,
+   "related": [],
    "bounds": [
     -87.03,
     21.42,
@@ -3962,30 +4189,12 @@
    ],
    "radiusKm": 220,
    "coastKm": 1,
+   "related": [],
    "bounds": [
     -74.63,
     -54.14,
     -68.7,
     -52.21
-   ]
-  },
-  {
-   "id": "drake-passage",
-   "name": "Drake Passage",
-   "aliases": [],
-   "kind": "strait",
-   "tier": 3,
-   "center": [
-    -63.88,
-    -65.03
-   ],
-   "radiusKm": 918,
-   "coastKm": 83,
-   "bounds": [
-    -68.05,
-    -66.7,
-    -59.62,
-    -55.7
    ]
   },
   {
@@ -4000,6 +4209,7 @@
    ],
    "radiusKm": 192,
    "coastKm": 41,
+   "related": [],
    "bounds": [
     -6.4,
     50.11,
@@ -4019,6 +4229,7 @@
    ],
    "radiusKm": 196,
    "coastKm": 58,
+   "related": [],
    "bounds": [
     7.13,
     56.84,
@@ -4038,6 +4249,7 @@
    ],
    "radiusKm": 158,
    "coastKm": 41,
+   "related": [],
    "bounds": [
     10.28,
     55.7,
@@ -4061,6 +4273,7 @@
    ],
    "radiusKm": 51,
    "coastKm": 2,
+   "related": [],
    "bounds": [
     12.21,
     55.3,
@@ -4080,6 +4293,7 @@
    ],
    "radiusKm": 184,
    "coastKm": 29,
+   "related": [],
    "bounds": [
     -132.52,
     52.27,
@@ -4099,6 +4313,7 @@
    ],
    "radiusKm": 125,
    "coastKm": 53,
+   "related": [],
    "bounds": [
     21.74,
     56.97,
@@ -4121,6 +4336,7 @@
    ],
    "radiusKm": 271,
    "coastKm": 61,
+   "related": [],
    "bounds": [
     15.36,
     30.27,
@@ -4142,6 +4358,7 @@
    ],
    "radiusKm": 112,
    "coastKm": 31,
+   "related": [],
    "bounds": [
     10.04,
     33.66,
@@ -4161,6 +4378,7 @@
    ],
    "radiusKm": 176,
    "coastKm": 8,
+   "related": [],
    "bounds": [
     32.36,
     27.22,
@@ -4182,6 +4400,7 @@
    ],
    "radiusKm": 99,
    "coastKm": 10,
+   "related": [],
    "bounds": [
     34.39,
     27.98,
@@ -4203,6 +4422,7 @@
    ],
    "radiusKm": 289,
    "coastKm": 113,
+   "related": [],
    "bounds": [
     105.62,
     17.9,
@@ -4226,6 +4446,7 @@
    ],
    "radiusKm": 271,
    "coastKm": 82,
+   "related": [],
    "bounds": [
     117.55,
     37.12,
@@ -4245,6 +4466,9 @@
    ],
    "radiusKm": 95,
    "coastKm": 61,
+   "related": [
+    "mediterranean-sea"
+   ],
    "bounds": [
     7.82,
     43.02,
@@ -4264,6 +4488,9 @@
    ],
    "radiusKm": 235,
    "coastKm": 67,
+   "related": [
+    "mediterranean-sea"
+   ],
    "bounds": [
     -0.33,
     38.66,
@@ -4285,6 +4512,9 @@
    ],
    "radiusKm": 271,
    "coastKm": 23,
+   "related": [
+    "mediterranean-sea"
+   ],
    "bounds": [
     22.73,
     35.12,
@@ -4306,6 +4536,7 @@
    ],
    "radiusKm": 218,
    "coastKm": 59,
+   "related": [],
    "bounds": [
     34.84,
     45.27,
@@ -4327,6 +4558,7 @@
    ],
    "radiusKm": 416,
    "coastKm": 8,
+   "related": [],
    "bounds": [
     69.01,
     66.25,
@@ -4346,6 +4578,9 @@
    ],
    "radiusKm": 193,
    "coastKm": 27,
+   "related": [
+    "gulf-of-maine"
+   ],
    "bounds": [
     -67.19,
     44.15,
@@ -4365,6 +4600,7 @@
    ],
    "radiusKm": 174,
    "coastKm": 7,
+   "related": [],
    "bounds": [
     -77.31,
     36.89,
@@ -4384,6 +4620,9 @@
    ],
    "radiusKm": 277,
    "coastKm": 28,
+   "related": [
+    "hudson-bay"
+   ],
    "bounds": [
     -82.42,
     50.76,
@@ -4403,6 +4642,7 @@
    ],
    "radiusKm": 202,
    "coastKm": 84,
+   "related": [],
    "bounds": [
     -70.65,
     57.9,
@@ -4422,6 +4662,7 @@
    ],
    "radiusKm": 413,
    "coastKm": 94,
+   "related": [],
    "bounds": [
     -86.75,
     63.76,
@@ -4441,6 +4682,9 @@
    ],
    "radiusKm": 223,
    "coastKm": 93,
+   "related": [
+    "bay-of-fundy"
+   ],
    "bounds": [
     -70.83,
     41.69,
@@ -4460,6 +4704,9 @@
    ],
    "radiusKm": 229,
    "coastKm": 23,
+   "related": [
+    "gulf-of-alaska"
+   ],
    "bounds": [
     -154.18,
     58.89,
@@ -4479,6 +4726,7 @@
    ],
    "radiusKm": 246,
    "coastKm": 101,
+   "related": [],
    "bounds": [
     -162.13,
     55.75,
@@ -4498,6 +4746,7 @@
    ],
    "radiusKm": 204,
    "coastKm": 5,
+   "related": [],
    "bounds": [
     -125.24,
     47.11,
@@ -4517,6 +4766,7 @@
    ],
    "radiusKm": 129,
    "coastKm": 44,
+   "related": [],
    "bounds": [
     -88.91,
     15.7,
@@ -4538,6 +4788,7 @@
    ],
    "radiusKm": 163,
    "coastKm": 16,
+   "related": [],
    "bounds": [
     -80.47,
     7.5,
@@ -4560,6 +4811,9 @@
    ],
    "radiusKm": 395,
    "coastKm": 153,
+   "related": [
+    "gulf-of-mexico"
+   ],
    "bounds": [
     -97.2,
     18.17,
@@ -4582,6 +4836,7 @@
    ],
    "radiusKm": 322,
    "coastKm": 41,
+   "related": [],
    "bounds": [
     -58.55,
     -36.35,
@@ -4603,6 +4858,7 @@
    ],
    "radiusKm": 113,
    "coastKm": 47,
+   "related": [],
    "bounds": [
     -72.11,
     9.05,
@@ -4624,6 +4880,7 @@
    ],
    "radiusKm": 106,
    "coastKm": 14,
+   "related": [],
    "bounds": [
     68.8,
     22.29,
@@ -4643,6 +4900,7 @@
    ],
    "radiusKm": 187,
    "coastKm": 83,
+   "related": [],
    "bounds": [
     77.3,
     7.32,
@@ -4662,6 +4920,7 @@
    ],
    "radiusKm": 282,
    "coastKm": 72,
+   "related": [],
    "bounds": [
     142.21,
     -8.95,
@@ -4681,6 +4940,7 @@
    ],
    "radiusKm": 148,
    "coastKm": 22,
+   "related": [],
    "bounds": [
     113.4,
     -26.39,
@@ -4700,6 +4960,7 @@
    ],
    "radiusKm": 129,
    "coastKm": 46,
+   "related": [],
    "bounds": [
     175.77,
     -37.99,
@@ -4719,6 +4980,7 @@
    ],
    "radiusKm": 481,
    "coastKm": 199,
+   "related": [],
    "bounds": [
     116.76,
     5.06,
@@ -4738,6 +5000,7 @@
    ],
    "radiusKm": 771,
    "coastKm": 186,
+   "related": [],
    "bounds": [
     120.25,
     -8.75,
@@ -4757,6 +5020,7 @@
    ],
    "radiusKm": 603,
    "coastKm": 147,
+   "related": [],
    "bounds": [
     141.97,
     -5.98,
@@ -4776,6 +5040,7 @@
    ],
    "radiusKm": 892,
    "coastKm": 152,
+   "related": [],
    "bounds": [
     146.95,
     -11.76,
@@ -4795,6 +5060,7 @@
    ],
    "radiusKm": 697,
    "coastKm": 279,
+   "related": [],
    "bounds": [
     138.84,
     68.54,
@@ -4816,6 +5082,7 @@
    ],
    "radiusKm": 418,
    "coastKm": 116,
+   "related": [],
    "bounds": [
     13.6,
     41.8,
@@ -4837,6 +5104,7 @@
    ],
    "radiusKm": 222,
    "coastKm": 219,
+   "related": [],
    "bounds": [
     22.33,
     42.51,
@@ -4859,6 +5127,9 @@
    ],
    "radiusKm": 210,
    "coastKm": 552,
+   "related": [
+    "carpathian-mountains"
+   ],
    "bounds": [
     18,
     48.82,
@@ -4880,6 +5151,9 @@
    ],
    "radiusKm": 208,
    "coastKm": 380,
+   "related": [
+    "carpathian-mountains"
+   ],
    "bounds": [
     21.63,
     44.62,
@@ -4901,6 +5175,7 @@
    ],
    "radiusKm": 236,
    "coastKm": 45,
+   "related": [],
    "bounds": [
     -7.41,
     42.68,
@@ -4920,6 +5195,7 @@
    ],
    "radiusKm": 124,
    "coastKm": 360,
+   "related": [],
    "bounds": [
     6.52,
     47.81,
@@ -4941,6 +5217,7 @@
    ],
    "radiusKm": 129,
    "coastKm": 334,
+   "related": [],
    "bounds": [
     5.68,
     46.05,
@@ -4962,6 +5239,7 @@
    ],
    "radiusKm": 72,
    "coastKm": 209,
+   "related": [],
    "bounds": [
     9.58,
     51.28,
@@ -4981,6 +5259,7 @@
    ],
    "radiusKm": 78,
    "coastKm": 170,
+   "related": [],
    "bounds": [
     4.16,
     49.46,
@@ -5003,6 +5282,7 @@
    ],
    "radiusKm": 102,
    "coastKm": 377,
+   "related": [],
    "bounds": [
     11.67,
     49.88,
@@ -5025,6 +5305,7 @@
    ],
    "radiusKm": 135,
    "coastKm": 339,
+   "related": [],
    "bounds": [
     14.19,
     49.9,
@@ -5046,6 +5327,7 @@
    ],
    "radiusKm": 137,
    "coastKm": 50,
+   "related": [],
    "bounds": [
     -5.54,
     55.92,
@@ -5065,6 +5347,7 @@
    ],
    "radiusKm": 179,
    "coastKm": 147,
+   "related": [],
    "bounds": [
     1.43,
     43.4,
@@ -5086,6 +5369,7 @@
    ],
    "radiusKm": 192,
    "coastKm": 70,
+   "related": [],
    "bounds": [
     19.93,
     38.45,
@@ -5107,6 +5391,7 @@
    ],
    "radiusKm": 343,
    "coastKm": 10,
+   "related": [],
    "bounds": [
     34.05,
     40.14,
@@ -5128,6 +5413,7 @@
    ],
    "radiusKm": 86,
    "coastKm": 25,
+   "related": [],
    "bounds": [
     35.31,
     33.23,
@@ -5150,6 +5436,7 @@
    ],
    "radiusKm": 297,
    "coastKm": 29,
+   "related": [],
    "bounds": [
     55.86,
     22.19,
@@ -5172,6 +5459,7 @@
    ],
    "radiusKm": 295,
    "coastKm": 362,
+   "related": [],
    "bounds": [
     55.46,
     36.2,
@@ -5194,6 +5482,7 @@
    ],
    "radiusKm": 281,
    "coastKm": 750,
+   "related": [],
    "bounds": [
     68.93,
     29.08,
@@ -5216,6 +5505,7 @@
    ],
    "radiusKm": 426,
    "coastKm": 93,
+   "related": [],
    "bounds": [
     35.42,
     22.61,
@@ -5239,6 +5529,7 @@
    ],
    "radiusKm": 449,
    "coastKm": 1150,
+   "related": [],
    "bounds": [
     1.07,
     21.67,
@@ -5260,6 +5551,7 @@
    ],
    "radiusKm": 320,
    "coastKm": 974,
+   "related": [],
    "bounds": [
     15.68,
     19.49,
@@ -5279,6 +5571,7 @@
    ],
    "radiusKm": 543,
    "coastKm": 520,
+   "related": [],
    "bounds": [
     126.3,
     62.72,
@@ -5298,6 +5591,7 @@
    ],
    "radiusKm": 491,
    "coastKm": 337,
+   "related": [],
    "bounds": [
     123.1,
     54.31,
@@ -5320,6 +5614,7 @@
    ],
    "radiusKm": 573,
    "coastKm": 122,
+   "related": [],
    "bounds": [
     132.52,
     42.83,
@@ -5342,6 +5637,7 @@
    ],
    "radiusKm": 644,
    "coastKm": 824,
+   "related": [],
    "bounds": [
     117.38,
     43.16,
@@ -5363,6 +5659,7 @@
    ],
    "radiusKm": 440,
    "coastKm": 885,
+   "related": [],
    "bounds": [
     105.03,
     32.53,
@@ -5386,6 +5683,7 @@
    ],
    "radiusKm": 650,
    "coastKm": 115,
+   "related": [],
    "bounds": [
     102.48,
     10.74,
@@ -5408,6 +5706,7 @@
    ],
    "radiusKm": 267,
    "coastKm": 37,
+   "related": [],
    "bounds": [
     93.26,
     17.23,
@@ -5429,6 +5728,7 @@
    ],
    "radiusKm": 364,
    "coastKm": 421,
+   "related": [],
    "bounds": [
     73.53,
     21.85,
@@ -5451,6 +5751,7 @@
    ],
    "radiusKm": 170,
    "coastKm": 404,
+   "related": [],
    "bounds": [
     72.1,
     24.6,
@@ -5470,6 +5771,7 @@
    ],
    "radiusKm": 284,
    "coastKm": 919,
+   "related": [],
    "bounds": [
     130.25,
     -23.83,
@@ -5489,6 +5791,7 @@
    ],
    "radiusKm": 219,
    "coastKm": 142,
+   "related": [],
    "bounds": [
     138,
     -33.34,
@@ -5508,6 +5811,7 @@
    ],
    "radiusKm": 242,
    "coastKm": 56,
+   "related": [],
    "bounds": [
     146.74,
     -10.24,
@@ -5527,6 +5831,7 @@
    ],
    "radiusKm": 845,
    "coastKm": 69,
+   "related": [],
    "bounds": [
     -136.83,
     49.13,
@@ -5546,6 +5851,7 @@
    ],
    "radiusKm": 460,
    "coastKm": 354,
+   "related": [],
    "bounds": [
     -137.35,
     59.34,
@@ -5567,6 +5873,9 @@
    ],
    "radiusKm": 146,
    "coastKm": 115,
+   "related": [
+    "appalachian-mountains"
+   ],
    "bounds": [
     -75.82,
     42.8,
@@ -5586,6 +5895,7 @@
    ],
    "radiusKm": 90,
    "coastKm": 732,
+   "related": [],
    "bounds": [
     -104.85,
     43.41,
@@ -5605,6 +5915,7 @@
    ],
    "radiusKm": 641,
    "coastKm": 158,
+   "related": [],
    "bounds": [
     -105.59,
     15.69,
@@ -5624,6 +5935,7 @@
    ],
    "radiusKm": 559,
    "coastKm": 417,
+   "related": [],
    "bounds": [
     -67.8,
     2.74,
@@ -5643,32 +5955,12 @@
    ],
    "radiusKm": 345,
    "coastKm": 56,
+   "related": [],
    "bounds": [
     -50.28,
     -29.89,
     -47.73,
     -24.55
-   ]
-  },
-  {
-   "id": "vatnajokull",
-   "name": "Vatnajökull",
-   "aliases": [
-    "Vatnajokull"
-   ],
-   "kind": "range",
-   "tier": 3,
-   "center": [
-    64.49,
-    -16.77
-   ],
-   "radiusKm": 75,
-   "coastKm": 54,
-   "bounds": [
-    -18.17,
-    64,
-    -15.35,
-    64.91
    ]
   },
   {
@@ -5685,6 +5977,7 @@
    ],
    "radiusKm": 127,
    "coastKm": 94,
+   "related": [],
    "bounds": [
     34.25,
     29.58,
@@ -5704,6 +5997,7 @@
    ],
    "radiusKm": 189,
    "coastKm": 820,
+   "related": [],
    "bounds": [
     135.76,
     -26.92,
@@ -5723,6 +6017,7 @@
    ],
    "radiusKm": 216,
    "coastKm": 681,
+   "related": [],
    "bounds": [
     122.92,
     -25.82,
@@ -5742,6 +6037,7 @@
    ],
    "radiusKm": 150,
    "coastKm": 546,
+   "related": [],
    "bounds": [
     130.25,
     -20.67,
@@ -5764,6 +6060,7 @@
    ],
    "radiusKm": 257,
    "coastKm": 514,
+   "related": [],
    "bounds": [
     56.3,
     29.8,
@@ -5787,6 +6084,7 @@
    ],
    "radiusKm": 221,
    "coastKm": 271,
+   "related": [],
    "bounds": [
     52.77,
     33.41,
@@ -5810,6 +6108,7 @@
    ],
    "radiusKm": 293,
    "coastKm": 545,
+   "related": [],
    "bounds": [
     39.57,
     27.64,
@@ -5831,6 +6130,9 @@
    ],
    "radiusKm": 806,
    "coastKm": 1439,
+   "related": [
+    "sahara"
+   ],
    "bounds": [
     8.29,
     13.87,
@@ -5850,6 +6152,9 @@
    ],
    "radiusKm": 346,
    "coastKm": 464,
+   "related": [
+    "sahara"
+   ],
    "bounds": [
     4.04,
     28.58,
@@ -5869,32 +6174,14 @@
    ],
    "radiusKm": 295,
    "coastKm": 553,
+   "related": [
+    "sahara"
+   ],
    "bounds": [
     -2.3,
     29.18,
     3.36,
     32.37
-   ]
-  },
-  {
-   "id": "salar-de-uyuni",
-   "name": "Salar de Uyuni",
-   "aliases": [
-    "Uyuni Salt Flat"
-   ],
-   "kind": "desert",
-   "tier": 3,
-   "center": [
-    -20.25,
-    -67.39
-   ],
-   "radiusKm": 112,
-   "coastKm": 288,
-   "bounds": [
-    -68.05,
-    -21.26,
-    -66.73,
-    -19.24
    ]
   },
   {
@@ -5909,6 +6196,7 @@
    ],
    "radiusKm": 364,
    "coastKm": 931,
+   "related": [],
    "bounds": [
     103.6,
     34.56,
@@ -5930,6 +6218,7 @@
    ],
    "radiusKm": 185,
    "coastKm": 227,
+   "related": [],
    "bounds": [
     53.17,
     42.72,
@@ -5949,6 +6238,7 @@
    ],
    "radiusKm": 651,
    "coastKm": 857,
+   "related": [],
    "bounds": [
     76.14,
     36.59,
@@ -5970,6 +6260,7 @@
    ],
    "radiusKm": 244,
    "coastKm": 990,
+   "related": [],
    "bounds": [
     103.27,
     28.69,
@@ -5989,6 +6280,7 @@
    ],
    "radiusKm": 665,
    "coastKm": 360,
+   "related": [],
    "bounds": [
     -121.77,
     33.81,
@@ -6010,6 +6302,7 @@
    ],
    "radiusKm": 426,
    "coastKm": 105,
+   "related": [],
    "bounds": [
     124.26,
     -32.65,
@@ -6031,6 +6324,7 @@
    ],
    "radiusKm": 895,
    "coastKm": 973,
+   "related": [],
    "bounds": [
     -64.53,
     -31.82,
@@ -6052,6 +6346,7 @@
    ],
    "radiusKm": 738,
    "coastKm": 377,
+   "related": [],
    "bounds": [
     -73.72,
     2.63,
@@ -6071,6 +6366,7 @@
    ],
    "radiusKm": 441,
    "coastKm": 1190,
+   "related": [],
    "bounds": [
     -60.63,
     -21.39,
@@ -6092,6 +6388,7 @@
    ],
    "radiusKm": 426,
    "coastKm": 610,
+   "related": [],
    "bounds": [
     27.83,
     4.83,
@@ -6113,6 +6410,7 @@
    ],
    "radiusKm": 163,
    "coastKm": 521,
+   "related": [],
    "bounds": [
     69.79,
     40.18,
@@ -6134,6 +6432,7 @@
    ],
    "radiusKm": 367,
    "coastKm": 77,
+   "related": [],
    "bounds": [
     -122.78,
     35.07,
@@ -6153,6 +6452,7 @@
    ],
    "radiusKm": 137,
    "coastKm": 493,
+   "related": [],
    "bounds": [
     -114.09,
     35.27,
@@ -6175,6 +6475,7 @@
    ],
    "radiusKm": 1924,
    "coastKm": 100,
+   "related": [],
    "bounds": [
     28.86,
     -15.65,
@@ -6196,6 +6497,7 @@
    ],
    "radiusKm": 471,
    "coastKm": 43,
+   "related": [],
    "bounds": [
     44.36,
     44.1,
@@ -6215,6 +6517,7 @@
    ],
    "radiusKm": 126,
    "coastKm": 19,
+   "related": [],
    "bounds": [
     105.21,
     9.39,
@@ -6238,6 +6541,7 @@
    ],
    "radiusKm": 240,
    "coastKm": 85,
+   "related": [],
    "bounds": [
     87.54,
     21.58,
@@ -6257,6 +6561,7 @@
    ],
    "radiusKm": 43,
    "coastKm": 9,
+   "related": [],
    "bounds": [
     -89.77,
     28.98,
@@ -6276,6 +6581,7 @@
    ],
    "radiusKm": 203,
    "coastKm": 81,
+   "related": [],
    "bounds": [
     4.69,
     4.28,
@@ -6295,6 +6601,7 @@
    ],
    "radiusKm": 72,
    "coastKm": 37,
+   "related": [],
    "bounds": [
     47.53,
     45.51,
@@ -6314,6 +6621,7 @@
    ],
    "radiusKm": 51,
    "coastKm": 19,
+   "related": [],
    "bounds": [
     28.72,
     44.75,
@@ -6333,6 +6641,7 @@
    ],
    "radiusKm": 139,
    "coastKm": 40,
+   "related": [],
    "bounds": [
     123.3,
     72.08,
@@ -6354,6 +6663,7 @@
    ],
    "radiusKm": 360,
    "coastKm": 86,
+   "related": [],
    "bounds": [
     66.65,
     66.54,
@@ -6377,6 +6687,7 @@
    ],
    "radiusKm": 269,
    "coastKm": 132,
+   "related": [],
    "bounds": [
     98.81,
     73.14,
@@ -6399,6 +6710,7 @@
    ],
    "radiusKm": 288,
    "coastKm": 33,
+   "related": [],
    "bounds": [
     -179.13,
     64.29,
@@ -6420,6 +6732,7 @@
    ],
    "radiusKm": 289,
    "coastKm": 88,
+   "related": [],
    "bounds": [
     141.47,
     -15.1,
@@ -6439,6 +6752,7 @@
    ],
    "radiusKm": 309,
    "coastKm": 139,
+   "related": [],
    "bounds": [
     132.38,
     -14.96,
@@ -6458,6 +6772,7 @@
    ],
    "radiusKm": 429,
    "coastKm": 24,
+   "related": [],
    "bounds": [
     -162.61,
     55.1,
@@ -6480,6 +6795,7 @@
    ],
    "radiusKm": 558,
    "coastKm": 24,
+   "related": [],
    "bounds": [
     -66.14,
     51.45,
@@ -6502,6 +6818,7 @@
    ],
    "radiusKm": 113,
    "coastKm": 54,
+   "related": [],
    "bounds": [
     -67.21,
     48,
@@ -6521,6 +6838,7 @@
    ],
    "radiusKm": 228,
    "coastKm": 39,
+   "related": [],
    "bounds": [
     119.02,
     34.96,
@@ -6540,6 +6858,7 @@
    ],
    "radiusKm": 210,
    "coastKm": 53,
+   "related": [],
    "bounds": [
     121.11,
     38.73,
@@ -6562,6 +6881,7 @@
    ],
    "radiusKm": 200,
    "coastKm": 107,
+   "related": [],
    "bounds": [
     68.97,
     20.71,
@@ -6583,6 +6903,9 @@
    ],
    "radiusKm": 42,
    "coastKm": 19,
+   "related": [
+    "arabian-peninsula"
+   ],
    "bounds": [
     56.11,
     25.62,
@@ -6604,6 +6927,7 @@
    ],
    "radiusKm": 49,
    "coastKm": 14,
+   "related": [],
    "bounds": [
     49.41,
     40.19,
@@ -6625,6 +6949,7 @@
    ],
    "radiusKm": 181,
    "coastKm": 23,
+   "related": [],
    "bounds": [
     129.58,
     31.02,
@@ -6644,6 +6969,7 @@
    ],
    "radiusKm": 138,
    "coastKm": 22,
+   "related": [],
    "bounds": [
     132.03,
     32.75,
@@ -6663,6 +6989,7 @@
    ],
    "radiusKm": 151,
    "coastKm": 79,
+   "related": [],
    "bounds": [
     108.64,
     18.22,
@@ -6682,6 +7009,7 @@
    ],
    "radiusKm": 211,
    "coastKm": 9,
+   "related": [],
    "bounds": [
     117.22,
     8.37,
@@ -6701,6 +7029,7 @@
    ],
    "radiusKm": 227,
    "coastKm": 33,
+   "related": [],
    "bounds": [
     -128.35,
     48.34,
@@ -6720,6 +7049,7 @@
    ],
    "radiusKm": 96,
    "coastKm": 9,
+   "related": [],
    "bounds": [
     -61.49,
     45.49,
@@ -6741,6 +7071,7 @@
    ],
    "radiusKm": 95,
    "coastKm": 8,
+   "related": [],
    "bounds": [
     -64.4,
     45.97,
@@ -6760,6 +7091,7 @@
    ],
    "radiusKm": 379,
    "coastKm": 77,
+   "related": [],
    "bounds": [
     -118.99,
     68.48,
@@ -6779,6 +7111,7 @@
    ],
    "radiusKm": 455,
    "coastKm": 43,
+   "related": [],
    "bounds": [
     -91.65,
     76.24,
@@ -6798,6 +7131,7 @@
    ],
    "radiusKm": 222,
    "coastKm": 86,
+   "related": [],
    "bounds": [
     -125.85,
     71.09,
@@ -6821,6 +7155,7 @@
    ],
    "radiusKm": 89,
    "coastKm": 8,
+   "related": [],
    "bounds": [
     -74.39,
     -43.37,
@@ -6840,6 +7175,7 @@
    ],
    "radiusKm": 201,
    "coastKm": 10,
+   "related": [],
    "bounds": [
     127.42,
     -0.89,
@@ -6859,6 +7195,7 @@
    ],
    "radiusKm": 258,
    "coastKm": 6,
+   "related": [],
    "bounds": [
     148.32,
     -6.32,
@@ -6880,6 +7217,7 @@
    ],
    "radiusKm": 519,
    "coastKm": 12,
+   "related": [],
    "bounds": [
     9.63,
     73.85,
@@ -6899,6 +7237,7 @@
    ],
    "radiusKm": 205,
    "coastKm": 4,
+   "related": [],
    "bounds": [
     44.6,
     79.45,
@@ -6918,6 +7257,7 @@
    ],
    "radiusKm": 325,
    "coastKm": 12,
+   "related": [],
    "bounds": [
     89.26,
     77.59,
@@ -6937,6 +7277,7 @@
    ],
    "radiusKm": 251,
    "coastKm": 6,
+   "related": [],
    "bounds": [
     135.94,
     72.97,
@@ -6959,6 +7300,7 @@
    ],
    "radiusKm": 606,
    "coastKm": 68,
+   "related": [],
    "bounds": [
     145.23,
     43.43,
@@ -6981,6 +7323,7 @@
    ],
    "radiusKm": 609,
    "coastKm": 52,
+   "related": [],
    "bounds": [
     122.67,
     23.93,
@@ -7004,6 +7347,7 @@
    ],
    "radiusKm": 80,
    "coastKm": 3,
+   "related": [],
    "bounds": [
     -7.64,
     61.26,
@@ -7026,6 +7370,7 @@
    ],
    "radiusKm": 107,
    "coastKm": 2,
+   "related": [],
    "bounds": [
     -1.88,
     59.23,
@@ -7048,6 +7393,7 @@
    ],
    "radiusKm": 48,
    "coastKm": 6,
+   "related": [],
    "bounds": [
     -3.53,
     58.67,
@@ -7069,6 +7415,7 @@
    ],
    "radiusKm": 116,
    "coastKm": 3,
+   "related": [],
    "bounds": [
     -7.8,
     56.8,
@@ -7088,6 +7435,7 @@
    ],
    "radiusKm": 124,
    "coastKm": 6,
+   "related": [],
    "bounds": [
     4.6,
     52.98,
@@ -7107,6 +7455,7 @@
    ],
    "radiusKm": 113,
    "coastKm": 8,
+   "related": [],
    "bounds": [
     23.97,
     36.23,
@@ -7126,6 +7475,7 @@
    ],
    "radiusKm": 149,
    "coastKm": 15,
+   "related": [],
    "bounds": [
     19.54,
     37.54,
@@ -7147,6 +7497,7 @@
    ],
    "radiusKm": 412,
    "coastKm": 17,
+   "related": [],
    "bounds": [
     -32.08,
     36.46,
@@ -7170,6 +7521,7 @@
    ],
    "radiusKm": 187,
    "coastKm": 11,
+   "related": [],
    "bounds": [
     -92.04,
     -1.77,
@@ -7193,6 +7545,7 @@
    ],
    "radiusKm": 136,
    "coastKm": 7,
+   "related": [],
    "bounds": [
     -61.48,
     -52.43,
@@ -7212,6 +7565,7 @@
    ],
    "radiusKm": 799,
    "coastKm": 203,
+   "related": [],
    "bounds": [
     -70.41,
     9.9,
@@ -7233,6 +7587,7 @@
    ],
    "radiusKm": 267,
    "coastKm": 3,
+   "related": [],
    "bounds": [
     91.7,
     10,
@@ -7252,6 +7607,7 @@
    ],
    "radiusKm": 206,
    "coastKm": 8,
+   "related": [],
    "bounds": [
     92.43,
     6.27,
@@ -7275,6 +7631,7 @@
    ],
    "radiusKm": 798,
    "coastKm": 61,
+   "related": [],
    "bounds": [
     124.24,
     -8.43,
@@ -7296,6 +7653,7 @@
    ],
    "radiusKm": 738,
    "coastKm": 3,
+   "related": [],
    "bounds": [
     114.42,
     -11.2,
@@ -7317,6 +7675,7 @@
    ],
    "radiusKm": 712,
    "coastKm": 339,
+   "related": [],
    "bounds": [
     54.51,
     -21.85,
@@ -7338,6 +7697,7 @@
    ],
    "radiusKm": 35,
    "coastKm": 3,
+   "related": [],
    "bounds": [
     148.83,
     -20.59,
@@ -7361,6 +7721,7 @@
    ],
    "radiusKm": 39,
    "coastKm": 280,
+   "related": [],
    "bounds": [
     6.13,
     46.2,
@@ -7380,6 +7741,7 @@
    ],
    "radiusKm": 69,
    "coastKm": 332,
+   "related": [],
    "bounds": [
     42.3,
     38.31,
@@ -7399,6 +7761,7 @@
    ],
    "radiusKm": 40,
    "coastKm": 91,
+   "related": [],
    "bounds": [
     35.36,
     31.09,
@@ -7421,6 +7784,7 @@
    ],
    "radiusKm": 91,
    "coastKm": 377,
+   "related": [],
    "bounds": [
     76.2,
     42.15,
@@ -7443,6 +7807,7 @@
    ],
    "radiusKm": 98,
    "coastKm": 457,
+   "related": [],
    "bounds": [
     136.78,
     -29.11,
@@ -7462,6 +7827,7 @@
    ],
    "radiusKm": 45,
    "coastKm": 437,
+   "related": [],
    "bounds": [
     36.99,
     11.62,
@@ -7481,6 +7847,7 @@
    ],
    "radiusKm": 30,
    "coastKm": 66,
+   "related": [],
    "bounds": [
     -81.1,
     26.69,
@@ -7502,6 +7869,7 @@
    ],
    "radiusKm": 82,
    "coastKm": 172,
+   "related": [],
    "bounds": [
     103.69,
     12.38,
@@ -7524,6 +7892,7 @@
    ],
    "radiusKm": 58,
    "coastKm": 1536,
+   "related": [],
    "bounds": [
     99.62,
     36.54,
@@ -7546,6 +7915,7 @@
    ],
    "radiusKm": 52,
    "coastKm": 84,
+   "related": [],
    "bounds": [
     26.95,
     58.22,
@@ -7565,6 +7935,7 @@
    ],
    "radiusKm": 59,
    "coastKm": 147,
+   "related": [],
    "bounds": [
     28.83,
     -2.48,
@@ -7584,6 +7955,7 @@
    ],
    "radiusKm": 105,
    "coastKm": 223,
+   "related": [],
    "bounds": [
     30.39,
     1.01,
@@ -7603,6 +7975,7 @@
    ],
    "radiusKm": 192,
    "coastKm": 311,
+   "related": [],
    "bounds": [
     -111.33,
     58.48,
@@ -7622,6 +7995,7 @@
    ],
    "radiusKm": 96,
    "coastKm": 91,
+   "related": [],
    "bounds": [
     -73.46,
     43.75,
@@ -7644,6 +8018,7 @@
    ],
    "radiusKm": 65,
    "coastKm": 60,
+   "related": [],
    "bounds": [
     14.09,
     57.78,
@@ -7665,6 +8040,7 @@
    ],
    "radiusKm": 193,
    "coastKm": 108,
+   "related": [],
    "bounds": [
     26.88,
     61.06,
@@ -7688,6 +8064,7 @@
    ],
    "radiusKm": 22,
    "coastKm": 111,
+   "related": [],
    "bounds": [
     175.74,
     -38.96,
@@ -7707,6 +8084,7 @@
    ],
    "radiusKm": 16,
    "coastKm": 35,
+   "related": [],
    "bounds": [
     -6.61,
     54.48,
@@ -7729,6 +8107,7 @@
    ],
    "radiusKm": 47,
    "coastKm": 36,
+   "related": [],
    "bounds": [
     4.97,
     52.26,
@@ -7748,6 +8127,7 @@
    ],
    "radiusKm": 19,
    "coastKm": 175,
+   "related": [],
    "bounds": [
     -120.16,
     38.94,
@@ -7772,6 +8152,7 @@
    ],
    "radiusKm": 73,
    "coastKm": 234,
+   "related": [],
    "bounds": [
     100.16,
     50.45,
@@ -7794,6 +8175,7 @@
    ],
    "radiusKm": 152,
    "coastKm": 389,
+   "related": [],
    "bounds": [
     83,
     47.71,

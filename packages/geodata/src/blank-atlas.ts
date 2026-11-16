@@ -38,6 +38,8 @@ export interface BlankAtlasFeature {
   radiusKm: number;
   /** How far its centre is from the nearest coast on the game's map: an inland feature is framed to show one. */
   coastKm: number;
+  /** Same-kind features that overlap it or are part of it (or it of them): never its wrong options. */
+  related: string[];
   /** [west, south, east, north] in degrees; west > east when it crosses the antimeridian. */
   bounds: readonly [number, number, number, number];
 }
@@ -70,6 +72,11 @@ export const BLANK_ATLAS_KIND_LABELS: Record<BlankAtlasKind, string> = {
 
 /** Lakes big enough that the map always draws them as water, like the coast: they help you find your way inland. */
 export const isContextLake = (f: Pick<BlankAtlasFeature, 'kind' | 'tier'>) => f.kind === 'lake' && f.tier <= 2;
+
+import version from '../data/blank-atlas-version.json' with { type: 'json' };
+
+/** When the features were built: part of the dataset version, so a server only replays runs made on the same features. */
+export const BLANK_ATLAS_VERSION: string = version.generatedAt;
 
 /** The features' names and places: what the game engine (and a server replaying it) needs. */
 export async function loadBlankAtlas(): Promise<BlankAtlasData> {
