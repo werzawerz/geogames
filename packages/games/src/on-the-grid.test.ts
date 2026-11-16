@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { queryCountries } from '@geogames/geodata';
 import { loadLandGrid } from '@geogames/geodata/land-grid';
 import { getGame } from './catalog.ts';
+import { arcadePools } from './pools.ts';
 import { distanceKm } from './circle.ts';
 import {
   GRID_CLICKS,
@@ -13,6 +14,8 @@ import {
   createOnTheGrid,
   formatCoordinates,
   gridPlan,
+  nearCity,
+  NEAR_CITY_KM,
   replayOnTheGrid,
   type GridState,
 } from './on-the-grid.ts';
@@ -25,6 +28,7 @@ const game = createOnTheGrid({ grid, countries });
 const byId = new Map(countries.map((c) => [c.id, c]));
 const definition = getGame('on-the-grid')!;
 const SEEDS = 60;
+const { cities } = await arcadePools();
 
 /** A click far from the spot of the level, and from the same place twice. */
 const wrong = (s: GridState, i = 0): [number, number] => [s.level.target[0] > 0 ? -40 + i : 40 + i, s.level.target[1] > 0 ? s.level.target[1] - 90 : s.level.target[1] + 90];
@@ -196,6 +200,59 @@ describe('on the grid', () => {
     expect(replayOnTheGrid(game, 11, state.moves)).toEqual(state);
     expect(state.moves).toContain(GRID_SKIP);
     expect(await replayGame(definition, normalizeSettings({}, definition), 11, state.moves)).toEqual({ score: state.score, finished: true });
+  });
+
+  it('keeps band 1 out of the Arctic and the empty south', () => {
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      for (const level of playPerfect(seed, 8).levels) expect(Math.abs(level.target[0]), `${seed}`).toBeLessThanOrEqual(55);
+    }
+  });
+
+  it('allows two clicks from level 26, and the second miss costs the life', () => {
+    expect(gridPlan(25).clicks).toBe(3);
+    expect(gridPlan(26).clicks).toBe(2);
+    let state = game.start(6);
+    while (state.level.number < 26) state = game.nextLevel(right(state));
+    state = game.click(state, ...wrong(state)).state;
+    expect(state.status).toBe('playing');
+    const { state: lost, result } = game.click(state, ...wrong(state, 1));
+    expect(result).toBe('lost');
+    expect(lost.lives).toBe(2);
+  });
+
+  it('keeps the closest find for the end screen', () => {
+    let state = game.start(3);
+    expect(state.closestKm).toBeNull();
+    const [lat, lng] = state.level.target;
+    state = game.click(state, lat + 1, lng).state;
+    expect(state.closestKm).toBeCloseTo(distanceKm([lat + 1, lng], [lat, lng]), 3);
+    state = game.nextLevel(state);
+    state = right(state);
+    expect(state.closestKm).toBe(0);
+  });
+
+  it('never has a point in a disputed place or on a border', () => {
+    const inBox = (lat: number, lng: number, [s, n, w, e]: number[]) => lat >= s! && lat <= n! && lng >= w! && lng <= e!;
+    for (const [lat, lng] of grid.cells) {
+      expect(inBox(lat, lng, [32.5, 37.2, 72.5, 80.8]), `${lat},${lng} Kashmir`).toBe(false);
+      expect(inBox(lat, lng, [44, 46.6, 32.4, 36.8]), `${lat},${lng} Crimea`).toBe(false);
+    }
+    // 43°N 20°E sits on the Serbia and Montenegro border region: not a point.
+    expect(grid.cells.some(([lat, lng]) => lat === 43 && lng === 20)).toBe(false);
+  });
+
+  it('names a nearby city only in the same country, and close', () => {
+    let named = 0;
+    for (const [lat, lng, c] of grid.cells) {
+      const country = grid.countries[c]!;
+      const city = nearCity([lat, lng], country, cities);
+      if (!city) continue;
+      named++;
+      expect(city.countryId, `${lat},${lng}`).toBe(country);
+      expect(distanceKm([lat, lng], city.latlng), `${lat},${lng} ${city.name}`).toBeLessThanOrEqual(NEAR_CITY_KM);
+      expect(city.name).not.toMatch(/industrial/i);
+    }
+    expect(named).toBeGreaterThan(300);
   });
 
   it('has no region setting', () => {

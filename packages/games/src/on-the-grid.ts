@@ -1,17 +1,18 @@
 import { countryProminence, type Country, type CountryId } from '@geogames/geodata';
 import type { LandGrid } from '@geogames/geodata/land-grid';
-import { destination, distanceKm } from './circle.ts';
+import { destination, distanceKm, type CircleCity } from './circle.ts';
 import { createRng, pick, type Rng } from './rng.ts';
 
 /**
  * On the Grid: a latitude and longitude are given, and you click that spot on a
- * map with no borders or names. Up to three clicks; after a miss, an arrow shows
- * which way the spot is and how far. A click within the level's radius finds it.
- * Three misses, or a skip, cost a life and end the level. The run has no end
- * but the lives.
+ * map with no borders or names. Up to three clicks (two from level 26); after a
+ * miss, an arrow shows which way the spot is and how far. A click within the
+ * level's radius finds it. The last miss, or a skip, costs a life and ends the
+ * level. The run has no end but the lives.
  *
  * Each band takes away a scaffold the band before taught you to replace:
- * 1. A grid line every 10°, on round coordinates: read the grid.
+ * 1. A grid line every 10°, on round coordinates in the well-known, populated
+ *    part of the world: read the grid.
  * 2. Only the Equator, the tropics and the prime meridian are drawn, on
  *    coordinates to 5°: know where those lines run.
  * 3. No lines at all, any whole degree, and the radius narrowing late on: an
@@ -31,20 +32,26 @@ export interface GridPlan {
   radiusKm: number;
   /** Band 1 keeps to the countries and parts of the world players know best. */
   fair: boolean;
+  /** Targets lie no nearer a pole than this: the Arctic is empty, and nothing there is known. */
+  maxLat: number;
+  /** Clicks a level allows; the last miss costs the life. */
+  clicks: number;
 }
 
 export const GRID_PLANS: readonly GridPlan[] = [
-  { from: 1, band: 1, lines: 'every-10', step: 10, radiusKm: 500, fair: true },
-  { from: 9, band: 2, lines: 'key', step: 5, radiusKm: 350, fair: false },
-  { from: 21, band: 3, lines: 'none', step: 1, radiusKm: 250, fair: false },
-  { from: 40, band: 3, lines: 'none', step: 1, radiusKm: 180, fair: false },
+  { from: 1, band: 1, lines: 'every-10', step: 10, radiusKm: 500, fair: true, maxLat: 55, clicks: 3 },
+  { from: 9, band: 2, lines: 'key', step: 5, radiusKm: 350, fair: false, maxLat: 80, clicks: 3 },
+  { from: 21, band: 3, lines: 'none', step: 1, radiusKm: 250, fair: false, maxLat: 80, clicks: 3 },
+  // The hints make survival easy for an expert, so from here a level allows two clicks, then a tighter radius.
+  { from: 26, band: 3, lines: 'none', step: 1, radiusKm: 250, fair: false, maxLat: 80, clicks: 2 },
+  { from: 40, band: 3, lines: 'none', step: 1, radiusKm: 180, fair: false, maxLat: 80, clicks: 2 },
 ];
 
 export const gridPlan = (level: number): GridPlan => [...GRID_PLANS].reverse().find((p) => level >= p.from)!;
 
 export const GRID_START_LIVES = 3;
 export const GRID_MAX_LIVES = 3;
-/** Clicks a level allows; the last miss costs the life. */
+/** Clicks a level allows at first; see GridPlan.clicks. */
 export const GRID_CLICKS = 3;
 /** A found spot is worth this × the level number, less for each miss. */
 export const GRID_POINTS_PER_LEVEL = 10;
@@ -92,6 +99,8 @@ export interface GridState {
   /** True when the level just ended earned a life back. */
   readonly bonusLife: boolean;
   readonly marks: readonly GridMark[];
+  /** The closest find so far, in km (the click that found it); null before the first. */
+  readonly closestKm: number | null;
   /** Spots asked so far as "lat,lng", oldest first. */
   readonly past: readonly string[];
   /** "lat,lng" clicks and skips, in order; with the seed this replays the game. */
@@ -137,13 +146,13 @@ export function createOnTheGrid({ grid, countries }: { grid: LandGrid; countries
   // The spots a plan may ask, by country: worked out once per plan, not each level.
   const spotCache = new Map<string, Map<number, Cell[]>>();
   function spotsOf(plan: GridPlan): Map<number, Cell[]> {
-    const key = `${plan.step}/${plan.fair}`;
+    const key = `${plan.step}/${plan.fair}/${plan.maxLat}`;
     let spots = spotCache.get(key);
     if (!spots) {
       spots = new Map();
       for (const cell of cells) {
         const [lat, lng, c] = cell;
-        if (lat % plan.step !== 0 || lng % plan.step !== 0 || (plan.fair && !fairCountry(grid.countries[c]!))) continue;
+        if (lat % plan.step !== 0 || lng % plan.step !== 0 || Math.abs(lat) > plan.maxLat || (plan.fair && !fairCountry(grid.countries[c]!))) continue;
         spots.set(c, [...(spots.get(c) ?? []), cell]);
       }
       spotCache.set(key, spots);
@@ -206,6 +215,7 @@ export function createOnTheGrid({ grid, countries }: { grid: LandGrid; countries
         status: 'playing',
         bonusLife: false,
         marks: [],
+        closestKm: null,
         past: [`${level.target}`],
         moves: [],
       };
@@ -225,10 +235,11 @@ export function createOnTheGrid({ grid, countries }: { grid: LandGrid; countries
         const flawless = clicks.length === 1;
         const base = GRID_POINTS_PER_LEVEL * level.number;
         const points = Math.round(base * CLICK_SHARE[clicks.length - 1]! + (flawless ? base * GRID_FLAWLESS_SHARE : 0));
+        const closestKm = state.closestKm === null ? km : Math.min(state.closestKm, km);
         const lives = flawless ? Math.min(GRID_MAX_LIVES, state.lives + 1) : state.lives;
-        return { result: 'found', state: endLevel(state, { ...level, clicks, status: 'cleared', points, flawless }, lives, flawless ? 'flawless' : 'found', move) };
+        return { result: 'found', state: { ...endLevel(state, { ...level, clicks, status: 'cleared', points, flawless }, lives, flawless ? 'flawless' : 'found', move), closestKm } };
       }
-      if (clicks.length >= GRID_CLICKS) {
+      if (clicks.length >= gridPlan(level.number).clicks) {
         return { result: 'lost', state: endLevel(state, { ...level, clicks, status: 'lost' }, state.lives - 1, 'lost', move) };
       }
       return { result: 'miss', state: { ...state, level: { ...level, clicks }, moves: [...state.moves, move] } };
@@ -265,4 +276,26 @@ export function replayOnTheGrid(game: OnTheGrid, seed: number, moves: readonly s
     }
   }
   return state;
+}
+
+/** A city whose name is a district or an industrial area, not somewhere a player would know. */
+const NOT_A_PLACE = /industrial|district|zone|area|port|city of|suburb|cantonment/i;
+/** A city this near the spot is worth naming. */
+export const NEAR_CITY_KM = 150;
+/** Small cities would only add noise to the line. */
+export const NEAR_CITY_MIN_POPULATION = 300_000;
+
+/**
+ * The city "near" a spot, for the reveal. Only a city in the same country and
+ * within NEAR_CITY_KM counts: "Zimbabwe, near Lusaka" is a wrong fact however
+ * close, and a city across a border is a political claim. Null when none fits.
+ */
+export function nearCity(spot: readonly [number, number], countryId: CountryId, cities: readonly CircleCity[]): CircleCity | null {
+  let best: { city: CircleCity; km: number } | null = null;
+  for (const city of cities) {
+    if (city.countryId !== countryId || city.population < NEAR_CITY_MIN_POPULATION || NOT_A_PLACE.test(city.name)) continue;
+    const km = distanceKm(spot, city.latlng);
+    if (km <= NEAR_CITY_KM && (!best || km < best.km)) best = { city, km };
+  }
+  return best?.city ?? null;
 }
