@@ -19,7 +19,7 @@ describe('web smoke', () => {
     for (const g of GAMES) expect(html).toContain(g.title);
   });
 
-  it('renders the game setup with region choice, unlimited in dev builds', () => {
+  it('renders the game setup with region choice, and nothing about plans or play limits', () => {
     const html = renderToString(
       <PlatformProvider>
         <GamePage game={game} />
@@ -28,7 +28,7 @@ describe('web smoke', () => {
     expect(html).toContain('Start game');
     expect(html).toContain('Whole world');
     expect(html).toContain('South America');
-    expect(html).toContain('Premium: unlimited plays');
+    expect(html).not.toMatch(/premium|plays left|unlimited/i);
     expect(html).not.toContain('City size');
   });
 

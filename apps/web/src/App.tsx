@@ -5,7 +5,6 @@ import { Home } from './pages/Home.tsx';
 import { DailyPage } from './pages/DailyPage.tsx';
 import { GamePage } from './pages/GamePage.tsx';
 import { ScoresPage } from './pages/ScoresPage.tsx';
-import { PremiumPage } from './pages/PremiumPage.tsx';
 
 export function App() {
   const route = useRoute();
@@ -24,8 +23,7 @@ export function App() {
 }
 
 function Page({ route }: { route: Route }) {
-  if (route.page === 'premium') return <PremiumPage />;
-  if (route.page === 'home') return <Home />;
+  if (route.page === 'home' || route.page === 'premium') return <Home />;
   const game = getGame(route.gameId);
   if (!game || game.status !== 'live') return <Home />;
   if (route.page === 'daily') return DAILY_GAMES.includes(game.id) ? <DailyPage key={game.id} game={game} /> : <Home />;
@@ -33,7 +31,7 @@ function Page({ route }: { route: Route }) {
 }
 
 function TopBar() {
-  const { allowance, player } = usePlatform();
+  const { player } = usePlatform();
   return (
     <nav className="topbar">
       <a className="brand" href={href({ page: 'home' })}>
@@ -41,9 +39,6 @@ function TopBar() {
       </a>
       <div className="topbar-right">
         <span className="muted">{player.name}</span>
-        <a className="pill" href={href({ page: 'premium' })}>
-          {allowance.remaining === null ? 'Premium' : `${allowance.remaining}/${allowance.limit} plays`}
-        </a>
       </div>
     </nav>
   );

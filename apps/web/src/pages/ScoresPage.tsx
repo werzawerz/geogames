@@ -24,7 +24,8 @@ import { CircleOptions } from '../components/CircleOptions.tsx';
 import { href } from '../router.ts';
 
 export function ScoresPage({ game, variant = 'world' }: { game: GameDefinition; variant?: string }) {
-  const { scores, player, renamePlayer } = usePlatform();
+  const { scores, player, account, renamePlayer } = usePlatform();
+  const [nameNote, setNameNote] = useState<string | null>(null);
   const [scope, setScope] = useState<LeaderboardScope>('personal');
   const [entries, setEntries] = useState<RankedScore[] | null | undefined>(undefined);
   const [settings, setSettings] = useState(() => settingsFromVariant(variant, game));
@@ -101,14 +102,26 @@ export function ScoresPage({ game, variant = 'world' }: { game: GameDefinition; 
         )}
       </div>
 
+      {scope === 'global' && account.status === 'anonymous' && <AnonymousNote />}
+
       <label className="name-field">
         Display name
         <input
+          key={player.name}
           defaultValue={player.name}
           maxLength={24}
-          onBlur={(e) => renamePlayer(e.currentTarget.value)}
+          onChange={() => setNameNote(null)}
+          onBlur={async (e) => {
+            const result = await renamePlayer(e.currentTarget.value);
+            setNameNote(result === 'rejected' ? 'That name isn’t allowed. Please pick another.' : null);
+          }}
         />
       </label>
+      {nameNote && (
+        <p className="muted name-note" role="alert">
+          {nameNote}
+        </p>
+      )}
 
       <p>
         <a className="btn btn-primary" href={href({ page: 'play', gameId: game.id })}>
@@ -117,4 +130,9 @@ export function ScoresPage({ game, variant = 'world' }: { game: GameDefinition; 
       </p>
     </div>
   );
+}
+
+/** Global leaderboards list signed-in players only. */
+export function AnonymousNote() {
+  return <p className="muted small center">Global leaderboards show players who signed in with Google. Your scores are kept either way.</p>;
 }
