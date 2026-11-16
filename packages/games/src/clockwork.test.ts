@@ -110,7 +110,7 @@ describe('clockwork data', () => {
     for (const p of CLOCK_PLACES) zones.set(p.country, (zones.get(p.country) ?? new Set()).add(p.zone));
     for (const p of CLOCK_PLACES) if (zones.get(p.country)!.size > 1) expect(p.city, p.id).toBeDefined();
     // Countries the IANA database splits into zones, even when only one is asked.
-    for (const country of ['USA', 'CAN', 'RUS', 'AUS', 'BRA', 'MEX', 'IDN', 'CHL', 'ECU', 'ESP', 'PRT', 'NZL', 'MNG', 'GRL']) {
+    for (const country of ['USA', 'CAN', 'RUS', 'AUS', 'BRA', 'MEX', 'IDN', 'CHL', 'ECU', 'ESP', 'PRT', 'NZL', 'MNG', 'GRL', 'PNG']) {
       for (const p of CLOCK_PLACES.filter((q) => q.country === country)) expect(p.city, p.id).toBeDefined();
     }
   });

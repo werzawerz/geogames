@@ -1483,6 +1483,16 @@ test('clockwork: plays from the keyboard, and everything fits with no scroll on 
     await allInView();
   }
 
+  // Enter on a focused Skip skips, even with a time picked: it isn't taken as a guess.
+  await page.locator('.clock-hour').nth((Math.floor(state.level.answer / 60) + 3) % 24).click();
+  await page.locator('.clock-skip').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.route-summary.failed')).toContainText('Skipped: −1 ♥');
+  await expect(page.locator('.clock-guesses')).toHaveCount(0);
+  await expect(page.locator('.lives .life:not(.lost)')).toHaveCount(2);
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.clock-chosen')).toHaveText('Pick an hour');
+
   // A phone: the same, with no scroll and no on-screen keyboard.
   await page.setViewportSize({ width: 390, height: 844 });
   await allInView();

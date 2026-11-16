@@ -94,7 +94,7 @@ export const CLOCK_PLACES: readonly ClockPlace[] = [
   { id: 'rus-novosibirsk', country: 'RUS', zone: 'Asia/Novosibirsk', city: city('Novosibirsk', 55.01, 82.93), kind: 'longitude', tier: 2 },
   { id: 'rus-vladivostok', country: 'RUS', zone: 'Asia/Vladivostok', city: city('Vladivostok', 43.12, 131.89), kind: 'longitude', tier: 2 },
   { id: 'aus-perth', country: 'AUS', zone: 'Australia/Perth', city: city('Perth', -31.95, 115.86), kind: 'longitude', tier: 2 },
-  { id: 'png', country: 'PNG', zone: 'Pacific/Port_Moresby', kind: 'longitude', tier: 2 },
+  { id: 'png-port-moresby', country: 'PNG', zone: 'Pacific/Port_Moresby', city: city('Port Moresby', -9.44, 147.18), kind: 'longitude', tier: 2 },
   { id: 'khm', country: 'KHM', zone: 'Asia/Phnom_Penh', kind: 'longitude', tier: 2 },
   { id: 'lao', country: 'LAO', zone: 'Asia/Vientiane', kind: 'longitude', tier: 2 },
   { id: 'omn', country: 'OMN', zone: 'Asia/Muscat', kind: 'longitude', tier: 2 },
@@ -144,7 +144,6 @@ export const CLOCK_PLACES: readonly ClockPlace[] = [
   { id: 'sen', country: 'SEN', zone: 'Africa/Dakar', kind: 'exception', tier: 2, note: 'Senegal keeps UTC, though its longitude says about UTC−1.' },
   { id: 'grl-nuuk', country: 'GRL', zone: 'America/Nuuk', city: city('Nuuk', 64.18, -51.72), kind: 'exception', tier: 2, note: 'Nuuk moved its clock an hour forward in 2023, to UTC−2, with daylight saving from 2024.' },
 
-  { id: 'chn-kashgar', country: 'CHN', zone: 'Asia/Shanghai', city: city('Kashgar', 39.47, 75.99), kind: 'exception', tier: 2, note: 'Kashgar, at China’s western edge, officially keeps Beijing time, UTC+8, though its longitude says about UTC+5. Many locals also keep an unofficial Xinjiang time, two hours behind.' },
   { id: 'rus-kamchatka', country: 'RUS', zone: 'Asia/Kamchatka', city: city('Petropavlovsk-Kamchatsky', 53.02, 158.65), kind: 'exception', tier: 2, note: 'Kamchatka runs on UTC+12, more than an hour ahead of its longitude, like much of Russia.' },
   { id: 'rus-samara', country: 'RUS', zone: 'Europe/Samara', city: city('Samara', 53.2, 50.15), kind: 'exception', tier: 2, note: 'Samara is an hour ahead of Moscow, on UTC+4.' },
   { id: 'blr', country: 'BLR', zone: 'Europe/Minsk', kind: 'exception', tier: 2, note: 'Belarus stayed on summer time for good in 2011, and so keeps Moscow’s UTC+3, an hour ahead of its longitude.' },

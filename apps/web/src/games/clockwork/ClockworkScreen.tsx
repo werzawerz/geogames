@@ -31,6 +31,12 @@ const DAY = 24 * 60;
 /** Digits typed within this long of each other make one time: 1, 7, 3, 0 is 17:30. */
 const TYPING_GAP_MS = 1500;
 
+/** Whether a key goes to the time picker: nothing focused, or the picker or one of its time buttons (not Skip). */
+const onPicker = (target: EventTarget | null) =>
+  !(target instanceof HTMLElement) ||
+  target === document.body ||
+  (target.closest('.clock-play') !== null && target.closest('.clock-skip') === null);
+
 /** Loads the map shapes (lazily), then plays. */
 export function ClockworkScreen({ seed, initialMoves, onMovesChange, onGameOver }: GameScreenProps<ClockworkDefinition>) {
   const [shapes, setShapes] = useState<WorldShapes | null>(null);
@@ -193,12 +199,14 @@ function ClockworkPlay({
         typed.current = { digits, at: now };
         const minutes = parseClock(digits);
         if (minutes !== null) setChoice(minutes);
-      } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        e.preventDefault();
+      } else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && onPicker(e.target)) {
+        // Only the picker's own focus stops the page scrolling; with nothing focused the arrows still step.
+        if (e.target instanceof HTMLElement && e.target.closest('.clock-play')) e.preventDefault();
         const by = (e.shiftKey ? 15 : 60) * (e.key === 'ArrowUp' ? 1 : -1);
         setChoice((((choice ?? level.utcHour * 60) + by) % DAY + DAY) % DAY);
-      } else if (e.key === 'Enter') {
-        // Also stops a focused hour button from taking Enter as a click.
+      } else if (e.key === 'Enter' && onPicker(e.target)) {
+        // Also stops a focused hour button from taking Enter as a click. Skip, links and
+        // other controls keep their own Enter.
         e.preventDefault();
         check();
       } else if (e.key === 'Escape') {
