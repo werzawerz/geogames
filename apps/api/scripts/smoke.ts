@@ -14,6 +14,7 @@ const FUNCTION_PORT = 8000; // Deno.serve's default
 const USER = '00000000-0000-4000-8000-000000000001';
 
 const { rpc, addUser } = await createLocalDb();
+const deletedUsers: string[] = [];
 await addUser(USER);
 
 const supabase = createServer(async (req, res) => {
@@ -33,9 +34,14 @@ const supabase = createServer(async (req, res) => {
     }
   }
   if (req.url?.startsWith('/auth/v1/user')) {
+    // A player who has linked Google, so their scores are public.
     return req.headers.authorization === 'Bearer good-token'
-      ? reply(200, { id: USER, aud: 'authenticated', role: 'authenticated', is_anonymous: true })
+      ? reply(200, { id: USER, aud: 'authenticated', role: 'authenticated', is_anonymous: false })
       : reply(401, { message: 'invalid JWT' });
+  }
+  if (req.method === 'DELETE' && req.url === `/auth/v1/admin/users/${USER}`) {
+    deletedUsers.push(USER);
+    return reply(200, {});
   }
   reply(404, { message: `unexpected ${req.url}` });
 });
@@ -107,7 +113,13 @@ try {
 
   await call('POST', '/sessions', { gameId: 'capitals', settings: {}, datasetVersion: DATASET_VERSION });
   const refused = await call('POST', '/sessions', { gameId: 'capitals', settings: {}, datasetVersion: DATASET_VERSION });
-  check('the daily limit comes from the environment', refused.status === 402, refused.json);
+  check('a daily limit comes from the environment', refused.status === 429, refused.json);
+
+  const feedback = await call('POST', '/feedback', { message: 'Smoke test' });
+  check('stores feedback', feedback.status === 201, feedback.json);
+
+  const deleted = await call('DELETE', '/me');
+  check('deletes the player and their sign-in account', deleted.status === 200 && deletedUsers.includes(USER), deleted.json);
 } finally {
   // With a shell in between, the whole process tree has to go.
   if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(deno.pid), '/T', '/F'], { stdio: 'ignore' });

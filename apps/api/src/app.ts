@@ -13,30 +13,63 @@ import {
   randomSeed,
   replayGame,
   variantKey,
-  type AllowanceDto,
   type ApiErrorCode,
   type ApiErrorResponse,
+  type DeleteAccountResponse,
   type FinishSessionResponse,
   type GameSettings,
   type LeaderboardEntryDto,
   type LeaderboardResponse,
   type MeResponse,
+  type MergeResponse,
   type StartDailyResponse,
   type StartSessionResponse,
 } from '@geogames/games';
+import { isOffensiveName } from './names.ts';
 
 /** Runs a database function by name; the only way this API touches the database. */
 export type Rpc = (name: string, args: Record<string, unknown>) => Promise<unknown>;
 
+/** Who a verified token belongs to. `anonymous` comes from the token, never from the request body. */
+export interface Caller {
+  id: string;
+  anonymous: boolean;
+}
+
+/** How fast one player may go. Generous for people, a wall for scripts. */
+export interface Limits {
+  startsPerMinute: number;
+  startsPerHour: number;
+  finishesPerMinute: number;
+  finishesPerHour: number;
+  feedbackPerPlayerHour: number;
+  feedbackPerIpHour: number;
+}
+
+export const DEFAULT_LIMITS: Limits = {
+  startsPerMinute: 30,
+  startsPerHour: 600,
+  finishesPerMinute: 12,
+  finishesPerHour: 300,
+  feedbackPerPlayerHour: 5,
+  feedbackPerIpHour: 20,
+};
+
 export interface AppOptions {
   rpc: Rpc;
-  /** The player id a bearer token belongs to, or null if it isn't valid. */
-  verifyToken(token: string): Promise<string | null>;
-  freePlaysPerDay: number;
-  /** Keeps coming days' seeds unguessable. */
+  /** The player a bearer token belongs to, or null if it isn't valid. */
+  verifyToken(token: string): Promise<Caller | null>;
+  /** Deletes a sign-in account (needs the service role, so only the server can). */
+  deleteUser(id: string): Promise<void>;
+  /** Games a player may start per day; null (the default) for no limit. A switch for a paid tier later. */
+  freePlaysPerDay?: number | null;
+  limits?: Partial<Limits>;
+  /** Keeps coming days' seeds unguessable; also salts hashed IP addresses. */
   dailySecret: string;
   /** Origins allowed to call the API. Requests carry a token rather than cookies, so "*" is safe. */
   allowedOrigins: readonly string[] | '*';
+  /** The caller's IP address, for rate limits; null when unknown. Defaults to the first X-Forwarded-For entry. */
+  clientIp?(request: Request): string | null;
 }
 
 const MAX_BODY_BYTES = 512 * 1024;
@@ -44,25 +77,37 @@ const MAX_MOVES = 10_000;
 const MAX_MOVE_LENGTH = 64;
 const MAX_NAME_LENGTH = 24;
 const LEADERBOARD_MAX = 100;
+const MAX_FEEDBACK_LENGTH = 2000;
+const MAX_EMAIL_LENGTH = 254;
+const MAX_PAGE_LENGTH = 200;
+const UUID = /^[0-9a-f-]{36}$/i;
 
 const newPlayerName = () => `Explorer ${Math.floor(1000 + Math.random() * 9000)}`;
 
-function nextUtcMidnight(): string {
-  const d = new Date();
-  d.setUTCHours(24, 0, 0, 0);
-  return d.toISOString();
+const forwardedFor = (request: Request) => request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+
+async function hashIp(ip: string, secret: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${secret}:${ip}`));
+  return [...new Uint8Array(digest)].slice(0, 16).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-type StoredAllowance = Omit<AllowanceDto, 'resetsAt'>;
-const allowanceDto = (a: StoredAllowance): AllowanceDto => ({ ...a, resetsAt: nextUtcMidnight() });
+type Env = { Variables: { caller: Caller } };
 
-type Env = { Variables: { player: string } };
-
-export function createApp({ rpc, verifyToken, freePlaysPerDay, dailySecret, allowedOrigins }: AppOptions) {
+export function createApp({
+  rpc,
+  verifyToken,
+  deleteUser,
+  freePlaysPerDay = null,
+  limits: limitOverrides,
+  dailySecret,
+  allowedOrigins,
+  clientIp = forwardedFor,
+}: AppOptions) {
+  const limits = { ...DEFAULT_LIMITS, ...limitOverrides };
   const app = new Hono<Env>().basePath('/api');
 
-  const fail = (c: Context, status: 400 | 401 | 402 | 404 | 409 | 422 | 500, error: ApiErrorCode, extra: Partial<ApiErrorResponse> = {}) =>
-    c.json<ApiErrorResponse>({ error, ...extra }, status);
+  const fail = (c: Context, status: 400 | 401 | 403 | 404 | 409 | 422 | 429 | 500, error: ApiErrorCode) =>
+    c.json<ApiErrorResponse>({ error }, status);
 
   const bearer = (c: Context) => c.req.header('Authorization')?.match(/^Bearer (.+)$/)?.[1];
 
@@ -70,7 +115,7 @@ export function createApp({ rpc, verifyToken, freePlaysPerDay, dailySecret, allo
     '*',
     cors({
       origin: allowedOrigins === '*' ? '*' : [...allowedOrigins],
-      allowMethods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
+      allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
       allowHeaders: ['Authorization', 'Content-Type'],
       maxAge: 86_400,
     }),
@@ -85,9 +130,9 @@ export function createApp({ rpc, verifyToken, freePlaysPerDay, dailySecret, allo
 
   const signedIn = async (c: Context<Env>, next: () => Promise<void>) => {
     const token = bearer(c);
-    const player = token ? await verifyToken(token) : null;
-    if (!player) return fail(c, 401, 'unauthorized');
-    c.set('player', player);
+    const caller = token ? await verifyToken(token) : null;
+    if (!caller) return fail(c, 401, 'unauthorized');
+    c.set('caller', caller);
     return next();
   };
 
@@ -100,27 +145,86 @@ export function createApp({ rpc, verifyToken, freePlaysPerDay, dailySecret, allo
     }
   };
 
+  /** Who is calling, as every database function that may sign a player up takes it. */
+  const who = (c: Context<Env>) => {
+    const { id, anonymous } = c.get('caller');
+    return { p_player: id, p_anonymous: anonymous, p_default_name: newPlayerName() };
+  };
+
   app.get('/health', async (c) => {
     await rpc('ping', {});
     return c.json({ ok: true, datasetVersion: DATASET_VERSION });
   });
 
   app.get('/me', signedIn, async (c) => {
-    const player = c.get('player');
-    const me = (await rpc('get_me', { p_player: player, p_default_name: newPlayerName(), p_free_limit: freePlaysPerDay })) as {
-      name: string;
-      allowance: StoredAllowance;
-      bests: MeResponse['bests'];
-    };
-    return c.json<MeResponse>({ player: { id: player, name: me.name }, allowance: allowanceDto(me.allowance), bests: me.bests });
+    const me = (await rpc('get_me', who(c))) as { name: string; bests: MeResponse['bests'] };
+    return c.json<MeResponse>({ player: { id: c.get('caller').id, name: me.name }, bests: me.bests });
   });
 
   app.patch('/me', signedIn, async (c) => {
     const input = await body(c);
-    const name = typeof input?.name === 'string' ? input.name.trim().slice(0, MAX_NAME_LENGTH) : '';
+    const name = typeof input?.name === 'string' ? input.name.trim().slice(0, MAX_NAME_LENGTH).trim() : '';
     if (!name) return fail(c, 400, 'bad-request');
-    await rpc('rename_player', { p_player: c.get('player'), p_name: name });
+    if (isOffensiveName(name)) return fail(c, 422, 'name-not-allowed');
+    await rpc('get_me', who(c)); // a rename can be a new player's first call
+    await rpc('rename_player', { p_player: c.get('caller').id, p_name: name });
     return c.json({ name });
+  });
+
+  // Games, feedback and the player go first, then the sign-in account: if that
+  // fails, all that's left is an empty account.
+  app.delete('/me', signedIn, async (c) => {
+    const { id } = c.get('caller');
+    await rpc('delete_player', { p_player: id });
+    await deleteUser(id);
+    return c.json<DeleteAccountResponse>({ deleted: true });
+  });
+
+  // After "Sign in with Google" found the Google account already belongs to
+  // another player, the browser signs in to that one and hands over the token of
+  // the anonymous player it had: holding both tokens proves both are its own.
+  app.post('/me/merge', signedIn, async (c) => {
+    const caller = c.get('caller');
+    if (caller.anonymous) return fail(c, 403, 'forbidden');
+    const input = await body(c);
+    const token = typeof input?.anonymousToken === 'string' ? input.anonymousToken : '';
+    const from = token ? await verifyToken(token) : null;
+    if (!from) return fail(c, 401, 'unauthorized');
+    if (!from.anonymous || from.id === caller.id) return fail(c, 403, 'forbidden');
+    const moved = Number(await rpc('merge_players', { p_from: from.id, p_into: caller.id, p_default_name: newPlayerName() }));
+    await deleteUser(from.id);
+    return c.json<MergeResponse>({ moved });
+  });
+
+  app.post('/feedback', signedIn, async (c) => {
+    const input = await body(c);
+    const message = typeof input?.message === 'string' ? input.message.trim() : '';
+    const rawEmail = input?.email ?? undefined;
+    const rawPage = input?.page ?? undefined;
+    const email = typeof rawEmail === 'string' && rawEmail.trim() ? rawEmail.trim() : undefined;
+    const page = typeof rawPage === 'string' && rawPage ? rawPage : undefined;
+    if (
+      !message ||
+      message.length > MAX_FEEDBACK_LENGTH ||
+      (rawEmail !== undefined && typeof rawEmail !== 'string') ||
+      (email !== undefined && (email.length > MAX_EMAIL_LENGTH || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) ||
+      (rawPage !== undefined && typeof rawPage !== 'string') ||
+      (page !== undefined && page.length > MAX_PAGE_LENGTH)
+    ) {
+      return fail(c, 400, 'bad-request');
+    }
+    const ip = clientIp(c.req.raw);
+    const stored = (await rpc('submit_feedback', {
+      ...who(c),
+      p_message: message,
+      p_email: email ?? null,
+      p_page: page ?? null,
+      p_ip_hash: ip ? await hashIp(ip, dailySecret) : null,
+      p_per_player_hour: limits.feedbackPerPlayerHour,
+      p_per_ip_hour: limits.feedbackPerIpHour,
+    })) as { ok: boolean };
+    if (!stored.ok) return fail(c, 429, 'rate-limited');
+    return c.json({ ok: true }, 201);
   });
 
   app.post('/sessions', signedIn, async (c) => {
@@ -131,17 +235,18 @@ export function createApp({ rpc, verifyToken, freePlaysPerDay, dailySecret, allo
     const settings = normalizeSettings((input!.settings ?? {}) as Partial<GameSettings>, game);
     const seed = randomSeed();
     const started = (await rpc('start_session', {
-      p_player: c.get('player'),
-      p_default_name: newPlayerName(),
+      ...who(c),
       p_game_id: game.id,
       p_variant: variantKey(settings, game),
       p_settings: settings,
       p_seed: seed,
       p_dataset_version: DATASET_VERSION,
-      p_free_limit: freePlaysPerDay,
-    })) as { ok: boolean; sessionId?: string; allowance: StoredAllowance };
-    if (!started.ok) return fail(c, 402, 'out-of-plays', { allowance: allowanceDto(started.allowance) });
-    return c.json<StartSessionResponse>({ sessionId: started.sessionId!, seed, allowance: allowanceDto(started.allowance) }, 201);
+      p_daily_limit: freePlaysPerDay,
+      p_per_minute: limits.startsPerMinute,
+      p_per_hour: limits.startsPerHour,
+    })) as { ok: boolean; sessionId?: string };
+    if (!started.ok) return fail(c, 429, 'rate-limited');
+    return c.json<StartSessionResponse>({ sessionId: started.sessionId!, seed }, 201);
   });
 
   app.post('/daily/:gameId/start', signedIn, async (c) => {
@@ -152,8 +257,7 @@ export function createApp({ rpc, verifyToken, freePlaysPerDay, dailySecret, allo
     if (input?.datasetVersion !== DATASET_VERSION) return fail(c, 409, 'update-required');
     const date = dailyDate();
     const session = (await rpc('start_daily_session', {
-      p_player: c.get('player'),
-      p_default_name: newPlayerName(),
+      ...who(c),
       p_game_id: game.id,
       p_variant: dailyVariant(date),
       p_settings: dailySettings(game),
@@ -170,8 +274,8 @@ export function createApp({ rpc, verifyToken, freePlaysPerDay, dailySecret, allo
 
   app.post('/sessions/:id/finish', signedIn, async (c) => {
     const sessionId = c.req.param('id') ?? '';
-    if (!/^[0-9a-f-]{36}$/i.test(sessionId)) return fail(c, 404, 'not-found');
-    const player = c.get('player');
+    if (!UUID.test(sessionId)) return fail(c, 404, 'not-found');
+    const player = c.get('caller').id;
     const input = await body(c);
     const moves = input?.moves;
     if (
@@ -190,17 +294,26 @@ export function createApp({ rpc, verifyToken, freePlaysPerDay, dailySecret, allo
       score: number | null;
     } | null;
     if (!session) return fail(c, 404, 'not-found');
-    const finish = async (score: number) =>
-      (await rpc('finish_session', { p_session: sessionId, p_player: player, p_moves: moves, p_score: score })) as FinishSessionResponse;
+    const finish = async (score: number) => {
+      const result = (await rpc('finish_session', {
+        p_session: sessionId,
+        p_player: player,
+        p_moves: moves,
+        p_score: score,
+        p_per_minute: limits.finishesPerMinute,
+        p_per_hour: limits.finishesPerHour,
+      })) as FinishSessionResponse | { error: 'rate-limited' };
+      return 'error' in result ? fail(c, 429, 'rate-limited') : c.json<FinishSessionResponse>(result);
+    };
     // Already finished: answer as before, without replaying the new moves.
-    if (session.status === 'finished') return c.json<FinishSessionResponse>(await finish(session.score!));
+    if (session.status === 'finished') return finish(session.score!);
     // Data deployed since this game started can't replay it.
     if (session.datasetVersion !== DATASET_VERSION) return fail(c, 409, 'update-required');
     const game = getGame(session.gameId);
     if (!game) return fail(c, 404, 'not-found');
     const { score, finished } = await replayGame(game, session.settings, Number(session.seed), moves);
     if (!finished) return fail(c, 422, 'unfinished-game');
-    return c.json<FinishSessionResponse>(await finish(score));
+    return finish(score);
   });
 
   app.get('/leaderboards/:gameId/:variant', async (c) => {
@@ -209,9 +322,9 @@ export function createApp({ rpc, verifyToken, freePlaysPerDay, dailySecret, allo
     let entries: unknown;
     if (c.req.query('scope') === 'personal') {
       const token = bearer(c);
-      const player = token ? await verifyToken(token) : null;
-      if (!player) return fail(c, 401, 'unauthorized');
-      entries = await rpc('leaderboard_personal', { p_player: player, p_game_id: gameId, p_variant: variant, p_limit: limit });
+      const caller = token ? await verifyToken(token) : null;
+      if (!caller) return fail(c, 401, 'unauthorized');
+      entries = await rpc('leaderboard_personal', { p_player: caller.id, p_game_id: gameId, p_variant: variant, p_limit: limit });
     } else {
       entries = await rpc('leaderboard_global', { p_game_id: gameId, p_variant: variant, p_limit: limit });
     }
@@ -219,4 +332,10 @@ export function createApp({ rpc, verifyToken, freePlaysPerDay, dailySecret, allo
   });
 
   return app;
+}
+
+/** FREE_PLAYS_PER_DAY: a positive whole number turns a daily limit on; anything else, or nothing, means none. */
+export function parseDailyLimit(value: string | undefined): number | null {
+  const n = Number(value);
+  return Number.isInteger(n) && n > 0 ? n : null;
 }
