@@ -122,6 +122,7 @@ export function WorldMap({
   label,
   borders = true,
   terrain = false,
+  fit = 'meet',
   maxZoom = MAX_ZOOM,
 }: {
   shapes: WorldShapes;
@@ -139,6 +140,8 @@ export function WorldMap({
   borders?: boolean;
   /** Colour terrain over the plain land and sea, loaded lazily (TERRAIN_SOURCE in terrain.ts). */
   terrain?: boolean;
+  /** How the map fills a box of another shape: `slice` crops the sides of a tall box (phones) rather than shrinking. */
+  fit?: 'meet' | 'slice';
   /** How far in the map zooms, compared to its starting view. */
   maxZoom?: number;
 }) {
@@ -246,6 +249,7 @@ export function WorldMap({
         ref={svgRef}
         className={`world-map${onPick ? ' pickable' : ''}`}
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        preserveAspectRatio={`xMidYMid ${fit}`}
         role="img"
         aria-label={label}
         onClick={onPick ? handleClick : undefined}

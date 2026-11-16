@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Flag } from './Flag.tsx';
 import { buildIndex, exactMatch, normalize, search, type SearchItem } from './search.ts';
 
@@ -18,6 +18,9 @@ export function SearchInput({
   onNoMatch,
   placeholder,
   label,
+  cleanQuery = (t) => t,
+  exactOnly = false,
+  focusWithoutScroll = false,
 }: {
   items: readonly SearchItem[];
   exclude: ReadonlySet<string>;
@@ -26,6 +29,12 @@ export function SearchInput({
   onNoMatch(): void;
   placeholder: string;
   label: string;
+  /** Rewrites the text before matching (River Run drops a "River" around the name). */
+  cleanQuery?(text: string): string;
+  /** Enter takes only an exact name or an arrowed suggestion; anything else is "no match", never a guess. */
+  exactOnly?: boolean;
+  /** Focuses on mount without scrolling the page, instead of autoFocus. */
+  focusWithoutScroll?: boolean;
 }) {
   const listId = useId();
   const [text, setText] = useState('');
@@ -34,7 +43,12 @@ export function SearchInput({
   const [arrowed, setArrowed] = useState(false);
 
   const index = useMemo(() => buildIndex(items), [items]);
-  const suggestions = useMemo(() => search(index, text, exclude, MAX_SUGGESTIONS), [index, text, exclude]);
+  const query = cleanQuery(text);
+  const suggestions = useMemo(() => search(index, query, exclude, MAX_SUGGESTIONS), [index, query, exclude]);
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (focusWithoutScroll) input.current?.focus({ preventScroll: true });
+  }, [focusWithoutScroll]);
 
   const pick = (item: SearchItem) => {
     onPick(item.id);
@@ -49,8 +63,8 @@ export function SearchInput({
   // (Hyderabad, India / Pakistan) use the highlighted suggestion instead.
   const submit = () => {
     if (!normalize(text)) return;
-    const exact = arrowed ? null : exactMatch(index, text);
-    const chosen = exact ?? (arrowed ? suggestions[active] : suggestions[0])?.item;
+    const exact = arrowed ? null : exactMatch(index, query);
+    const chosen = exact ?? (arrowed ? suggestions[active] : exactOnly ? undefined : suggestions[0])?.item;
     if (chosen) pick(chosen);
     else onNoMatch();
   };
@@ -66,7 +80,8 @@ export function SearchInput({
         aria-label={label}
         placeholder={placeholder}
         autoComplete="off"
-        autoFocus
+        ref={input}
+        autoFocus={!focusWithoutScroll}
         value={text}
         onChange={(e) => {
           setText(e.currentTarget.value);
