@@ -101,6 +101,7 @@ for (const c of countries) {
   out.push({
     id: c.id,
     name: native,
+    lang: locale,
     // CLDR says "Chinese (Traditional)" for zh-Hant; the language name is enough for players.
     language: (languageNames[locale] ?? languageNames[lang]!).replace(/ \(.*\)$/, ''),
     script: script === 'Han' && lang === 'ja' ? 'Japanese' : script === 'Han' && locale === 'zh-Hant' ? 'Han (traditional)' : script,

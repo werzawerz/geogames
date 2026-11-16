@@ -1,6 +1,7 @@
 import { countries, getCountry, queryCountries } from '@geogames/geodata';
 import { loadGreatCircles } from '@geogames/geodata/cities';
 import { loadRivers } from '@geogames/geodata/rivers';
+import { loadNativeNames } from '@geogames/geodata/native-names';
 import { BLANK_ATLAS_KIND_LABELS } from '@geogames/geodata/blank-atlas';
 import {
   DEFAULT_SETTINGS,
@@ -21,6 +22,7 @@ import {
   createPinDrop,
   createHalfway,
   createRiverRun,
+  createNativeTongue,
   riverChoices,
   createClockwork,
   CLOCK_DATES,
@@ -1770,5 +1772,73 @@ for (const [label, viewport] of [
     await page.keyboard.press(String(second.findIndex((id) => id !== state.level.river) + 1));
     await expect(page.locator('.route-summary.failed')).toContainText('A wrong pick: −1 ♥');
     await expect(lives).toHaveCount(2);
+  });
+}
+
+for (const [label, viewport] of [
+  ['desktop', { width: 1280, height: 720 }],
+  ['phone', { width: 390, height: 844 }],
+] as const) {
+  test(`native-tongue (${label}): the name in its own script, a wrong guess shows its own name, a skip costs a life, and it all fits with no scrolling`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => {
+      Math.random = () => 0.5;
+    });
+    const { names } = await loadNativeNames();
+    const nativeOf = new Map(names.map((n) => [n.id, n]));
+    const engine = createNativeTongue({ names, countries: queryCountries() });
+    let state = engine.start(Math.floor(0.5 * 2 ** 32));
+    const lives = page.locator('.lives .life:not(.lost)');
+    const inView = async (selector: string) => {
+      const box = (await page.locator(selector).first().boundingBox())!;
+      expect(box.y, selector).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height, selector).toBeLessThanOrEqual(viewport.height);
+    };
+    const guess = async (id: string) => {
+      const input = page.getByRole('combobox');
+      await input.fill(getCountry(id)!.name);
+      await input.press('Enter');
+    };
+
+    await openGame(page, 'native-tongue');
+    await page.getByRole('button', { name: 'Start game' }).click();
+    await expect(page.locator('.tongue-name')).toHaveText(nativeOf.get(state.level.country)!.name, { timeout: 20_000 });
+    for (const selector of ['.route-status', '.tongue-name', '.world-map', '[role=combobox]', '.tongue-skip']) await inView(selector);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    // The page never says which country it is before the end of the level.
+    expect(await page.locator('.tongue-game').innerHTML()).not.toContain(getCountry(state.level.country)!.name);
+
+    // A wrong guess shows what that country calls itself, and costs a free miss.
+    const wrong = ['BRA', 'CAN', 'JPN'].find((id) => id !== state.level.country)!;
+    await guess(wrong);
+    await expect(page.locator('.tongue-wrong')).toContainText(getCountry(wrong)!.name);
+    await expect(page.locator('.tongue-wrong')).toContainText(nativeOf.get(wrong)!.name);
+    await expect(page.locator('.tongue-misses')).toHaveText('1');
+    await inView('.tongue-wrong');
+    await inView('[role=combobox]');
+
+    // The right country: points for the second try, and Enter goes on from the focused button.
+    await guess(state.level.country);
+    await expect(page.locator('.route-summary.solved')).toContainText(getCountry(state.level.country)!.name);
+    await inView('.route-summary');
+    await expect(page.getByRole('button', { name: 'Next level' })).toBeFocused();
+    await page.keyboard.press('Enter');
+    state = engine.nextLevel(engine.guess(engine.guess(state, wrong).state, state.level.country).state);
+    await expect(page.locator('.route-status')).toContainText('Level 2');
+    await expect(page.locator('.tongue-name')).toHaveText(nativeOf.get(state.level.country)!.name);
+
+    // A skip costs a life, and shows the answer.
+    await page.getByRole('button', { name: /Skip/ }).click();
+    await expect(page.locator('.route-summary.failed')).toContainText('Skipped: −1 ♥');
+    await expect(page.locator('.route-summary.failed')).toContainText(getCountry(state.level.country)!.name);
+    await expect(lives).toHaveCount(2);
+    await expect(page.getByRole('button', { name: 'Change settings' })).toHaveCount(0);
+
+    // Out of lives ends the run.
+    for (let i = 0; i < 2; i++) {
+      await page.getByRole('button', { name: 'Next level' }).click();
+      await page.getByRole('button', { name: /Skip/ }).click();
+    }
+    await expect(page.getByRole('button', { name: 'See final score' })).toBeVisible();
   });
 }

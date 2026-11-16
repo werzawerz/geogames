@@ -2762,3 +2762,46 @@ summary:focus-visible {
 .nowrap {
   white-space: nowrap;
 }
+
+/* Native Tongue */
+.art-tongue text { fill: var(--map-ink); font: 700 46px var(--font-body); text-anchor: middle; dominant-baseline: middle; }
+.art-tongue rect { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
+.art-tongue .art-tongue-a { fill: var(--accent); }
+.tongue-card {
+  text-align: center;
+  padding: 0.6rem 0.75rem 0.7rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm, none);
+}
+.tongue-ask { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.tongue-name {
+  display: block;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+.tongue-name.size-l { font-size: clamp(2.4rem, 8vw, 3.6rem); }
+.tongue-name.size-m { font-size: clamp(1.8rem, 6vw, 2.7rem); }
+.tongue-name.size-s { font-size: clamp(1.4rem, 4.6vw, 2rem); }
+/* On a short screen the map shrinks, so the name above it and the input below fit together. */
+.tongue-game { --tongue-chrome: 480px; }
+.tongue-game .map-frame {
+  max-width: max(200px, min(100%, calc((100dvh - var(--tongue-chrome)) * 16 / 9)));
+  width: 100%;
+  margin-inline: auto;
+}
+.tongue-input { display: flex; gap: 0.5rem; align-items: flex-start; }
+.tongue-input .search-input { flex: 1; min-width: 0; }
+.tongue-skip { min-height: 44px; white-space: nowrap; }
+.tongue-wrong { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.25rem 0.9rem; justify-content: center; color: var(--wrong); font-size: 0.95rem; }
+.tongue-chip { font-weight: 600; color: var(--text); }
+/* The answer panel takes more room than the input did. */
+.tongue-game.done { --tongue-chrome: 640px; }
+@media (max-width: 640px) {
+  .tongue-game { --tongue-chrome: 560px; }
+  .tongue-game.done { --tongue-chrome: 700px; }
+}
