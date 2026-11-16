@@ -51,10 +51,9 @@ function useRememberedSettings(game: GameDefinition) {
 }
 
 export function GamePage({ game }: { game: GameDefinition }) {
-  const { allowance, startPlay, finishPlay } = usePlatform();
+  const { startPlay, finishPlay } = usePlatform();
   const [phase, setPhase] = useState<Phase>({ name: 'setup' });
   const [settings, setSettings] = useRememberedSettings(game);
-  const [blocked, setBlocked] = useState(false);
   const [starting, setStarting] = useState(false);
   const [updateRequired, setUpdateRequired] = useState(false);
 
@@ -64,7 +63,6 @@ export function GamePage({ game }: { game: GameDefinition }) {
     const result = await startPlay(game, chosen);
     setStarting(false);
     if (result.status === 'update-required') setUpdateRequired(true);
-    else if (result.status === 'out-of-plays') setBlocked(true);
     else setPhase({ name: 'playing', play: result.play, settings: chosen });
   };
 
@@ -91,10 +89,6 @@ export function GamePage({ game }: { game: GameDefinition }) {
         </div>
       </div>
     );
-  }
-
-  if (blocked || (phase.name === 'setup' && allowance.remaining === 0)) {
-    return <OutOfPlays />;
   }
 
   const isDefault = (s: GameSettings) => variantKey(s, game) === 'world';
@@ -127,7 +121,11 @@ export function GamePage({ game }: { game: GameDefinition }) {
           {phase.result && (
             <p>{phase.result.isPersonalBest ? '🎉 New personal best!' : `Personal best: ${phase.result.personalBest}`}</p>
           )}
-          {phase.result?.notice && <p className="muted score-notice">{phase.result.notice}</p>}
+          {phase.result?.notice && (
+            <p className={`muted score-notice score-${phase.result.status}`} role="status">
+              {phase.result.notice}
+            </p>
+          )}
           <div className="row">
             <button className="btn btn-primary btn-lg" disabled={starting} onClick={() => start(phase.settings)}>
               Play again
@@ -144,7 +142,6 @@ export function GamePage({ game }: { game: GameDefinition }) {
               Leaderboard
             </a>
           </div>
-          <PlaysLeft />
         </div>
       )}
     </div>
@@ -250,43 +247,6 @@ function GameSetup({
       <button className="btn btn-primary btn-lg" onClick={onStart} disabled={inPlay < MIN_POOL_SIZE || starting}>
         Start game
       </button>
-      <PlaysLeft />
-    </div>
-  );
-}
-
-function PlaysLeft() {
-  const { allowance } = usePlatform();
-  if (allowance.remaining === null) return <p className="muted">Premium: unlimited plays</p>;
-  return (
-    <p className="muted">
-      {allowance.remaining} of {allowance.limit} free plays left today ·{' '}
-      <a className="link" href={href({ page: 'premium' })}>
-        Go unlimited
-      </a>
-    </p>
-  );
-}
-
-function OutOfPlays() {
-  const { allowance } = usePlatform();
-  const time = allowance.resetsAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  return (
-    <div className="page">
-      <div className="panel center">
-        <h1>You've used today's free plays</h1>
-        <p>
-          Free players get {allowance.limit} games a day. New plays unlock at {time}, or upgrade for unlimited games.
-        </p>
-        <div className="row">
-          <a className="btn btn-primary btn-lg" href={href({ page: 'premium' })}>
-            See Premium
-          </a>
-          <a className="btn" href={href({ page: 'home' })}>
-            Back to games
-          </a>
-        </div>
-      </div>
     </div>
   );
 }

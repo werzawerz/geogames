@@ -23,7 +23,10 @@ interface Tile {
  * frame needs one or two, so only a few are kept (a phone's memory is short).
  */
 const tiles = new Map<number, Promise<Tile>>();
-const KEEP_TILES = 3;
+/** The same tiles once decoded, for drawing a frame at once (renderTerrainNow). */
+const decoded = new Map<number, Tile>();
+/** A phone keeps three (about 27 MB); a desktop keeps all six, so a new level needs no decoding. */
+const KEEP_TILES = typeof matchMedia !== 'undefined' && matchMedia('(max-width: 640px)').matches ? 3 : 6;
 
 function loadTile(i: number): Promise<Tile> {
   const key = i;
@@ -49,14 +52,20 @@ function loadTile(i: number): Promise<Tile> {
           data[q + 1] = rgba[p + 1]!;
           data[q + 2] = rgba[p + 2]!;
         }
-        resolve({ data, width: img.width, height: img.height });
+        const done = { data, width: img.width, height: img.height };
+        if (tiles.has(key)) decoded.set(key, done);
+        resolve(done);
       };
       img.onerror = () => reject(new Error(`terrain tile ${key} failed to load`));
       img.src = url;
     });
     tile.catch(() => tiles.delete(key));
     tiles.set(key, tile);
-    for (const old of tiles.keys()) if (tiles.size > KEEP_TILES) tiles.delete(old);
+    for (const old of tiles.keys()) {
+      if (tiles.size <= KEEP_TILES) break;
+      tiles.delete(old);
+      decoded.delete(old);
+    }
   }
   return tile;
 }
@@ -94,15 +103,21 @@ export interface TerrainImage {
   y: number;
   width: number;
   height: number;
+
 }
 
-let coords: [Float32Array, Float32Array] | null = null;
-/** Longitude and latitude per pixel, kept between frames of the same size (every level is). */
+/** Longitude and latitude per pixel, kept between frames of the same size (every level is), one pair per size. */
+const coords = new Map<number, [Float32Array, Float32Array]>();
 function buffers(size: number): [Float32Array, Float32Array] {
-  if (coords?.[0].length !== size) coords = [new Float32Array(size), new Float32Array(size)];
-  coords[0].fill(NaN);
-  coords[1].fill(NaN);
-  return coords;
+  let pair = coords.get(size);
+  if (!pair) {
+    if (coords.size >= 4) coords.clear();
+    pair = [new Float32Array(size), new Float32Array(size)];
+    coords.set(size, pair);
+  }
+  pair[0].fill(NaN);
+  pair[1].fill(NaN);
+  return pair;
 }
 
 const tileOf = (lngDeg: number) => Math.min(Math.floor((lngDeg + 180) / TERRAIN_TILE_DEGREES), TILES - 1);
@@ -114,9 +129,77 @@ const tileOf = (lngDeg: number) => Math.min(Math.floor((lngDeg + 180) / TERRAIN_
  */
 export async function renderTerrain(
   projection: GeoProjection,
-  [[x0, y0], [x1, y1]]: [[number, number], [number, number]],
+  extent: [[number, number], [number, number]],
   density: number,
 ): Promise<TerrainImage | null> {
+  const frame = locate(projection, extent, density);
+  if (!frame) return null;
+  const loaded = new Map(await Promise.all([...frame.needed].map(async (i) => [i, await loadTile(i)] as const)));
+  const canvas = paint(frame, loaded);
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', 0.88));
+  if (!blob) return null;
+  return image(URL.createObjectURL(blob), extent);
+}
+
+/**
+ * The same, drawn right away as a data URL, when every tile it needs is already
+ * decoded; undefined when one isn't (then use renderTerrain). Meant for small,
+ * quick frames: it blocks while it draws.
+ */
+export function renderTerrainNow(
+  projection: GeoProjection,
+  extent: [[number, number], [number, number]],
+  density: number,
+): TerrainImage | null | undefined {
+  const frame = locate(projection, extent, density);
+  if (!frame) return null;
+  const loaded = new Map<number, Tile>();
+  for (const i of frame.needed) {
+    const tile = decoded.get(i);
+    if (!tile) return undefined;
+    loaded.set(i, tile);
+  }
+  for (const i of frame.needed) loadTile(i); // mark them recently used
+  return image(paint(frame, loaded).toDataURL('image/jpeg', 0.85), extent);
+}
+
+/**
+ * Decodes the tiles the next frames may need while the player looks at this one, when
+ * all of them fit in the cache (not on a phone), so a new level always draws at once.
+ */
+export function warmTerrain(): void {
+  if (KEEP_TILES < TILES) return;
+  const idle = (fn: () => void) => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn) : setTimeout(fn, 200));
+  const next = (i: number) => {
+    if (i >= TILES) return;
+    if (tiles.has(i)) return next(i + 1);
+    idle(() => loadTile(i).then(() => next(i + 1), () => next(i + 1)));
+  };
+  next(0);
+}
+
+const image = (href: string, [[x0, y0], [x1, y1]]: [[number, number], [number, number]]): TerrainImage => ({
+  href,
+  x: x0,
+  y: y0,
+  width: x1 - x0,
+  height: y1 - y0,
+});
+
+interface Frame {
+  width: number;
+  height: number;
+  lng: Float32Array;
+  lat: Float32Array;
+  needed: Set<number>;
+}
+
+/** Each pixel's longitude and latitude, and the tiles they fall in; null if none is on the picture. */
+function locate(
+  projection: GeoProjection,
+  [[x0, y0], [x1, y1]]: [[number, number], [number, number]],
+  density: number,
+): Frame | null {
   const k = projection.scale();
   const [tx, ty] = projection.translate();
   const lng0 = -projection.rotate()[0];
@@ -144,9 +227,11 @@ export async function renderTerrain(
       needed.add(tileOf(lngDeg));
     }
   }
-  if (needed.size === 0) return null;
-  const loaded = new Map(await Promise.all([...needed].map(async (i) => [i, await loadTile(i)] as const)));
+  return needed.size === 0 ? null : { width, height, lng, lat, needed };
+}
 
+function paint({ width, height, lng, lat }: Frame, loaded: Map<number, Tile>): HTMLCanvasElement {
+  const { north } = TERRAIN_BOUNDS;
   const out = new ImageData(width, height);
   for (let p = 0; p < lng.length; p++) {
     const lngDeg = lng[p]!;
@@ -176,7 +261,5 @@ export async function renderTerrain(
   canvas.width = width;
   canvas.height = height;
   canvas.getContext('2d')!.putImageData(out, 0, 0);
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', 0.88));
-  if (!blob) return null;
-  return { href: URL.createObjectURL(blob), x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+  return canvas;
 }

@@ -1,50 +1,75 @@
+import { useEffect } from 'react';
 import { DAILY_GAMES, getGame } from '@geogames/games';
-import { usePlatform } from './platform/PlatformProvider.tsx';
 import { href, useRoute, type Route } from './router.ts';
+import { SiteHeader } from './components/SiteHeader.tsx';
 import { Home } from './pages/Home.tsx';
 import { DailyPage } from './pages/DailyPage.tsx';
+import { DailiesPage } from './pages/DailiesPage.tsx';
 import { GamePage } from './pages/GamePage.tsx';
 import { ScoresPage } from './pages/ScoresPage.tsx';
-import { PremiumPage } from './pages/PremiumPage.tsx';
+import { ProfilePage } from './pages/ProfilePage.tsx';
+import { AboutPage, ContactPage, PrivacyPage, TermsPage } from './pages/InfoPages.tsx';
+
+const SITE = 'GeoGames';
+
+/** The browser tab title for a route, e.g. "Blank Atlas · GeoGames". */
+export function routeTitle(route: Route): string {
+  switch (route.page) {
+    case 'about':
+      return `About · ${SITE}`;
+    case 'privacy':
+      return `Privacy policy · ${SITE}`;
+    case 'terms':
+      return `Terms of use · ${SITE}`;
+    case 'profile':
+      return `Profile · ${SITE}`;
+    case 'dailies':
+      return `Daily challenges · ${SITE}`;
+    case 'contact':
+      return `Contact · ${SITE}`;
+    case 'play':
+    case 'daily':
+    case 'scores': {
+      const game = getGame(route.gameId);
+      if (!game || game.status !== 'live') return `${SITE} · Geography games`;
+      if (route.page === 'daily') return `Daily ${game.title} · ${SITE}`;
+      if (route.page === 'scores') return `${game.title} leaderboard · ${SITE}`;
+      return `${game.title} · ${SITE}`;
+    }
+    default:
+      return `${SITE} · Geography games`;
+  }
+}
 
 export function App() {
   const route = useRoute();
+  useEffect(() => {
+    document.title = routeTitle(route);
+  }, [route]);
   return (
     <>
-      <TopBar />
+      <SiteHeader route={route} />
       <main>
         <Page route={route} />
       </main>
       <footer className="footer">
-        Data: World Bank WDI (CC BY 4.0), UN World Urbanization Prospects 2018 & 2025 (CC BY 3.0 IGO), GeoNames (CC BY 4.0), Wikidata (CC0), Euromonitor rankings,
-        mledoze/countries (ODbL), flag-icons (MIT).
+        <a href={href({ page: 'about' })}>About</a> · <a href={href({ page: 'privacy' })}>Privacy</a> · <a href={href({ page: 'terms' })}>Terms</a> ·{' '}
+        <a href={href({ page: 'contact' })}>Contact</a>
       </footer>
     </>
   );
 }
 
 function Page({ route }: { route: Route }) {
-  if (route.page === 'premium') return <PremiumPage />;
+  if (route.page === 'about') return <AboutPage />;
+  if (route.page === 'privacy') return <PrivacyPage />;
+  if (route.page === 'terms') return <TermsPage />;
+  if (route.page === 'contact') return <ContactPage />;
+  if (route.page === 'profile') return <ProfilePage />;
   if (route.page === 'home') return <Home />;
+  if (route.page === 'dailies') return <DailiesPage />;
   const game = getGame(route.gameId);
   if (!game || game.status !== 'live') return <Home />;
   if (route.page === 'daily') return DAILY_GAMES.includes(game.id) ? <DailyPage key={game.id} game={game} /> : <Home />;
   return route.page === 'play' ? <GamePage key={game.id} game={game} /> : <ScoresPage key={`${game.id}/${route.variant}`} game={game} variant={route.variant} />;
-}
-
-function TopBar() {
-  const { allowance, player } = usePlatform();
-  return (
-    <nav className="topbar">
-      <a className="brand" href={href({ page: 'home' })}>
-        🌍 GeoGames
-      </a>
-      <div className="topbar-right">
-        <span className="muted">{player.name}</span>
-        <a className="pill" href={href({ page: 'premium' })}>
-          {allowance.remaining === null ? 'Premium' : `${allowance.remaining}/${allowance.limit} plays`}
-        </a>
-      </div>
-    </nav>
-  );
 }

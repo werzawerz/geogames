@@ -18,6 +18,17 @@ export function remove(key: string): void {
   }
 }
 
+/** Removes every key of this app that starts with `prefix` (all of them by default). */
+export function clearAll(prefix = ''): void {
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith(PREFIX + prefix)) localStorage.removeItem(key);
+    }
+  } catch {
+    // Nothing stored, then.
+  }
+}
+
 export function save(key: string, value: unknown): void {
   try {
     localStorage.setItem(PREFIX + key, JSON.stringify(value));

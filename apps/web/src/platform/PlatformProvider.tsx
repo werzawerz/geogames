@@ -1,21 +1,42 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { GameDefinition, GameSettings } from '@geogames/games';
 import { createApiBackend } from './api-backend.ts';
-import { createDevAuth, createSupabaseAuth } from './auth.ts';
-import { createLocalBackend, type Backend, type DailyStart, type FinishedGame, type FinishResult, type Play, type StartResult } from './backend.ts';
-import type { Allowance, Plan } from './entitlements.ts';
+import { createDevAuth, createSupabaseAuth, type Account } from './auth.ts';
+import {
+  createLocalBackend,
+  type Backend,
+  type DailyStart,
+  type FeedbackInput,
+  type FinishedGame,
+  type FinishResult,
+  type Play,
+  type RenameResult,
+  type StartResult,
+} from './backend.ts';
 import type { ScoreService } from './scores.ts';
 import type { Player } from './player.ts';
 
+export type { Account } from './auth.ts';
+export type { FeedbackInput, FinishResult, FinishStatus, RenameResult } from './backend.ts';
+
 interface Platform {
   player: Player;
-  renamePlayer(name: string): void;
-  allowance: Allowance;
+  /** 'local': a build without a server (no sign-in); 'anonymous': playing without an account; 'signed-in': with Google. */
+  account: Account;
+  /** 'rejected': the server refused the name (offensive), and the old one stays; 'offline': kept here, sent next time. */
+  renamePlayer(name: string): Promise<RenameResult>;
   startPlay(game: GameDefinition, settings: GameSettings): Promise<StartResult>;
   startDaily(game: GameDefinition): Promise<DailyStart>;
+  /** `status` says whether the score reached the server ('saved') or stayed in this browser. */
   finishPlay(play: Play, game: FinishedGame): Promise<FinishResult>;
-  /** Only without a server: lets the free-play limit be tried out. */
-  setPlan?(plan: Plan): void;
+  /** Starts "Sign in with Google" (leaves the page and comes back to the same route). Keeps this player's games. */
+  signIn(): Promise<void>;
+  /** Signs out in this browser; play continues as a fresh anonymous player. */
+  signOut(): Promise<void>;
+  /** Deletes the player's games, feedback and account on the server, then starts over as a fresh anonymous player. */
+  deleteAccount(): Promise<void>;
+  /** Rejects with a message for the player when it can't be sent. */
+  sendFeedback(input: FeedbackInput): Promise<void>;
   scores: ScoreService;
 }
 
@@ -28,6 +49,8 @@ function createBackend(): Backend {
   return createApiBackend(apiUrl, supabaseUrl && supabaseKey ? createSupabaseAuth(supabaseUrl, supabaseKey) : createDevAuth());
 }
 
+const MAX_NAME_LENGTH = 24;
+
 /**
  * Single place where the backend is chosen. Swapping it doesn't touch any game
  * or page component.
@@ -35,51 +58,69 @@ function createBackend(): Backend {
 export function PlatformProvider({ children }: { children: ReactNode }) {
   const [backend] = useState(createBackend);
   const [player, setPlayer] = useState(backend.initial.player);
-  const [allowance, setAllowance] = useState(backend.initial.allowance);
+  const [account, setAccount] = useState(backend.initial.account);
 
   useEffect(() => {
     let cancelled = false;
     backend.load().then((loaded) => {
       if (cancelled || !loaded) return;
       setPlayer(loaded.player);
-      setAllowance(loaded.allowance);
+      setAccount(loaded.account);
     });
     return () => {
       cancelled = true;
     };
   }, [backend]);
 
-  const startPlay = useCallback(
-    async (game: GameDefinition, settings: GameSettings) => {
-      const result = await backend.startPlay(game, settings);
-      if (result.status !== 'update-required') setAllowance(result.allowance);
-      return result;
-    },
-    [backend],
-  );
+  const startPlay = useCallback((game: GameDefinition, settings: GameSettings) => backend.startPlay(game, settings), [backend]);
 
   const startDaily = useCallback((game: GameDefinition) => backend.startDaily(game), [backend]);
 
   const finishPlay = useCallback((play: Play, game: FinishedGame) => backend.finishPlay(play, game, player), [backend, player]);
 
-  const setPlan = useMemo(
-    () => (backend.simulatePlan ? (plan: Plan) => setAllowance(backend.simulatePlan!(plan)) : undefined),
-    [backend],
-  );
-
   const renamePlayer = useCallback(
-    (name: string) => {
-      const next = { ...player, name: name.trim().slice(0, 24) || player.name };
-      if (next.name === player.name) return;
+    async (name: string): Promise<RenameResult> => {
+      const next = { ...player, name: name.trim().slice(0, MAX_NAME_LENGTH).trim() || player.name };
+      if (next.name === player.name) return 'ok';
       setPlayer(next);
-      void backend.rename(next);
+      const result = await backend.rename(next);
+      if (result === 'rejected') setPlayer((current) => (current.name === next.name ? player : current));
+      return result;
     },
     [backend, player],
   );
 
+  const signIn = useCallback(async () => {
+    await backend.signIn();
+    // Usually the page has left for Google by now; a sign-in that needs no redirect shows at once.
+    const loaded = await backend.load();
+    if (loaded) setAccount(loaded.account);
+  }, [backend]);
+
+  const startOver = useCallback((next: { player: Player; account: Account }) => {
+    setPlayer(next.player);
+    setAccount(next.account);
+  }, []);
+  const signOut = useCallback(async () => startOver(await backend.signOut()), [backend, startOver]);
+  const deleteAccount = useCallback(async () => startOver(await backend.deleteAccount()), [backend, startOver]);
+
+  const sendFeedback = useCallback((input: FeedbackInput) => backend.sendFeedback(input), [backend]);
+
   const value = useMemo(
-    () => ({ player, renamePlayer, allowance, startPlay, startDaily, finishPlay, setPlan, scores: backend.scores }),
-    [player, renamePlayer, allowance, startPlay, startDaily, finishPlay, setPlan, backend],
+    () => ({
+      player,
+      account,
+      renamePlayer,
+      startPlay,
+      startDaily,
+      finishPlay,
+      signIn,
+      signOut,
+      deleteAccount,
+      sendFeedback,
+      scores: backend.scores,
+    }),
+    [player, account, renamePlayer, startPlay, startDaily, finishPlay, signIn, signOut, deleteAccount, sendFeedback, backend],
   );
   return <PlatformContext.Provider value={value}>{children}</PlatformContext.Provider>;
 }

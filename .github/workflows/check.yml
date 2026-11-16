@@ -1,10 +1,25 @@
 name: Check
 
+# Typecheck and unit tests run first; the slower browser tests only start once they pass.
 on:
   workflow_call:
 
 jobs:
-  check:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npx vitest run
+
+  e2e:
+    needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -14,8 +29,6 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run typecheck
-      - run: npm test
       - run: npm run build:api
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e

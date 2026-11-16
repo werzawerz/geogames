@@ -1,7 +1,7 @@
 // Supabase Edge Function entry point. `npm run build:api` bundles this file into
 // supabase/functions/api/index.ts, which is what gets deployed.
 import { createClient } from '@supabase/supabase-js';
-import { createApp } from './app.ts';
+import { createApp, parseDailyLimit } from './app.ts';
 
 declare const Deno: {
   env: { get(name: string): string | undefined };
@@ -29,11 +29,19 @@ const app = createApp({
     if (error) throw new Error(`${name}: ${error.message}`);
     return data;
   },
+  // Asks Supabase Auth, so a token is checked against the live account (a deleted
+  // or signed-out one fails), and `is_anonymous` is the server's, not the browser's.
   verifyToken: async (token) => {
     const { data, error } = await supabase.auth.getUser(token);
-    return error ? null : (data.user?.id ?? null);
+    if (error || !data.user) return null;
+    return { id: data.user.id, anonymous: data.user.is_anonymous === true };
   },
-  freePlaysPerDay: Number(Deno.env.get('FREE_PLAYS_PER_DAY')) || 5,
+  deleteUser: async (id) => {
+    const { error } = await supabase.auth.admin.deleteUser(id);
+    if (error) throw new Error(`deleteUser: ${error.message}`);
+  },
+  // Off unless set: the game is free. Kept as a switch for a paid tier later.
+  freePlaysPerDay: parseDailyLimit(Deno.env.get('FREE_PLAYS_PER_DAY')),
   // Already a secret of this project, so a daily challenge needs no extra setup.
   dailySecret: key,
   allowedOrigins: origins ? origins.split(',').map((o) => o.trim()) : '*',

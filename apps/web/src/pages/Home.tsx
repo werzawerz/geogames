@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { GAMES, dailyDate, dailyGames, dailyVariant, type GameDefinition } from '@geogames/games';
+import { dailyDate, dailyGames, dailyVariant, gamesByGroup, type GameDefinition } from '@geogames/games';
 import { GameCardArt } from '../games/GameCardArt.tsx';
 import { usePlatform } from '../platform/PlatformProvider.tsx';
 import { href } from '../router.ts';
@@ -9,22 +9,36 @@ export function Home() {
     <div className="page">
       <header className="hero">
         <h1>How well do you know the world?</h1>
-        <p>Quick geography games built on fresh World Bank data.</p>
+        <p>Free geography games: maps, borders, cities and quick quizzes. Play a short run and see how you rank.</p>
       </header>
-      <section className="daily" aria-label="Daily challenge">
-        <h2 className="daily-title">Daily challenge</h2>
-        <p className="muted">The same run for everyone, one try a day. It doesn't use a free play.</p>
+      <section className="daily" id="daily" aria-labelledby="daily-title">
+        <h2 className="daily-title" id="daily-title">
+          Today's daily challenges
+        </h2>
+        <p className="muted">
+          The same run for everyone, one try a day.{' '}
+          <a className="link" href={href({ page: 'dailies' })}>
+            All daily challenges →
+          </a>
+        </p>
         <div className="daily-games">
           {dailyGames().map((g) => (
             <DailyLink key={g.id} game={g} />
           ))}
         </div>
       </section>
-      <div className="game-grid">
-        {GAMES.map((g) => (
-          <GameCard key={g.id} game={g} />
-        ))}
-      </div>
+      {gamesByGroup().map((group) => (
+        <section key={group.id} className="game-group" aria-labelledby={`group-${group.id}`}>
+          <h2 className="group-title" id={`group-${group.id}`}>
+            {group.title}
+          </h2>
+          <div className="game-grid">
+            {group.games.map((g) => (
+              <GameCard key={g.id} game={g} />
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
