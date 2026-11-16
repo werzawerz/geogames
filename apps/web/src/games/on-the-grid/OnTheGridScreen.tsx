@@ -42,6 +42,8 @@ interface Line {
   /** Where the label sits. */
   at: [number, number];
   major: boolean;
+  /** False draws the line without its label. */
+  named?: boolean;
 }
 
 const parallel = (lat: number, label: string, major: boolean): Line => ({
@@ -53,7 +55,7 @@ const parallel = (lat: number, label: string, major: boolean): Line => ({
 const meridian = (lng: number, label: string, major: boolean): Line => ({
   coordinates: Array.from({ length: 29 }, (_, i) => [lng, -80 + i * 5] as [number, number]),
   label,
-  at: [lng, -58],
+  at: [lng, -52],
   major,
 });
 const degrees = (v: number, pos: string, neg: string) => (v === 0 ? '0°' : `${Math.abs(v)}°${v < 0 ? neg : pos}`);
@@ -71,7 +73,8 @@ function gridLines(kind: GridLines): Line[] {
   }
   const lines: Line[] = [];
   for (let lat = -50; lat <= 80; lat += 10) lines.push(parallel(lat, degrees(lat, 'N', 'S'), lat === 0));
-  for (let lng = -180; lng < 180; lng += 10) lines.push(meridian(lng, degrees(lng, 'E', 'W'), lng === 0));
+  // Meridians crowd towards the poles: every third one is named.
+  for (let lng = -180; lng < 180; lng += 10) lines.push({ ...meridian(lng, degrees(lng, 'E', 'W'), lng === 0), named: lng % 30 === 0 });
   return lines;
 }
 
@@ -129,7 +132,7 @@ function GridPlay({
       return (
         <>
           {lines.map((l) => (
-            <path key={l.label} className={`grid-line${l.major ? ' grid-major' : ''}`} d={path({ type: 'LineString', coordinates: l.coordinates }) ?? ''} />
+            <path key={`${l.coordinates[0]!.join()}-${l.label}`} className={`grid-line${l.major ? ' grid-major' : ''}`} d={path({ type: 'LineString', coordinates: l.coordinates }) ?? ''} />
           ))}
           {ring && <path className="grid-ring" d={path(ring) ?? ''} />}
         </>
@@ -139,7 +142,7 @@ function GridPlay({
 
   const markers = (toScreen: ToScreen) => {
     const view = (p: [number, number] | null) => (p && p[0] > 0 && p[0] < 960 && p[1] > 0 && p[1] < 540 ? p : null);
-    const labelled = lines.flatMap((l) => {
+    const labelled = lines.filter((l) => l.named !== false).flatMap((l) => {
       const p = view(toScreen(l.at));
       return p ? [{ ...l, x: p[0], y: p[1] }] : [];
     });
@@ -159,7 +162,7 @@ function GridPlay({
     return (
       <>
         {labelled.map((l) => (
-          <text key={l.label} className={`grid-label${l.major ? ' grid-label-major' : ''}`} x={l.x} y={l.y}>
+          <text key={`${l.coordinates[0]!.join()}-${l.label}`} className={`grid-label${l.major ? ' grid-label-major' : ''}`} x={l.x} y={l.y}>
             {l.label}
           </text>
         ))}

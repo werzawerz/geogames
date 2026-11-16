@@ -2838,7 +2838,7 @@ summary:focus-visible {
 .grid-game {
   gap: 0.5rem;
   /* Everything but the map: header, title, status, question and actions. */
-  --grid-chrome: 270px;
+  --grid-chrome: 340px;
 }
 
 .grid-game .map-frame {
@@ -2891,7 +2891,7 @@ summary:focus-visible {
 
 @media (max-width: 640px) {
   .grid-game {
-    --grid-chrome: 330px;
+    --grid-chrome: 400px;
   }
 
   .grid-hint,
@@ -2900,7 +2900,7 @@ summary:focus-visible {
   }
 
   .grid-label {
-    font-size: 22px;
+    font-size: 17px;
     stroke-width: 5px;
   }
 }
