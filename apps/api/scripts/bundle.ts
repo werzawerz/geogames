@@ -44,6 +44,12 @@ function slim(file: string, data: any): unknown {
   if (/cities[\\/]small-cities\.json$/.test(file)) return data.map((row: unknown[]) => row.slice(0, 6));
   if (/cities[\\/]city-proper\.json$/.test(file)) return { tourismRank: data.tourismRank, cities: data.cities.map((row: unknown[]) => row.slice(0, 6)) };
   if (/cities[\\/][a-z-]+\.json$/.test(file)) return data.map(slimCity);
+  // River Run scores a guess by how much of the river was drawn, which the client logs: no lines needed.
+  if (/rivers\.json$/.test(file)) {
+    // The anchor stays: the four names offered from half drawn are picked around it, and a typed one of them scores as a pick.
+    const keep = ({ id, name, tier, continent, anchor }: Record<string, unknown>) => ({ id, name, tier, continent, anchor });
+    return { ...data, rivers: data.rivers.map(keep) };
+  }
   // Blank Atlas replays need only what each feature is, where, and what it's part of; never names or outlines.
   if (/blank-atlas\.json$/.test(file)) {
     return {

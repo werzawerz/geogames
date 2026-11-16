@@ -10,10 +10,12 @@
     "./countries.json": "./data/countries.json",
     "./shapes": "./src/shapes.ts",
     "./blank-atlas": "./src/blank-atlas.ts",
-    "./blank-atlas-shapes": "./src/blank-atlas-shapes.ts"
+    "./blank-atlas-shapes": "./src/blank-atlas-shapes.ts",
+    "./rivers": "./src/rivers.ts"
   },
   "scripts": {
-    "build:data": "node scripts/build-countries.ts && node scripts/build-cities.ts"
+    "build:data": "node scripts/build-countries.ts && node scripts/build-cities.ts",
+    "build:rivers": "node scripts/build-rivers.ts"
   },
   "dependencies": {
     "topojson-client": "^3.1.0",
