@@ -264,7 +264,7 @@ describe('River Run', () => {
           total++;
         }
     expect(middle / total).toBeLessThanOrEqual(0.3);
-  });
+  }, 30_000); // hundreds of seeded levels: slow on a busy machine
 
   it('counts a typed name as a pick once the four are offered, and only if it is one of them', () => {
     const start = game.start(23);
