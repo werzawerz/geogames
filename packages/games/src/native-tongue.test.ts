@@ -243,3 +243,19 @@ describe('replay', () => {
     expect(usesRegion(definition)).toBe(false);
   });
 });
+
+describe('names that are English', () => {
+  it('are never asked, however they are spelt', () => {
+    // CLDR's English spells these with & and St.; the language being English is what counts.
+    for (const id of ['ATG', 'KNA', 'VCT', 'TTO', 'LCA', 'GBR', 'SSD']) {
+      expect(nameOf.get(id)!.looksEnglish, id).toBe(true);
+      expect(game.pool.some((n) => n.id === id), id).toBe(false);
+    }
+    for (const n of names.filter((n) => n.lang === 'en')) expect(n.looksEnglish, n.id).toBe(true);
+  });
+
+  it('keeps the Congos apart without giving away the capital', () => {
+    expect(nameOf.get('COD')!.name).toBe('République démocratique du Congo');
+    expect(nameOf.get('COG')!.name).toBe('République du Congo');
+  });
+});

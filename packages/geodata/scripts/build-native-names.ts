@@ -46,6 +46,10 @@ const LOCALES: Record<string, string> = {
  * "Palestinian Territories" (الأراضي الفلسطينية), the State of Palestine's own name is فلسطين.
  */
 const OVERRIDES: Record<string, { name: string; why: string }> = {
+  // CLDR's French has the disambiguation forms with the capital (Congo-Kinshasa, Congo-Brazzaville), which hand over
+  // which Congo it is. The states' own short names are these, and still tell the two apart.
+  CD: { name: 'République démocratique du Congo', why: "CLDR has the disambiguation form \"Congo-Kinshasa\", with the capital; the state's own name is République démocratique du Congo" },
+  CG: { name: 'République du Congo', why: "CLDR has the disambiguation form \"Congo-Brazzaville\", with the capital; the state's own name is République du Congo" },
   PS: { name: 'فلسطين', why: 'CLDR has "Palestinian Territories"; the State of Palestine calls itself فلسطين' },
 };
 
@@ -74,7 +78,9 @@ const RTL = new Set(['Arabic', 'Hebrew']);
 
 const scriptOf = (name: string) => SCRIPTS.find(([, re]) => re.test(name))![0];
 /** For "same as English" tests: lower case, no accents. */
-const plain = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z]/g, '');
+// "St." and "&" are spelt out first: Antigua & Barbuda is Antigua and Barbuda.
+const plain = (s: string) =>
+  s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/&/g, 'and').replace(/\bst\.?\s/g, 'saint ').replace(/[^a-z]/g, '');
 
 const cldrArg = process.argv.indexOf('--cldr');
 if (cldrArg < 0) throw new Error('Pass --cldr <dir>/package/main (see the top of this file).');
@@ -115,7 +121,8 @@ for (const c of countries) {
     script: script === 'Han' && lang === 'ja' ? 'Japanese' : script === 'Han' && locale === 'zh-Hant' ? 'Han (traditional)' : script,
     ...(RTL.has(script) ? { rtl: true } : {}),
     // Names that read like the English one (Mexico, Chile, Ghana) make no puzzle.
-    looksEnglish: plain(native) === plain(c.name),
+    // A name in English is no puzzle, however it's spelt (Trinidad & Tobago, South Sudan).
+    looksEnglish: lang === 'en' || plain(native) === plain(c.name),
   });
 }
 

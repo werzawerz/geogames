@@ -17,7 +17,7 @@ import {
 } from '@geogames/games';
 import { Flag } from '../../components/Flag.tsx';
 import { SearchInput } from '../../components/SearchInput.tsx';
-import { countryItems } from '../../components/searchItems.ts';
+import { blockShownNames, englishCountryItems } from '../../components/searchItems.ts';
 import { WorldMap, type MapCountry } from '../../components/WorldMap.tsx';
 import { circleShape } from '../circle/shared.tsx';
 import type { GameScreenProps } from '../types.ts';
@@ -45,10 +45,14 @@ export function NativeTongueScreen({ seed, initialMoves, onMovesChange, onGameOv
   return <TonguePlay {...loaded} seed={seed} initialMoves={initialMoves} onMovesChange={onMovesChange} onGameOver={onGameOver} />;
 }
 
-/** A name in its own language: its lang picks the right glyphs (Chinese or Japanese), and its direction the right way round. */
-function Native({ name, className }: { name: NativeName; className?: string }) {
+/**
+ * A name in its own language: its direction makes right-to-left names read the right way round, and its
+ * lang picks the glyphs (Chinese or Japanese). The question name leaves lang off until the language is
+ * given away anyway, since lang is in the page for anyone who looks.
+ */
+function Native({ name, className, lang = true }: { name: NativeName; className?: string; lang?: boolean }) {
   return (
-    <span className={className} lang={name.lang} dir={name.rtl ? 'rtl' : 'ltr'}>
+    <span className={className} lang={lang ? name.lang : undefined} dir={name.rtl ? 'rtl' : 'ltr'}>
       {name.name}
     </span>
   );
@@ -92,7 +96,13 @@ function TonguePlay({
   const countries = useMemo(() => queryCountries(), []);
   const game: NativeTongue = useMemo(() => createNativeTongue({ names, countries }), [names, countries]);
   // "Congo" alone is both countries': take it off the Republic so the list offers the two to pick from.
-  const items = useMemo(() => countryItems(countries.map((c) => c.id)).map((i) => (i.id === 'COG' ? { ...i, aliases: i.aliases?.filter((a) => a !== 'Congo') } : i)), [countries]);
+  // No other languages' names in the search, or typing what's on screen would hand over the answer.
+  const shown = useMemo(() => names.map((n) => n.name), [names]);
+  const items = useMemo(
+    () => englishCountryItems(countries.map((c) => c.id), shown).map((i) => (i.id === 'COG' ? { ...i, aliases: i.aliases?.filter((a) => a !== 'Congo') } : i)),
+    [countries, shown],
+  );
+  const blockShown = useMemo(() => blockShownNames(shown), [shown]);
   const nativeOf = useMemo(() => new Map(names.map((n) => [n.id, n])), [names]);
 
   const [state, setState] = useState<TongueState>(() => replayNativeTongue(game, seed, initialMoves ?? []));
@@ -140,6 +150,7 @@ function TonguePlay({
   const skipped = level.status === 'lost' && state.moves.at(-1) === TONGUE_SKIP;
   const next = () => setState(game.nextLevel(state));
 
+  const hinted = wrong.length > 0 || !playing;
   const wrongList =
     wrong.length > 0 ? (
       <ul className="tongue-wrong" aria-label="Your wrong guesses, and what each calls itself">
@@ -187,10 +198,10 @@ function TonguePlay({
 
       <div className="tongue-card">
         <p className="tongue-ask">This country calls itself</p>
-        <Native name={name} className={`tongue-name ${sizeClass(name.name)}`} />
+        <Native name={name} lang={hinted} className={`tongue-name ${sizeClass(name.name)}`} />
         {/* The line is always there, so the hint arriving moves nothing. */}
         <p className="tongue-hint" role="status">
-          {wrong.length > 0 || !playing ? `Hint: it’s in ${name.language}.` : ''}
+          {hinted ? `Hint: it’s in ${name.language}.` : ''}
         </p>
       </div>
 
@@ -207,6 +218,7 @@ function TonguePlay({
               onNoMatch={() => setMessage('Not one of the countries. Pick one from the list.')}
               placeholder="Which country is it?"
               label="Name the country"
+              cleanQuery={blockShown}
               focusWithoutScroll
             />
             <button type="button" className="btn tongue-skip" onClick={skip}>
