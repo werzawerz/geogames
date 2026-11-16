@@ -1,6 +1,6 @@
 # Backend plan
 
-Status: **built, not yet deployed** (2026-11-02). How to deploy and run it is in [deploy.md](deploy.md).
+Status: **built and deployed**. Since 2026-11-16 the game is free: plans and subscriptions are gone (see migration `20261116000000_free_accounts_feedback.sql` and [google-sign-in.md](google-sign-in.md) for accounts). The plan below is kept as written. How to deploy and run it is in [deploy.md](deploy.md).
 
 What changed from the plan below while building it: the API runs on **Supabase Edge Functions**, not Cloudflare Workers (about 2 s CPU per request instead of 10 ms, so replays fit without extra work, and one provider to manage). The site goes on **GitHub Pages**. Local development and tests use **PGlite** instead of the Supabase CLI's Docker stack. Replay data is slimmed when bundling (`apps/api/scripts/bundle.ts`). Weekly leaderboards aren't built yet.
 

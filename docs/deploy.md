@@ -43,12 +43,11 @@ The site appears at `https://<you>.github.io/<repo>/`. Check the API at `https:/
 ## Day to day
 
 - **Change of schema:** add a file to `supabase/migrations`. Tests run it too; the deploy applies it.
-- **Unlimited plays for yourself:** set your display name in the app, then in the Supabase SQL editor:
-  ```sql
-  insert into public.subscriptions (player_id)
-  select id from public.players where name = 'Your Name';
-  ```
-- **Other free-play limit:** `npx supabase secrets set FREE_PLAYS_PER_DAY=20 --remote=<project-ref>` (default 5).
+- **Sign in with Google:** set up once, by hand: [google-sign-in.md](google-sign-in.md).
+- **Plays are unlimited.** `FREE_PLAYS_PER_DAY` is a switch kept for a paid tier: a positive number limits each player's games per day (refused as `rate-limited`), unset means no limit. If you set it earlier, remove it: `npx supabase secrets unset FREE_PLAYS_PER_DAY --remote=<project-ref>`.
+- **Rate limits** (`DEFAULT_LIMITS` in `apps/api/src/app.ts`): per player, 30 game starts a minute and 600 an hour, 12 finished games a minute and 300 an hour (a capped game stays open and can be sent again later), 5 feedback messages an hour; and 20 feedback messages an hour per IP address (stored as a salted hash).
+- **Feedback** goes into the `feedback` table; read it in the dashboard's Table Editor. The API can only add to it.
+- **Display names** are checked against a small list of offensive words (`apps/api/src/names.ts`) on rename.
 - **Restrict the API to your site** (optional, any origin works by default): `npx supabase secrets set ALLOWED_ORIGINS=https://<you>.github.io --remote=<project-ref>`.
 - **Paused project:** free projects pause after a week without activity. `keep-alive.yml` pings the API daily to prevent it. If it pauses anyway, games keep working locally, and scores don't reach the leaderboard until you restore it in the dashboard.
 
@@ -68,11 +67,11 @@ Without `.env.local` the site runs in the browser alone. `npm run e2e` covers bo
 
 ## How a game is verified
 
-1. `POST /sessions`: the server checks the daily limit, picks the seed and opens a session.
+1. `POST /sessions`: the server checks the rate limits, picks the seed and opens a session.
 2. The browser plays with that seed.
 3. `POST /sessions/:id/finish`: the server replays the moves with the same engines (`packages/games/src/replay.ts`) and stores the score it computes. A score sent by the client is ignored.
 
-This stops forged scores and looking for a lucky seed, but not a player who uses a bot or looks answers up. Anonymous players can reset their free plays by clearing browser data, as there's no real account to tie them to yet.
+This stops forged scores and looking for a lucky seed, but not a player who uses a bot or looks answers up. Only players signed in with Google are on the global leaderboards, which the API decides from the verified token; anonymous players keep their own bests.
 
 The daily challenge works the same way, with one session per player, game and day. Its seed is a hash of the date, the game and the project's secret key, so nobody can work out a coming day's run. Leaving and coming back resumes the run from moves kept in the browser; clearing browser data gets a new anonymous player and so a new try, until real accounts exist.
 
