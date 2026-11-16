@@ -1828,3 +1828,8 @@ a {
   .clock-minutes { grid-template-columns: repeat(4, 1fr); flex: 1 1 100%; }
   .clock-chosen { text-align: left; }
 }
+
+/* colour terrain (WorldMap `terrain`) */
+.map-terrain {
+  pointer-events: none;
+}

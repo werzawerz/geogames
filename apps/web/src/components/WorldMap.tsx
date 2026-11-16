@@ -5,6 +5,8 @@ import { geoCentroid, geoNaturalEarth1, geoPath, type GeoPermissibleObjects, typ
 import type { CountryId } from '@geogames/geodata';
 import type { WorldShapes } from '@geogames/geodata/shapes';
 import { mainland } from './mainland.ts';
+import { renderTerrain, type TerrainImage } from './terrain.ts';
+import { TERRAIN_SOURCE, type TerrainSource } from './terrain-bounds.ts';
 
 export type MapTone = 'start' | 'end' | 'optimal' | 'near' | 'far' | 'route';
 
@@ -61,12 +63,47 @@ function placeLabels(countries: readonly MapCountry[], shapes: WorldShapes, toSc
 }
 
 const MAX_ZOOM = 20;
+/** The terrain covers the view and half a view around it, for panning; pixels per map unit. */
+const TERRAIN_MARGIN = 0.5;
+const TERRAIN_DENSITY = 1.25;
+
+/** Shaded relief for the frame, drawn when the projection changes; null until it's ready. */
+function useTerrain(projection: GeoProjection, source: TerrainSource | null): TerrainImage | null {
+  const [image, setImage] = useState<TerrainImage | null>(null);
+  useEffect(() => {
+    if (!source) return;
+    let cancelled = false;
+    let made: TerrainImage | null = null;
+    const extent: [[number, number], [number, number]] = [
+      [-WIDTH * TERRAIN_MARGIN, -HEIGHT * TERRAIN_MARGIN],
+      [WIDTH * (1 + TERRAIN_MARGIN), HEIGHT * (1 + TERRAIN_MARGIN)],
+    ];
+    renderTerrain(projection, extent, TERRAIN_DENSITY, source).then(
+      (result) => {
+        made = result;
+        if (!cancelled) setImage(result);
+        else if (result) URL.revokeObjectURL(result.href);
+      },
+      // The map works without terrain: the plain land and sea are drawn under it.
+      () => {},
+    );
+    return () => {
+      cancelled = true;
+      setImage(null);
+      if (made) URL.revokeObjectURL(made.href);
+    };
+  }, [projection, source]);
+  return image;
+}
 
 /**
  * A political map: every country with its borders, the given `countries`
  * coloured and labelled. It is framed on `frame` (any GeoJSON) or else on the
  * `focus` countries' mainlands, and can be zoomed (wheel, pinch, buttons) and
  * panned. Countries outside `inPlay` are dimmed (e.g. outside the chosen region).
+ *
+ * `terrain` draws Natural Earth's colour shaded relief with water over the plain
+ * land and sea (see scripts/build-terrain.ts), for games about physical geography.
  *
  * Extra layers: `overlay` draws shapes (e.g. a circle) that zoom with the map;
  * `markers` draws dots and labels at a fixed size, positioned with `toScreen`.
@@ -82,6 +119,7 @@ export function WorldMap({
   onPick,
   label,
   borders = true,
+  terrain = false,
   maxZoom = MAX_ZOOM,
 }: {
   shapes: WorldShapes;
@@ -97,6 +135,8 @@ export function WorldMap({
   label: string;
   /** False leaves out every border but those of `countries`: the others aren't in the page at all. */
   borders?: boolean;
+  /** Colour terrain over the plain land and sea, loaded lazily: true for TERRAIN_SOURCE, or a source by name. */
+  terrain?: boolean | TerrainSource;
   /** How far in the map zooms, compared to its starting view. */
   maxZoom?: number;
 }) {
@@ -130,6 +170,7 @@ export function WorldMap({
   }, [shapes, focusKey, frame]);
 
   const path = useMemo(() => geoPath(projection), [projection]);
+  const relief = useTerrain(projection, terrain === true ? TERRAIN_SOURCE : terrain || null);
   const landPath = useMemo(() => path(shapes.land) ?? '', [path, shapes.land]);
   // Base layer of every country; only recomputed when the frame changes, never while zooming.
   const base = useMemo(
@@ -210,6 +251,7 @@ export function WorldMap({
         <rect className="map-sea" width={WIDTH} height={HEIGHT} />
         <g transform={transform.toString()}>
           <path className="map-land" d={landPath} />
+          {relief && <image className="map-terrain" href={relief.href} x={relief.x} y={relief.y} width={relief.width} height={relief.height} preserveAspectRatio="none" />}
           {borders && <g>{base}</g>}
           {countries.map(({ id, tone }) => {
             const shape = shapes.countries.get(id);
