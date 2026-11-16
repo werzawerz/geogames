@@ -8,6 +8,8 @@ import {
   GAMES,
   arcadePools,
   createBorderBlitz,
+  createClockwork,
+  clockworkCountries,
   createChoiceQuiz,
   createCircleArcade,
   createHalfway,
@@ -20,6 +22,7 @@ import {
   replayGame,
   routeCountries,
   type BlitzState,
+  type ClockState,
   type CircleArcade,
   type GameDefinition,
   type QuizDefinition,
@@ -135,6 +138,31 @@ describe('the server bundle', () => {
     expect(await server.replayGame(definition, settings, 41, state.moves)).toEqual(full);
     console.log(`replaying Halfway: ${(performance.now() - started).toFixed(0)} ms`);
   }, 30_000);
+
+  it('scores Clockwork the same, from its pinned offsets: misses, skips and lost lives', async () => {
+    const definition = GAMES.find((g) => g.kind === 'clockwork')!;
+    const settings = normalizeSettings({}, definition);
+    const engine = createClockwork({ countries: clockworkCountries() });
+    const wrongFor = (s: ClockState) => [60, 120, 180, 240].map((h) => (s.level.answer + h) % 1440).find((m) => !s.level.guesses.includes(m))!;
+    let state = engine.start(41);
+    // 30 levels, into the band with clock-change dates: a miss first on every third, a skip on every seventh.
+    for (let i = 1; i <= 30; i++) {
+      if (i % 7 === 0) state = engine.skip(state);
+      else {
+        if (i % 3 === 0) state = engine.guess(state, wrongFor(state)).state;
+        state = engine.guess(state, state.level.answer).state;
+      }
+      state = engine.nextLevel(state);
+    }
+    while (state.status !== 'over') {
+      if (state.status === 'level-over') state = engine.nextLevel(state);
+      state = engine.guess(state, wrongFor(state)).state;
+    }
+    const full = await replayGame(definition, settings, 41, state.moves);
+    expect(full).toEqual({ score: state.score, finished: true });
+    expect(full.score).toBeGreaterThan(0);
+    expect(await server.replayGame(definition, settings, 41, state.moves)).toEqual(full);
+  });
 
   it('scores Border Blitz the same: wrong answers, time bonuses, timeouts, give-ups and lost lives', async () => {
     const definition = GAMES.find((g) => g.kind === 'border-blitz')!;

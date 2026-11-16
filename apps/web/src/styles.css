@@ -1740,3 +1740,91 @@ a {
 .blitz-end-label {
   pointer-events: none;
 }
+
+/* Clockwork */
+.art-meridian { stroke: rgba(148, 163, 184, 0.35); stroke-width: 2; stroke-dasharray: 6 8; }
+.art-greenwich { stroke: rgba(250, 204, 21, 0.7); }
+.art-tick { stroke: #38bdf8; stroke-width: 4; stroke-linecap: round; }
+.art-hand { fill: none; stroke: #f8fafc; stroke-width: 7; stroke-linecap: round; }
+.clock-meridian {
+  fill: none;
+  stroke: rgba(148, 163, 184, 0.35);
+  stroke-width: 1;
+  stroke-dasharray: 4 5;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.clock-greenwich { stroke: rgba(250, 204, 21, 0.65); stroke-dasharray: none; }
+.clock-prompt { text-align: center; margin: 0.25rem 0 0.5rem; }
+/* On a short screen the map shrinks, so the question above it and the input below fit together. */
+.clockwork-game .map-frame {
+  max-width: max(240px, min(100%, calc((100dvh - var(--clock-chrome, 500px)) * 16 / 9)));
+  width: 100%;
+  margin-inline: auto;
+}
+.clock-prompt p { margin: 0.15rem 0; }
+.clock-given { font-size: 1.05rem; }
+.clock-utc { font-variant-numeric: tabular-nums; color: var(--accent); }
+.clock-question { font-size: 1.2rem; }
+.clock-answer { margin: 0.25rem 0; }
+.clock-note { margin: 0.25rem 0; font-style: italic; }
+.clock-guesses {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 1rem;
+  font-variant-numeric: tabular-nums;
+}
+.clock-guesses .guess-in { color: var(--correct); font-weight: 600; }
+.clock-guesses .guess-out { color: var(--wrong); }
+.clockwork-game { --clock-chrome: 500px; }
+.clock-play { outline: none; margin-top: 0.6rem; }
+.clock-picker { max-width: 760px; margin: 0 auto; display: grid; gap: 0.4rem; }
+.clock-hours { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; }
+.clock-hour,
+.clock-minute {
+  position: relative;
+  min-height: 44px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.clock-hour:hover,
+.clock-minute:hover { border-color: var(--accent); }
+.clock-hour.selected,
+.clock-minute.selected { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+/* The UTC hour, the reference point: an underline, not a colour of its own. */
+.clock-hour-utc::after {
+  content: '';
+  position: absolute;
+  left: 25%;
+  right: 25%;
+  bottom: 5px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+}
+.clock-hour-utc.selected::after { background: var(--accent-ink); }
+.clock-hour.tried { color: var(--muted); border-style: dashed; }
+.clock-hour.tried.selected { color: var(--accent-ink); }
+.clock-hour-way { position: absolute; top: 1px; right: 4px; font-size: 0.7rem; color: var(--down); }
+.clock-picker-row { display: flex; align-items: center; gap: 0.5rem; }
+.clock-minutes { display: grid; grid-template-columns: repeat(4, 56px); gap: 4px; }
+.clock-chosen { flex: 1; margin: 0; text-align: center; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.clock-chosen .muted { font-size: 0.9rem; }
+.clock-check { min-height: 44px; min-width: 96px; }
+.clock-skip { min-height: 44px; }
+@media (max-width: 640px) {
+  .clockwork-game { --clock-chrome: 650px; }
+  .clock-hours { grid-template-columns: repeat(6, 1fr); }
+  .clock-picker-row { flex-wrap: wrap; }
+  .clock-minutes { grid-template-columns: repeat(4, 1fr); flex: 1 1 100%; }
+  .clock-chosen { text-align: left; }
+}

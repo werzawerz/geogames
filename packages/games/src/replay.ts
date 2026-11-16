@@ -4,6 +4,7 @@ import type { GameDefinition } from './catalog.ts';
 import { createBorderBlitz, replayBorderBlitz } from './border-blitz.ts';
 import { createChoiceQuiz, replayChoiceQuiz } from './choice-quiz.ts';
 import { createCircleArcade, replayCircleArcade, type CircleArcade } from './circle-arcade.ts';
+import { CLOCK_TZDB, clockworkCountries, createClockwork, replayClockwork } from './clockwork.ts';
 import { createCircleGame, replayCircle } from './circle.ts';
 import { createHigherLowerGame, replayHigherLower, type Guess } from './higher-lower.ts';
 import { createHalfway, replayHalfway, type Halfway } from './halfway.ts';
@@ -18,7 +19,8 @@ import type { GameSettings } from './settings.ts';
  * Identifies the data a game was played on. Replaying needs the same pools the
  * player had, so a server only accepts sessions from clients on its version.
  */
-export const DATASET_VERSION = `${dataset.generatedAt}|${cityIndex.generatedAt}`;
+// The tz release too: Clockwork's offsets come from it, so a rebuild of them must ask clients to update.
+export const DATASET_VERSION = `${dataset.generatedAt}|${cityIndex.generatedAt}|tz${CLOCK_TZDB}`;
 
 export interface ReplayResult {
   score: number;
@@ -97,6 +99,10 @@ export async function replayGame(
     case 'border-blitz': {
       const engine = createBorderBlitz({ countries: routeCountries(settings), rounds: game.rounds });
       const state = replayBorderBlitz(engine, seed, moves);
+      return { score: state.score, finished: state.status === 'over' };
+    }
+    case 'clockwork': {
+      const state = replayClockwork(createClockwork({ countries: clockworkCountries() }), seed, moves);
       return { score: state.score, finished: state.status === 'over' };
     }
     case 'pin-drop': {

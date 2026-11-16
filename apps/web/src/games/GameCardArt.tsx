@@ -220,6 +220,19 @@ const ART: Record<string, () => ReactNode> = {
       <Area d={art.blitz.target} tone="start" />
     </>
   ),
+  clockwork: () => (
+    <>
+      {[80, 200, 320, 440, 560].map((x) => (
+        <path key={x} className={x === 320 ? 'art-meridian art-greenwich' : 'art-meridian'} d={`M${x} 0V${HEIGHT}`} />
+      ))}
+      <circle className="art-ring" cx={WIDTH / 2} cy={HEIGHT / 2} r={96} />
+      {Array.from({ length: 12 }, (_, i) => (
+        <path key={i} className="art-tick" d="M0 -84V-72" transform={`translate(${WIDTH / 2} ${HEIGHT / 2}) rotate(${i * 30})`} />
+      ))}
+      <path className="art-hand" d={`M${WIDTH / 2} ${HEIGHT / 2}l38 22M${WIDTH / 2} ${HEIGHT / 2}V${HEIGHT / 2 - 70}`} />
+      <Dot at={[WIDTH / 2, HEIGHT / 2]} r={6} />
+    </>
+  ),
   'mystery-country': () => (
     <>
       <Land d={art.mystery.land} />
