@@ -40,6 +40,10 @@ git push -u origin main
 
 The site appears at `https://<you>.github.io/<repo>/`. Check the API at `https://<project-ref>.supabase.co/functions/v1/api/health`.
 
+## Checks before a deploy
+
+`deploy.yml` starts with the shared `check.yml`: first `npm run typecheck` and `npx vitest run`, then, only if those pass, the browser tests. The backend and the site deploy only after all of it passes.
+
 ## Day to day
 
 - **Change of schema:** add a file to `supabase/migrations`. Tests run it too; the deploy applies it.
@@ -50,7 +54,7 @@ The site appears at `https://<you>.github.io/<repo>/`. Check the API at `https:/
   ```
 - **Other free-play limit:** `npx supabase secrets set FREE_PLAYS_PER_DAY=20 --remote=<project-ref>` (default 5).
 - **Restrict the API to your site** (optional, any origin works by default): `npx supabase secrets set ALLOWED_ORIGINS=https://<you>.github.io --remote=<project-ref>`.
-- **Paused project:** free projects pause after a week without activity. `keep-alive.yml` pings the API daily to prevent it. If it pauses anyway, games keep working locally, and scores don't reach the leaderboard until you restore it in the dashboard.
+- **Paused project:** free projects pause after a week without activity. `keep-alive.yml` pings the API's `/health` endpoint (which runs a database query) every 3 days to prevent it. It builds the URL from the `SUPABASE_PROJECT_ID` repository variable the deploy already uses, needs no secret, and does nothing until that variable is set. Run it by hand from the Actions tab to test. If it pauses anyway, games keep working locally, and scores don't reach the leaderboard until you restore it in the dashboard.
 
 ## Running it locally
 

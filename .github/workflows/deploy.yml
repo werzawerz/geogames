@@ -1,6 +1,6 @@
 name: Deploy
 
-# On every push to main: check, then update the database and API, then the site.
+# On every push to main: typecheck + unit tests, then browser tests, then update the database and API, then the site.
 # Setup is in docs/deploy.md.
 on:
   push:
