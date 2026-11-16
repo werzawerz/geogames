@@ -38,8 +38,16 @@ test('desktop header: Games menu, Daily, About, keyboard', async ({ page }) => {
   await page.getByRole('link', { name: 'About' }).first().click();
   await expect(page).toHaveURL(/#\/about$/);
   await expect(page).toHaveTitle('About · GeoGames');
-  await page.getByRole('link', { name: 'Daily' }).click();
-  await expect(page.getByRole('heading', { name: "Today's daily challenges" })).toBeInViewport();
+  await page.getByRole('link', { name: 'Daily', exact: true }).click();
+  await expect(page).toHaveURL(/#\/daily$/);
+  await expect(page).toHaveTitle('Daily challenges · GeoGames');
+  await expect(page.getByRole('heading', { level: 1, name: 'Daily challenges' })).toBeVisible();
+  await expect(page.locator('.daily-card')).toHaveCount(4);
+  await expect(page.locator('.daily-card .daily-status').first()).toHaveText('Not played yet today');
+  await page.locator('.daily-card').first().getByRole('link', { name: 'Play' }).click();
+  await expect(page).toHaveURL(/#\/daily\/border-route$/);
+  await page.getByRole('link', { name: '← All daily challenges' }).click();
+  await expect(page).toHaveURL(/#\/daily$/);
   await page.getByRole('link', { name: /GeoGames/ }).first().click();
   await expect(page).toHaveURL(/#\/$/);
   await expect(page.locator('.account-slot')).toBeVisible();
@@ -100,7 +108,7 @@ test('footer links reach the info pages', async ({ page }) => {
 
 test('no horizontal scroll at 390px on home and info pages', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const path of ['', 'about', 'privacy', 'terms', 'contact']) {
+  for (const path of ['', 'daily', 'about', 'privacy', 'terms', 'contact']) {
     await page.goto(`/#/${path}`);
     await expect(page.locator('h1').first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

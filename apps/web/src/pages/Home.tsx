@@ -1,25 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { dailyDate, dailyGames, dailyVariant, gamesByGroup, type GameDefinition } from '@geogames/games';
 import { GameCardArt } from '../games/GameCardArt.tsx';
 import { usePlatform } from '../platform/PlatformProvider.tsx';
 import { href } from '../router.ts';
 
-export function Home({ focusDaily = false }: { focusDaily?: boolean }) {
-  const dailyRef = useRef<HTMLElement>(null);
-  useEffect(() => {
-    if (focusDaily) dailyRef.current?.scrollIntoView({ block: 'start' });
-  }, [focusDaily]);
+export function Home() {
   return (
     <div className="page">
       <header className="hero">
         <h1>How well do you know the world?</h1>
         <p>Free geography games: maps, borders, cities and quick quizzes. Play a short run and see how you rank.</p>
       </header>
-      <section className="daily" id="daily" ref={dailyRef} aria-labelledby="daily-title">
+      <section className="daily" id="daily" aria-labelledby="daily-title">
         <h2 className="daily-title" id="daily-title">
           Today's daily challenges
         </h2>
-        <p className="muted">The same run for everyone, one try a day. A new one at midnight UTC.</p>
+        <p className="muted">
+          The same run for everyone, one try a day.{' '}
+          <a className="link" href={href({ page: 'dailies' })}>
+            All daily challenges →
+          </a>
+        </p>
         <div className="daily-games">
           {dailyGames().map((g) => (
             <DailyLink key={g.id} game={g} />

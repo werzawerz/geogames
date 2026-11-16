@@ -10,7 +10,7 @@ describe('router', () => {
   it('round-trips every route', () => {
     const routes: Route[] = [
       { page: 'home' },
-      { page: 'home', focus: 'daily' },
+      { page: 'dailies' },
       { page: 'play', gameId: 'pin-drop' },
       { page: 'daily', gameId: 'pin-drop' },
       { page: 'scores', gameId: 'pin-drop', variant: 'x' },

@@ -110,7 +110,7 @@ export function SiteHeader({ route }: { route: Route }) {
             ))}
           </div>
         </div>
-        <a className="nav-link" href={href({ page: 'home', focus: 'daily' })}>
+        <a className="nav-link" href={href({ page: 'dailies' })} aria-current={current('dailies')}>
           Daily
         </a>
         <a className="nav-link" href={href({ page: 'about' })} aria-current={current('about')}>

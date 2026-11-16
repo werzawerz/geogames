@@ -4,6 +4,7 @@ import { href, useRoute, type Route } from './router.ts';
 import { SiteHeader } from './components/SiteHeader.tsx';
 import { Home } from './pages/Home.tsx';
 import { DailyPage } from './pages/DailyPage.tsx';
+import { DailiesPage } from './pages/DailiesPage.tsx';
 import { GamePage } from './pages/GamePage.tsx';
 import { ScoresPage } from './pages/ScoresPage.tsx';
 import { ProfilePage } from './pages/ProfilePage.tsx';
@@ -22,6 +23,8 @@ export function routeTitle(route: Route): string {
       return `Terms of use · ${SITE}`;
     case 'profile':
       return `Profile · ${SITE}`;
+    case 'dailies':
+      return `Daily challenges · ${SITE}`;
     case 'contact':
       return `Contact · ${SITE}`;
     case 'play':
@@ -63,7 +66,8 @@ function Page({ route }: { route: Route }) {
   if (route.page === 'terms') return <TermsPage />;
   if (route.page === 'contact') return <ContactPage />;
   if (route.page === 'profile') return <ProfilePage />;
-  if (route.page === 'home') return <Home focusDaily={route.focus === 'daily'} />;
+  if (route.page === 'home') return <Home />;
+  if (route.page === 'dailies') return <DailiesPage />;
   const game = getGame(route.gameId);
   if (!game || game.status !== 'live') return <Home />;
   if (route.page === 'daily') return DAILY_GAMES.includes(game.id) ? <DailyPage key={game.id} game={game} /> : <Home />;

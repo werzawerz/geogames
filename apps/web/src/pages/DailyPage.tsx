@@ -79,8 +79,8 @@ export function DailyPage({ game }: { game: GameDefinition }) {
 
   return (
     <div className="page">
-      <a className="link back" href={href({ page: 'home' })}>
-        ← All games
+      <a className="link back" href={href({ page: 'dailies' })}>
+        ← All daily challenges
       </a>
       <h1 className="page-title">Daily challenge: {game.title}</h1>
 
@@ -117,7 +117,7 @@ export function DailyPage({ game }: { game: GameDefinition }) {
   );
 }
 
-const nextChallengeAt = () => {
+export const nextChallengeAt = () => {
   const next = new Date();
   next.setUTCHours(24, 0, 0, 0);
   return next.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -174,8 +174,8 @@ function DailyResult({
           <button className="btn btn-primary btn-lg" onClick={share}>
             {copied ? 'Copied!' : 'Copy result'}
           </button>
-          <a className="btn" href={href({ page: 'home' })}>
-            Back to games
+          <a className="btn" href={href({ page: 'dailies' })}>
+            Other daily challenges
           </a>
         </div>
         <p className="muted">One try a day. The next challenge starts at {nextChallengeAt()}.</p>

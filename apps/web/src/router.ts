@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 
 export type Route =
-  | { page: 'home'; focus?: 'daily' }
+  | { page: 'home' }
+  | { page: 'dailies' }
   | { page: 'play'; gameId: string }
   | { page: 'daily'; gameId: string }
   | { page: 'scores'; gameId: string; variant?: string }
@@ -18,7 +19,7 @@ export const INFO_PAGES = ['about', 'privacy', 'terms', 'contact'] as const;
 export function parseRoute(hash: string): Route {
   const [, page, arg, variant] = hash.replace(/^#/, '').split('/');
   if (page === 'play' && arg) return { page: 'play', gameId: arg };
-  if (page === 'daily' && !arg) return { page: 'home', focus: 'daily' };
+  if (page === 'daily' && !arg) return { page: 'dailies' };
   if (page === 'daily' && arg) return { page: 'daily', gameId: arg };
   if (page === 'scores' && arg) return { page: 'scores', gameId: arg, variant };
   if (page === 'profile') return { page: 'profile' };
@@ -29,7 +30,9 @@ export function parseRoute(hash: string): Route {
 export function href(route: Route): string {
   switch (route.page) {
     case 'home':
-      return route.focus === 'daily' ? '#/daily' : '#/';
+      return '#/';
+    case 'dailies':
+      return '#/daily';
     case 'profile':
     case 'about':
     case 'privacy':
