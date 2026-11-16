@@ -1828,3 +1828,197 @@ a {
   .clock-minutes { grid-template-columns: repeat(4, 1fr); flex: 1 1 100%; }
   .clock-chosen { text-align: left; }
 }
+
+/* blank atlas */
+.atlas-prompt {
+  margin: 0;
+  text-align: center;
+  font-size: 1.15rem;
+}
+
+/* On the colour terrain the lit-up feature is magenta (no blue on blue sea, no green on green land), with a white edge and a dark glow. */
+.atlas-feature {
+  vector-effect: non-scaling-stroke;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.atlas-feature:not(.atlas-sea) {
+  filter: drop-shadow(0 0 2px rgb(0 0 0 / 0.85));
+}
+
+.atlas-target {
+  fill: rgb(217 70 239 / 0.5);
+}
+
+.atlas-target.atlas-sea {
+  fill: rgb(217 70 239 / 0.7);
+}
+
+.atlas-target.atlas-lake {
+  fill: rgb(217 70 239 / 0.85);
+}
+
+.atlas-found {
+  fill: rgb(34 197 94 / 0.6);
+}
+
+.atlas-lost {
+  fill: rgb(245 158 11 / 0.65);
+}
+
+.atlas-guess {
+  fill: rgb(239 68 68 / 0.55);
+  stroke-dasharray: 5 3;
+}
+
+.atlas-ring {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.5;
+  stroke-dasharray: 6 4;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 2px rgb(0 0 0 / 0.9));
+}
+
+/* Water fills have no outline: the coast is their edge, and their open-sea edge is blurred. */
+.atlas-sea {
+  stroke: none;
+}
+
+/* The page fits one screen: question, map, options and Skip with no scrolling. */
+.page:has(.blank-atlas-game) {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.page:has(.blank-atlas-game) .page-title {
+  margin-bottom: 0.4rem;
+}
+
+.blank-atlas-game {
+  gap: 0.5rem;
+  /* Everything but the map: header, title, status, question, options and actions. */
+  --atlas-chrome: 350px;
+}
+
+.blank-atlas-game .map-frame {
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: #0b1324;
+}
+
+/* The map takes the height left over; what's beyond its 16:9 frame still shows, so a tall phone map has more to see. */
+.blank-atlas-game .world-map {
+  height: clamp(180px, calc(100dvh - var(--atlas-chrome)), 540px);
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.atlas-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.atlas-option {
+  min-height: 44px;
+  justify-content: flex-start;
+  text-align: left;
+  padding: 0.5rem 0.7rem;
+  line-height: 1.2;
+}
+
+.atlas-option:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.option-key {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.option-name {
+  flex: 1;
+}
+
+.option-mark {
+  font-weight: 800;
+}
+
+.atlas-option.option-right {
+  border-color: var(--correct);
+  background: rgb(22 163 74 / 0.25);
+}
+
+.atlas-option.option-wrong {
+  border-color: var(--wrong);
+  background: rgb(220 38 38 / 0.25);
+}
+
+.atlas-option.option-other {
+  opacity: 0.6;
+}
+
+.atlas-actions,
+.atlas-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 44px;
+}
+
+.atlas-result-text {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.atlas-result.solved strong:first-child {
+  color: var(--correct);
+}
+
+.atlas-result.failed strong:first-child {
+  color: #f87171;
+}
+
+.atlas-skip,
+.atlas-result .btn {
+  min-height: 44px;
+  flex: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .blank-atlas-game {
+    --atlas-chrome: 430px;
+  }
+
+  .atlas-options {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .atlas-hint {
+    font-size: 0.85rem;
+  }
+
+  .atlas-result-text {
+    font-size: 0.85rem;
+  }
+}
+
+/* colour terrain (WorldMap `terrain`) */
+.map-terrain {
+  pointer-events: none;
+}

@@ -1,6 +1,8 @@
 import { dataset, queryCountries } from '@geogames/geodata';
 import { cityIndex, loadGreatCircles } from '@geogames/geodata/cities';
 import type { GameDefinition } from './catalog.ts';
+import { BLANK_ATLAS_VERSION, loadBlankAtlas } from '@geogames/geodata/blank-atlas';
+import { createBlankAtlas, replayBlankAtlas, type BlankAtlas } from './blank-atlas.ts';
 import { createBorderBlitz, replayBorderBlitz } from './border-blitz.ts';
 import { createChoiceQuiz, replayChoiceQuiz } from './choice-quiz.ts';
 import { createCircleArcade, replayCircleArcade, type CircleArcade } from './circle-arcade.ts';
@@ -20,7 +22,8 @@ import type { GameSettings } from './settings.ts';
  * player had, so a server only accepts sessions from clients on its version.
  */
 // The tz release too: Clockwork's offsets come from it, so a rebuild of them must ask clients to update.
-export const DATASET_VERSION = `${dataset.generatedAt}|${cityIndex.generatedAt}|tz${CLOCK_TZDB}`;
+// And Blank Atlas's features: a rebuild can change which options a seed gives.
+export const DATASET_VERSION = `${dataset.generatedAt}|${cityIndex.generatedAt}|tz${CLOCK_TZDB}|atlas${BLANK_ATLAS_VERSION}`;
 
 export interface ReplayResult {
   score: number;
@@ -42,6 +45,10 @@ function arcadeFor(settings: GameSettings): Promise<CircleArcade> {
 // Halfway works out its fair pairs once per engine.
 let halfwayEngine: Promise<Halfway> | undefined;
 const halfway = () => (halfwayEngine ??= halfwayPools().then(createHalfway));
+
+let blankAtlasEngine: Promise<BlankAtlas> | undefined;
+/** The Blank Atlas engine, on its features (names and places, no outlines). */
+export const blankAtlasGame = () => (blankAtlasEngine ??= loadBlankAtlas().then((d) => createBlankAtlas(d.features)));
 
 /**
  * Plays a game again from its seed and the player's moves, with the same
@@ -111,6 +118,10 @@ export async function replayGame(
     }
     case 'halfway': {
       const state = replayHalfway(await halfway(), seed, moves);
+      return { score: state.score, finished: state.status === 'over' };
+    }
+    case 'blank-atlas': {
+      const state = replayBlankAtlas(await blankAtlasGame(), seed, moves);
       return { score: state.score, finished: state.status === 'over' };
     }
     case 'circle-arcade': {

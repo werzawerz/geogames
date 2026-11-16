@@ -44,6 +44,13 @@ function slim(file: string, data: any): unknown {
   if (/cities[\\/]small-cities\.json$/.test(file)) return data.map((row: unknown[]) => row.slice(0, 6));
   if (/cities[\\/]city-proper\.json$/.test(file)) return { tourismRank: data.tourismRank, cities: data.cities.map((row: unknown[]) => row.slice(0, 6)) };
   if (/cities[\\/][a-z-]+\.json$/.test(file)) return data.map(slimCity);
+  // Blank Atlas replays need only what each feature is, where, and what it's part of; never names or outlines.
+  if (/blank-atlas\.json$/.test(file)) {
+    return {
+      generatedAt: data.generatedAt,
+      features: data.features.map((f: Record<string, unknown>) => ({ id: f.id, kind: f.kind, tier: f.tier, center: f.center, related: f.related })),
+    };
+  }
   return data;
 }
 

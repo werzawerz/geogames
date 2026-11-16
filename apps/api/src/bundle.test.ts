@@ -7,6 +7,7 @@ import {
   DATASET_VERSION,
   GAMES,
   arcadePools,
+  blankAtlasGame,
   createBorderBlitz,
   createClockwork,
   clockworkCountries,
@@ -211,6 +212,24 @@ describe('the server bundle', () => {
     const full = await replayGame(route, settings, 21, state.moves);
     expect(full).toEqual({ score: state.score, finished: true });
     expect(await server.replayGame(route, settings, 21, state.moves)).toEqual(full);
+  });
+
+  it('scores Blank Atlas the same without names or outlines', async () => {
+    const game = GAMES.find((g) => g.kind === 'blank-atlas')!;
+    const settings = normalizeSettings({}, game);
+    const engine = await blankAtlasGame();
+    let state = engine.start(31);
+    for (let i = 0; i < 25 && state.status !== 'over'; i++) {
+      const wrong = state.level.options.find((id) => id !== state.level.feature)!;
+      if (i % 3 === 1) state = engine.nextLevel(engine.guess(state, wrong).state);
+      state = i % 5 === 4 ? engine.skip(state) : engine.guess(state, state.level.feature).state;
+      state = engine.nextLevel(state);
+    }
+    while (state.status !== 'over') state = engine.skip(state.status === 'level-over' ? engine.nextLevel(state) : state);
+    const full = await replayGame(game, settings, 31, state.moves);
+    expect(full).toEqual({ score: state.score, finished: true });
+    expect(full.score).toBeGreaterThan(0);
+    expect(await server.replayGame(game, settings, 31, state.moves)).toEqual(full);
   });
 
   it('builds every live game without the fields it strips', async () => {

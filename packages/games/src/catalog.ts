@@ -3,7 +3,7 @@ import type { MetricId } from '@geogames/geodata';
 export type GameKind = GameDefinition['kind'];
 
 /** What the game's items are; decides which pool is loaded and how cards are drawn. */
-export type Subject = 'country' | 'city';
+export type Subject = 'country' | 'city' | 'feature';
 
 interface BaseDefinition {
   id: string;
@@ -16,6 +16,7 @@ interface BaseDefinition {
 
 export interface HigherLowerDefinition extends BaseDefinition {
   kind: 'higher-lower';
+  subject: 'country' | 'city';
   metric: MetricId;
   /** Shown under values so players know what is measured. */
   valueNote?: string;
@@ -62,6 +63,12 @@ export interface HalfwayDefinition extends BaseDefinition {
   subject: 'city';
 }
 
+export interface BlankAtlasDefinition extends BaseDefinition {
+  kind: 'blank-atlas';
+  /** Physical features: seas, ranges, deserts, lakes, islands. */
+  subject: 'feature';
+}
+
 export interface GreatCircleDefinition extends BaseDefinition {
   kind: 'great-circle';
   subject: 'country';
@@ -100,7 +107,8 @@ export type GameDefinition =
   | GreatCircleDefinition
   | MysteryCountryDefinition
   | BorderBlitzDefinition
-  | ClockworkDefinition;
+  | ClockworkDefinition
+  | BlankAtlasDefinition;
 
 export const GAMES: readonly GameDefinition[] = [
   {
@@ -175,6 +183,14 @@ export const GAMES: readonly GameDefinition[] = [
     subject: 'city',
     title: 'City Circle Arcade',
     tagline: 'Endless circles, getting smaller and harder. How far can you get?',
+    status: 'live',
+  },
+  {
+    id: 'blank-atlas',
+    kind: 'blank-atlas',
+    subject: 'feature',
+    title: 'Blank Atlas',
+    tagline: 'A sea, a mountain range or a desert lights up on a map with no labels. Name it.',
     status: 'live',
   },
   {

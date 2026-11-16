@@ -12,6 +12,7 @@ const BorderBlitzScreen = lazy(() => import('./border-blitz/BorderBlitzScreen.ts
 const PinDropScreen = lazy(() => import('./pin/PinDropScreen.tsx').then((m) => ({ default: m.PinDropScreen })));
 const HalfwayScreen = lazy(() => import('./halfway/HalfwayScreen.tsx').then((m) => ({ default: m.HalfwayScreen })));
 const ClockworkScreen = lazy(() => import('./clockwork/ClockworkScreen.tsx').then((m) => ({ default: m.ClockworkScreen })));
+const BlankAtlasScreen = lazy(() => import('./blank-atlas/BlankAtlasScreen.tsx').then((m) => ({ default: m.BlankAtlasScreen })));
 const ArcadeScreen = lazy(() => import('./circle/ArcadeScreen.tsx').then((m) => ({ default: m.ArcadeScreen })));
 
 /** Renders the screen for a game's kind. Adding a game kind = one engine + one screen + one case here. */
@@ -68,6 +69,12 @@ export function GameScreen(props: GameScreenProps) {
       return (
         <Suspense fallback={<p className="panel center muted">Loading…</p>}>
           <ClockworkScreen {...props} game={game} />
+        </Suspense>
+      );
+    case 'blank-atlas':
+      return (
+        <Suspense fallback={<p className="panel center muted">Loading…</p>}>
+          <BlankAtlasScreen {...props} game={game} />
         </Suspense>
       );
     case 'circle-arcade':
