@@ -2762,3 +2762,145 @@ summary:focus-visible {
 .nowrap {
   white-space: nowrap;
 }
+
+/* on the grid */
+.grid-prompt {
+  margin: 0;
+  text-align: center;
+  font-size: 1.15rem;
+}
+
+.grid-coords {
+  font-family: var(--font-head);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.4rem;
+  color: var(--accent);
+}
+
+/* Ink lines with a parchment halo underneath read on both land and sea. */
+.grid-line {
+  fill: none;
+  stroke: var(--map-ink);
+  stroke-width: 0.8;
+  stroke-opacity: 0.55;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.grid-major {
+  stroke-width: 1.6;
+  stroke-opacity: 0.85;
+}
+
+.grid-label {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  fill: var(--map-ink);
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  pointer-events: none;
+}
+
+.grid-label-major {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.grid-ring {
+  fill: var(--correct-soft);
+  stroke: var(--correct);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.grid-arrow {
+  fill: none;
+  stroke: var(--wrong);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+/* The page fits one screen: coordinates, map, and the actions with no scrolling. */
+.page:has(.grid-game) {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.page:has(.grid-game) .page-title {
+  margin-bottom: 0.4rem;
+}
+
+.grid-game {
+  gap: 0.5rem;
+  /* Everything but the map: header, title, status, question and actions. */
+  --grid-chrome: 270px;
+}
+
+.grid-game .map-frame {
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--sea);
+}
+
+.grid-game .world-map {
+  max-height: calc(100dvh - var(--grid-chrome));
+  min-height: 180px;
+  border: 0;
+  border-radius: 0;
+}
+
+.grid-actions,
+.grid-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 44px;
+}
+
+.grid-hint,
+.grid-result-text {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.grid-hint strong {
+  color: var(--wrong-ink);
+}
+
+.grid-result.solved strong:first-child {
+  color: var(--correct-ink);
+}
+
+.grid-result.failed strong:first-child {
+  color: var(--wrong-ink);
+}
+
+.grid-skip,
+.grid-result .btn {
+  min-height: 44px;
+  flex: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .grid-game {
+    --grid-chrome: 330px;
+  }
+
+  .grid-hint,
+  .grid-result-text {
+    font-size: 0.85rem;
+  }
+
+  .grid-label {
+    font-size: 22px;
+    stroke-width: 5px;
+  }
+}

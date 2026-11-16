@@ -1,6 +1,8 @@
 import { countries, getCountry, queryCountries } from '@geogames/geodata';
 import { loadGreatCircles } from '@geogames/geodata/cities';
 import { loadRivers } from '@geogames/geodata/rivers';
+import { loadLandGrid } from '@geogames/geodata/land-grid';
+import { geoNaturalEarth1 } from 'd3-geo';
 import { BLANK_ATLAS_KIND_LABELS } from '@geogames/geodata/blank-atlas';
 import {
   DEFAULT_SETTINGS,
@@ -21,6 +23,8 @@ import {
   createPinDrop,
   createHalfway,
   createRiverRun,
+  createOnTheGrid,
+  formatCoordinates,
   riverChoices,
   createClockwork,
   CLOCK_DATES,
@@ -1772,3 +1776,79 @@ for (const [label, viewport] of [
     await expect(lives).toHaveCount(2);
   });
 }
+
+test('on the grid: click the coordinates; a miss shows the way, three misses or a skip cost a life, a find on the first click gives one back', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  const engine = createOnTheGrid({ grid: await loadLandGrid(), countries: queryCountries() });
+  let state = engine.start(Math.floor(0.5 * 2 ** 32));
+  const lives = page.locator('.lives .life:not(.lost)');
+  const map = page.locator('.world-map.pickable');
+  const inView = async () => {
+    for (const part of ['.route-status', '.grid-prompt', '.map-frame', '.grid-actions, .grid-result']) await expect(page.locator(part), part).toBeInViewport({ ratio: 1 });
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  };
+  // Where a coordinate is on the screen with the map unzoomed: the same projection WorldMap builds.
+  const project = async ([lat, lng]: readonly [number, number]) => {
+    const box = (await map.boundingBox())!;
+    const p = geoNaturalEarth1()
+      .rotate([0, 0])
+      .fitExtent([[48, 48], [912, 492]], { type: 'Sphere' })([lng, lat])!;
+    const s = Math.min(box.width / 960, box.height / 540);
+    return { x: box.x + box.width / 2 + (p[0] - 480) * s, y: box.y + box.height / 2 + (p[1] - 270) * s };
+  };
+
+  await openGame(page, 'on-the-grid');
+  await page.getByRole('button', { name: 'Start game' }).click();
+  await expect(map).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('.grid-coords')).toHaveText(formatCoordinates(state.level.target));
+  // Level 1 draws a line every 10°, with their degrees; the answer isn't in the page before it is revealed.
+  expect(await page.locator('.grid-line').count()).toBeGreaterThan(20);
+  await expect(page.locator('.grid-label').first()).toContainText('°');
+  await expect(page.locator('.marker-found')).toHaveCount(0);
+  await inView();
+
+  // Three clicks in the Pacific edge: each shows the way and the distance, the third costs the life.
+  const edge = async () => {
+    const box = (await map.boundingBox())!;
+    await page.mouse.click(box.x + 8, box.y + box.height * 0.5);
+  };
+  await edge();
+  await expect(page.locator('.grid-hint')).toContainText('km off');
+  await expect(page.locator('.grid-arrow')).toHaveCount(1);
+  await expect(page.locator('.grid-hint')).toContainText('2 clicks left');
+  await edge();
+  await expect(page.locator('.grid-hint')).toContainText('Last click');
+  await edge();
+  await expect(page.locator('.grid-result.failed')).toContainText('Not found: −1 ♥');
+  await expect(page.locator('.grid-result')).toContainText(formatCoordinates(state.level.target));
+  await expect(page.locator('.marker-found text')).toHaveText(formatCoordinates(state.level.target));
+  await expect(lives).toHaveCount(2);
+  // Three misses or a skip end a level the same way, and the next spot comes from the same place.
+  state = engine.skip(state);
+  await expect(page.getByRole('button', { name: 'Next level' })).toBeFocused();
+  await inView();
+  await page.keyboard.press('Enter');
+  state = engine.nextLevel(state);
+
+  // Level 2: the spot's own position is a find on the first click, and gives the life back.
+  await expect(page.locator('.grid-coords')).toHaveText(formatCoordinates(state.level.target));
+  const at = await project(state.level.target);
+  await page.mouse.click(at.x, at.y);
+  await expect(page.locator('.grid-result.solved')).toContainText('Found it!');
+  await expect(page.locator('.grid-result')).toContainText('Flawless! +1 ♥');
+  await expect(lives).toHaveCount(3);
+  await page.keyboard.press('Enter');
+
+  // A skip costs a life, and the phone fits too.
+  await page.getByRole('button', { name: /Skip/ }).click();
+  await expect(page.locator('.grid-result.failed')).toContainText('Skipped: −1 ♥');
+  await expect(lives).toHaveCount(2);
+  await page.keyboard.press('Enter');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await inView();
+  const skip = (await page.getByRole('button', { name: /Skip/ }).boundingBox())!;
+  expect(skip.height).toBeGreaterThanOrEqual(44);
+});

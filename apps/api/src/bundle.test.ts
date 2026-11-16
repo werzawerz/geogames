@@ -15,6 +15,7 @@ import {
   createCircleArcade,
   createHalfway,
   createRiverRun,
+  createOnTheGrid,
   riverChoices,
   halfwayPools,
   distanceKm,
@@ -33,6 +34,7 @@ import {
 } from '@geogames/games';
 import { queryCountries } from '@geogames/geodata';
 import { loadRivers } from '@geogames/geodata/rivers';
+import { loadLandGrid } from '@geogames/geodata/land-grid';
 import { bundle } from '../scripts/bundle.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -217,6 +219,27 @@ describe('the server bundle', () => {
     expect(full).toEqual({ score: state.score, finished: true });
     expect(full.score).toBeGreaterThan(0);
     expect(await server.replayGame(definition, settings, 43, state.moves)).toEqual(full);
+  });
+
+  it('scores On the Grid the same from the slimmed land grid: finds, misses, skips', async () => {
+    const definition = GAMES.find((g) => g.kind === 'on-the-grid')!;
+    const settings = normalizeSettings({}, definition);
+    const engine = createOnTheGrid({ grid: await loadLandGrid(), countries: queryCountries() });
+    let state = engine.start(41);
+    for (let i = 1; i <= 30; i++) {
+      const [lat, lng] = state.level.target;
+      if (i % 7 === 0) state = engine.skip(state);
+      else {
+        if (i % 3 === 0) state = engine.click(state, lat > 0 ? -40 : 40, lng > 0 ? lng - 90 : lng + 90).state;
+        state = engine.click(state, lat, lng).state;
+      }
+      state = engine.nextLevel(state);
+    }
+    while (state.status !== 'over') state = engine.skip(state.status === 'level-over' ? engine.nextLevel(state) : state);
+    const full = await replayGame(definition, settings, 41, state.moves);
+    expect(full).toEqual({ score: state.score, finished: true });
+    expect(full.score).toBeGreaterThan(0);
+    expect(await server.replayGame(definition, settings, 41, state.moves)).toEqual(full);
   });
 
   it('replays hard Border Route with its fixed guesses', async () => {
