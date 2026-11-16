@@ -103,7 +103,7 @@ export const usesCityData = (game: GameDefinition) => game.kind === 'circle-arca
 export const usesRouteMode = (game: GameDefinition) => game.kind === 'route';
 /** Arcade games follow a fixed progression around the world, so there's no region to pick. */
 export const usesRegion = (game: GameDefinition) =>
-  !['circle-arcade', 'route', 'pin-drop', 'halfway', 'great-circle', 'mystery-country', 'border-blitz', 'clockwork', 'blank-atlas', 'river-run'].includes(game.kind);
+  !['circle-arcade', 'route', 'pin-drop', 'halfway', 'great-circle', 'mystery-country', 'border-blitz', 'clockwork', 'blank-atlas', 'river-run', 'on-the-grid'].includes(game.kind);
 
 /** Whether the game has an option to choose; games without any don't offer to change settings. */
 export const hasSettings = (game: GameDefinition) =>

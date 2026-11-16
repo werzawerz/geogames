@@ -170,6 +170,8 @@ const RULES: Record<GameDefinition['kind'], string> = {
     'A river draws itself on the map from its source. Name it before the line reaches its end: the less of it drawn, the more points. A wrong guess draws that river in grey where it really runs. Two misses in a level are free; the third, a skip, or the line reaching its end costs one of your 3 lives and ends the level. Naming it on your first try before it’s half drawn is flawless: half as many points again, and a lost life back (never more than 3). From half drawn, four names are offered: the right one, picked or typed, scores half, and a wrong one of the four costs a life at once. The run goes on until your lives are gone: the great rivers first, then regional rivers from level 9, tributaries from level 21, and from level 36 rivers deep in the Amazon, Siberia and China with little around them to place them by. Each stage starts slowly, and the rivers draw faster as you go.',
   'blank-atlas':
     'A sea, mountain range, desert, lake, peninsula or island lights up on a shaded-relief map with no labels and no borders. Pick its name from four of the same kind (tap, or keys 1–4). A right pick scores 15 × the level and gives a lost life back (never more than 3). A wrong pick, or a skip, costs one of your 3 lives and ends the level; the one you picked is shown in red where it really is. The run goes on until your lives are gone: headline features first, then regional seas, ranges and deserts from level 9, and from level 21 straits, small ranges and archipelagos, close up. The wrong options get closer look-alikes as you go.',
+  'on-the-grid':
+    'A latitude and longitude are given: click that spot on a map with no borders or names. A click within the level’s radius finds it (500 km at first); a click further off shows which way the spot is and how far. You have 3 clicks: the third miss, or a skip, costs one of your 3 lives and ends the level, showing what is there. Right first time is flawless: half as many points again, and a lost life back (never more than 3); a later click pays less. The run goes on until your lives are gone: first a grid line every 10° and round coordinates; from level 9 only the Equator, the tropics and the prime meridian are drawn, and spots are to the nearest 5°; from level 21 no lines at all and any whole degree, and from level 40 a tighter radius.',
   'circle-arcade':
     'Name the top cities in each circle, anywhere in the world. Early circles are big and mostly about famous, much-visited cities; later ones get smaller and ask for more. Wrong guesses are free but spoil a perfect level; a skip costs a life. Hints (the country and every third letter) are limited and halve a city’s points. A perfect level, without misses, skips or hints, earns a life and a hint back.',
 };
@@ -191,7 +193,7 @@ function GameSetup({
   const inPlay = sizes[settings.region];
   const unit = game.subject === 'city' ? 'cities' : 'countries';
   // City Circle counts possible circle centres, which isn't a useful number to show.
-  const showCount = !['circle', 'circle-arcade', 'pin-drop', 'halfway', 'great-circle', 'mystery-country', 'border-blitz', 'clockwork', 'blank-atlas', 'river-run'].includes(game.kind);
+  const showCount = !['circle', 'circle-arcade', 'pin-drop', 'halfway', 'great-circle', 'mystery-country', 'border-blitz', 'clockwork', 'blank-atlas', 'river-run', 'on-the-grid'].includes(game.kind);
 
   return (
     <div className="panel center">

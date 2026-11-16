@@ -11,11 +11,13 @@
     "./shapes": "./src/shapes.ts",
     "./blank-atlas": "./src/blank-atlas.ts",
     "./blank-atlas-shapes": "./src/blank-atlas-shapes.ts",
-    "./rivers": "./src/rivers.ts"
+    "./rivers": "./src/rivers.ts",
+    "./land-grid": "./src/land-grid.ts"
   },
   "scripts": {
     "build:data": "node scripts/build-countries.ts && node scripts/build-cities.ts",
-    "build:rivers": "node scripts/build-rivers.ts"
+    "build:rivers": "node scripts/build-rivers.ts",
+    "build:land-grid": "node scripts/build-land-grid.ts"
   },
   "dependencies": {
     "topojson-client": "^3.1.0",

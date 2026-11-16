@@ -3,6 +3,7 @@ import { cityIndex, loadGreatCircles } from '@geogames/geodata/cities';
 import type { GameDefinition } from './catalog.ts';
 import { BLANK_ATLAS_VERSION, loadBlankAtlas } from '@geogames/geodata/blank-atlas';
 import { RIVERS_VERSION, loadRivers } from '@geogames/geodata/rivers';
+import { LAND_GRID_VERSION, loadLandGrid } from '@geogames/geodata/land-grid';
 import { createBlankAtlas, replayBlankAtlas, type BlankAtlas } from './blank-atlas.ts';
 import { createBorderBlitz, replayBorderBlitz } from './border-blitz.ts';
 import { createChoiceQuiz, replayChoiceQuiz } from './choice-quiz.ts';
@@ -13,6 +14,7 @@ import { createHigherLowerGame, replayHigherLower, type Guess } from './higher-l
 import { createHalfway, replayHalfway, type Halfway } from './halfway.ts';
 import { createGreatCircle, replayGreatCircle } from './great-circle.ts';
 import { createMysteryCountry, replayMysteryCountry } from './mystery-country.ts';
+import { createOnTheGrid, replayOnTheGrid } from './on-the-grid.ts';
 import { createPinDrop, replayPinDrop } from './pin-drop.ts';
 import { createRiverRun, replayRiverRun } from './river-run.ts';
 import { arcadePools, circleCities, halfwayPools, loadPool, quizItems, routeCountries } from './pools.ts';
@@ -24,8 +26,8 @@ import type { GameSettings } from './settings.ts';
  * player had, so a server only accepts sessions from clients on its version.
  */
 // The tz release too: Clockwork's offsets come from it, so a rebuild of them must ask clients to update.
-// And Blank Atlas's features and the rivers: a rebuild can change which options a seed gives.
-export const DATASET_VERSION = `${dataset.generatedAt}|${cityIndex.generatedAt}|tz${CLOCK_TZDB}|atlas${BLANK_ATLAS_VERSION}|rivers${RIVERS_VERSION}`;
+// And Blank Atlas's features, the rivers and On the Grid's land points: a rebuild can change which options a seed gives.
+export const DATASET_VERSION = `${dataset.generatedAt}|${cityIndex.generatedAt}|tz${CLOCK_TZDB}|atlas${BLANK_ATLAS_VERSION}|rivers${RIVERS_VERSION}|grid${LAND_GRID_VERSION}`;
 
 export interface ReplayResult {
   score: number;
@@ -124,6 +126,10 @@ export async function replayGame(
     }
     case 'river-run': {
       const state = replayRiverRun(createRiverRun(await loadRivers()), seed, moves);
+      return { score: state.score, finished: state.status === 'over' };
+    }
+    case 'on-the-grid': {
+      const state = replayOnTheGrid(createOnTheGrid({ grid: await loadLandGrid(), countries: queryCountries() }), seed, moves);
       return { score: state.score, finished: state.status === 'over' };
     }
     case 'blank-atlas': {
