@@ -85,6 +85,12 @@ export function AccountMenu() {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    const close = () => setOpen(false);
+    addEventListener('hashchange', close);
+    return () => removeEventListener('hashchange', close);
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
     rootRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
     const outside = (e: Event) => {

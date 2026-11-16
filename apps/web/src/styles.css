@@ -2640,3 +2640,7 @@ summary:focus-visible {
 .feedback-form .btn {
   margin-top: 0.6rem;
 }
+
+.profile-name-form + .muted, .profile .small {
+  margin-top: 0.75rem;
+}

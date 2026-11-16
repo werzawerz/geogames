@@ -95,7 +95,8 @@ plainTest('an offensive display name is refused, and the old one kept', async ({
   await input.fill('Nice Name');
   await input.blur();
   await expect(page.getByRole('alert')).toHaveCount(0);
-  await expect(page.locator('.topbar')).toContainText('Nice Name');
+  await page.reload();
+  await expect(page.getByLabel('Display name')).toHaveValue('Nice Name');
 });
 
 test('the daily challenge is the same run for everyone', async ({ browser }) => {
@@ -145,4 +146,105 @@ plainTest('games stay playable when the server is unreachable, and say the score
   await expect(page.locator('.scores li').first()).toContainText(String(shown));
   await page.getByRole('tab', { name: 'Global' }).click();
   await expect(page.getByText("The global leaderboard isn't available right now.")).toBeVisible();
+});
+
+test('signing in from the header shows the avatar and name, and the Profile page says signed in', async ({ page }) => {
+  await page.goto('/#/');
+  const signIn = page.getByRole('button', { name: 'Sign in with Google' });
+  await expect(signIn).toBeVisible();
+  await signIn.click();
+  const account = page.getByRole('button', { name: /Account menu for/ });
+  await expect(account).toBeVisible();
+  await expect(account.locator('.avatar')).toBeVisible();
+  await expect(signIn).toHaveCount(0);
+
+  await account.click();
+  await expect(page.getByRole('menuitem', { name: 'Sign out' })).toBeVisible();
+  await page.getByRole('menuitem', { name: 'Profile' }).click();
+  await expect(page).toHaveURL(/#\/profile$/);
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByText('Signed in as')).toContainText('dev@example.com');
+  await expect(page).toHaveTitle('Profile · GeoGames');
+
+  // Signing out goes back to a fresh anonymous player.
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await expect(page.getByRole('banner').getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
+});
+
+// Without the error-checking fixture: browsers log every error status to the console.
+plainTest('the Profile page refuses an offensive name and keeps the old one', async ({ page }) => {
+  await page.goto('/#/profile');
+  const input = page.getByLabel('Name on leaderboards');
+  const before = await input.inputValue();
+  await input.fill('Sh1thead');
+  await page.getByRole('button', { name: 'Save name' }).click();
+  await expect(page.getByRole('alert')).toContainText('That name isn’t allowed');
+  await input.fill('Nice Name');
+  await page.getByRole('button', { name: 'Save name' }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByText('Name saved.')).toBeVisible();
+  expect(before).not.toBe('Nice Name');
+  await page.reload();
+  await expect(input).toHaveValue('Nice Name');
+});
+
+test('the contact form sends a message', async ({ page }) => {
+  let sent: { message?: string; email?: string; page?: string } | null = null;
+  page.on('request', (req) => {
+    if (req.url().endsWith('/feedback') && req.method() === 'POST') sent = req.postDataJSON();
+  });
+  await page.goto('/#/contact');
+  const send = page.getByRole('button', { name: 'Send message' });
+  await expect(send).toBeDisabled();
+  await page.getByLabel('Your message').fill('Great games, thanks!');
+  await expect(page.getByText('20 / 2000')).toBeVisible();
+  await page.getByLabel('Email (optional)').fill('fan@example.com');
+  await send.click();
+  await expect(page.getByText('Thank you, your message was sent.')).toBeVisible();
+  expect(sent).toMatchObject({ message: 'Great games, thanks!', email: 'fan@example.com', page: '#/contact' });
+});
+
+test('deleting the account needs DELETE typed, and leaves a fresh anonymous player', async ({ page }) => {
+  await page.goto('/#/');
+  await page.getByRole('button', { name: 'Sign in with Google' }).click();
+  await expect(page.getByRole('button', { name: /Account menu for/ })).toBeVisible();
+  await page.goto('/#/profile');
+  await page.getByRole('button', { name: 'Delete my account' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText('permanently deletes');
+  const confirm = dialog.getByRole('button', { name: 'Delete everything' });
+  await expect(confirm).toBeDisabled();
+  await dialog.getByLabel(/Type DELETE/).fill('delete');
+  await expect(confirm).toBeDisabled();
+  await dialog.getByLabel(/Type DELETE/).fill('DELETE');
+  await confirm.click();
+  await expect(dialog).toBeHidden();
+  await expect(page).toHaveURL(/#\/$/);
+  await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Account menu for/ })).toHaveCount(0);
+});
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('the sign-in button is in the header, without sideways scrolling', async ({ page }) => {
+    await page.goto('/#/');
+    const signIn = page.getByRole('button', { name: 'Sign in with Google' });
+    await expect(signIn).toBeVisible();
+    await expect(signIn).toContainText('Sign in');
+    await expect(signIn.locator('.g-long')).toBeHidden();
+    const box = (await signIn.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.x + box.width).toBeLessThanOrEqual(390);
+    const scrolls = () => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+    expect(await scrolls()).toBe(false);
+
+    await signIn.click();
+    await expect(page.getByRole('button', { name: /Account menu for/ })).toBeVisible();
+    await page.getByRole('button', { name: /Account menu for/ }).click();
+    await expect(page.getByRole('menuitem', { name: 'Profile' })).toBeVisible();
+    expect(await scrolls()).toBe(false);
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    expect(await scrolls()).toBe(false);
+  });
 });

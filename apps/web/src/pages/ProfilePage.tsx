@@ -230,7 +230,9 @@ function DeleteSection() {
           </ul>
           <p>You can keep playing afterwards, as a new anonymous player.</p>
           <label className="name-field">
-            Type <strong>DELETE</strong> to confirm
+            <span>
+              Type <strong>DELETE</strong> to confirm
+            </span>
             <input value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" autoCapitalize="characters" spellCheck={false} />
           </label>
           {error && (

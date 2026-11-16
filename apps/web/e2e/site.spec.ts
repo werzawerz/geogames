@@ -86,7 +86,7 @@ for (const [path, heading, title] of [
       await expect(page.getByText('[Operator name]').first()).toBeVisible();
     }
     if (path === 'about') await expect(page.getByText('World Bank World Development Indicators')).toBeVisible();
-    if (path === 'contact') await expect(page.locator('.contact-form-slot')).toHaveCount(1);
+    if (path === 'contact') await expect(page.getByLabel('Your message')).toBeVisible();
   });
 }
 
