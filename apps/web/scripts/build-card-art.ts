@@ -15,6 +15,7 @@ import {
 } from 'd3-geo';
 import { getCountry } from '@geogames/geodata';
 import { loadWorldShapes } from '@geogames/geodata/shapes';
+import { loadBlankAtlasShapes } from '@geogames/geodata/blank-atlas-shapes';
 
 const WIDTH = 640;
 const HEIGHT = 280;
@@ -116,6 +117,7 @@ function scene(projection: GeoProjection) {
     circle: (center: [number, number], km: number) =>
       compact(path(geoCircle().center(center).radius((km / EARTH_KM) * (180 / Math.PI))())),
     point: (lngLat: [number, number]) => projection(lngLat)!.map((n) => Math.round(n)) as [number, number],
+    projection,
   };
 }
 
@@ -158,6 +160,10 @@ const toneFor = (id: string) => {
   const km = geoDistance([guess.latlng[1], guess.latlng[0]], [target.latlng[1], target.latlng[0]]) * EARTH_KM;
   return guess.borders.includes(target.id) || km < 1000 ? 'optimal' : km < 3000 ? 'near' : 'far';
 };
+
+// Blank Atlas: the Black Sea lit up on a map with no labels.
+const atlas = scene(framed(geoMercator(), [[21, 48], [44, 39]], 16));
+const outlines = await loadBlankAtlasShapes();
 
 // Border Blitz: Germany lit up, some of its neighbours found, the rest still to name.
 const blitz = scene(framed(geoMercator(), [[-1, 55.5], [21, 44]], 10));
@@ -232,6 +238,11 @@ const art = {
     land: blitz.land,
     target: blitz.shape('DEU'),
     found: ['FRA', 'POL', 'AUT', 'NLD'].map(blitz.shape),
+  },
+  atlas: {
+    land: atlas.land,
+    sea: compact(geoPath(atlas.projection)(outlines['black-sea']!)),
+    point: atlas.point([34.5, 43.2]),
   },
   area: { left: sameScale('BRA', 180), right: sameScale('AUS', 460) },
 };

@@ -1,0 +1,7805 @@
+{
+ "generatedAt": "2026-11-16T08:54:38.104Z",
+ "source": "Natural Earth 1:10m physical vectors (public domain), v5.1.2",
+ "features": [
+  {
+   "id": "mediterranean-sea",
+   "name": "Mediterranean Sea",
+   "aliases": [
+    "Mediterranean"
+   ],
+   "kind": "sea",
+   "tier": 1,
+   "center": [
+    37.45,
+    17.64
+   ],
+   "radiusKm": 1747,
+   "coastKm": 144,
+   "bounds": [
+    -2.09,
+    30.83,
+    36.19,
+    45.77
+   ]
+  },
+  {
+   "id": "black-sea",
+   "name": "Black Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 1,
+   "center": [
+    43.28,
+    34.2
+   ],
+   "radiusKm": 640,
+   "coastKm": 125,
+   "bounds": [
+    27.48,
+    40.92,
+    41.76,
+    47.21
+   ]
+  },
+  {
+   "id": "caspian-sea",
+   "name": "Caspian Sea",
+   "aliases": [
+    "Caspian"
+   ],
+   "kind": "sea",
+   "tier": 1,
+   "center": [
+    41.66,
+    50.72
+   ],
+   "radiusKm": 614,
+   "coastKm": 135,
+   "bounds": [
+    46.71,
+    36.61,
+    54.02,
+    47.11
+   ]
+  },
+  {
+   "id": "red-sea",
+   "name": "Red Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 1,
+   "center": [
+    20.22,
+    38.86
+   ],
+   "radiusKm": 984,
+   "coastKm": 85,
+   "bounds": [
+    33.83,
+    12.46,
+    43.49,
+    28.13
+   ]
+  },
+  {
+   "id": "caribbean-sea",
+   "name": "Caribbean Sea",
+   "aliases": [
+    "Caribbean"
+   ],
+   "kind": "sea",
+   "tier": 1,
+   "center": [
+    15.41,
+    -74.34
+   ],
+   "radiusKm": 1656,
+   "coastKm": 297,
+   "bounds": [
+    -88.35,
+    8.49,
+    -59.21,
+    22.69
+   ]
+  },
+  {
+   "id": "gulf-of-mexico",
+   "name": "Gulf of Mexico",
+   "aliases": [
+    "Gulf of America"
+   ],
+   "kind": "gulf",
+   "tier": 1,
+   "center": [
+    25.52,
+    -89.94
+   ],
+   "radiusKm": 1012,
+   "coastKm": 389,
+   "bounds": [
+    -97.86,
+    20.8,
+    -79.9,
+    30.69
+   ]
+  },
+  {
+   "id": "persian-gulf",
+   "name": "Persian Gulf",
+   "aliases": [
+    "Arabian Gulf",
+    "The Gulf"
+   ],
+   "kind": "gulf",
+   "tier": 1,
+   "center": [
+    26.81,
+    52.04
+   ],
+   "radiusKm": 533,
+   "coastKm": 86,
+   "bounds": [
+    47.72,
+    23.97,
+    57.2,
+    30.51
+   ]
+  },
+  {
+   "id": "baltic-sea",
+   "name": "Baltic Sea",
+   "aliases": [
+    "Baltic"
+   ],
+   "kind": "sea",
+   "tier": 1,
+   "center": [
+    56.76,
+    18.2
+   ],
+   "radiusKm": 446,
+   "coastKm": 18,
+   "bounds": [
+    12.06,
+    53.92,
+    23.48,
+    59.82
+   ]
+  },
+  {
+   "id": "north-sea",
+   "name": "North Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 1,
+   "center": [
+    56.29,
+    2.83
+   ],
+   "radiusKm": 603,
+   "coastKm": 290,
+   "bounds": [
+    -4.13,
+    50.91,
+    9.78,
+    60.69
+   ]
+  },
+  {
+   "id": "hudson-bay",
+   "name": "Hudson Bay",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 1,
+   "center": [
+    59.53,
+    -85.04
+   ],
+   "radiusKm": 723,
+   "coastKm": 266,
+   "bounds": [
+    -94.96,
+    54.7,
+    -76.52,
+    66.02
+   ]
+  },
+  {
+   "id": "bay-of-bengal",
+   "name": "Bay of Bengal",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 1,
+   "center": [
+    13.53,
+    87.49
+   ],
+   "radiusKm": 1230,
+   "coastKm": 566,
+   "bounds": [
+    79.69,
+    5.52,
+    95.24,
+    23.59
+   ]
+  },
+  {
+   "id": "arabian-sea",
+   "name": "Arabian Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 1,
+   "center": [
+    13.3,
+    63.89
+   ],
+   "radiusKm": 1858,
+   "coastKm": 908,
+   "bounds": [
+    51.03,
+    -0.68,
+    74.35,
+    25.6
+   ]
+  },
+  {
+   "id": "south-china-sea",
+   "name": "South China Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 1,
+   "center": [
+    11.13,
+    112.25
+   ],
+   "radiusKm": 1742,
+   "coastKm": 338,
+   "bounds": [
+    102.35,
+    -3.22,
+    122.27,
+    23.76
+   ]
+  },
+  {
+   "id": "sea-of-japan",
+   "name": "Sea of Japan",
+   "aliases": [
+    "East Sea"
+   ],
+   "kind": "sea",
+   "tier": 1,
+   "center": [
+    41.12,
+    135.45
+   ],
+   "radiusKm": 1290,
+   "coastKm": 235,
+   "bounds": [
+    128.31,
+    34.28,
+    142.21,
+    51.91
+   ]
+  },
+  {
+   "id": "bering-sea",
+   "name": "Bering Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 1,
+   "center": [
+    57.59,
+    -178.11
+   ],
+   "radiusKm": 1149,
+   "coastKm": 432,
+   "bounds": [
+    162.76,
+    50.99,
+    -161.44,
+    66.06
+   ]
+  },
+  {
+   "id": "himalayas",
+   "name": "Himalayas",
+   "aliases": [
+    "Himalaya",
+    "Himalayan Mountains"
+   ],
+   "kind": "range",
+   "tier": 1,
+   "center": [
+    29.56,
+    85.19
+   ],
+   "radiusKm": 1013,
+   "coastKm": 845,
+   "bounds": [
+    75.52,
+    26.86,
+    95.66,
+    33.91
+   ]
+  },
+  {
+   "id": "andes",
+   "name": "Andes",
+   "aliases": [
+    "Andes Mountains",
+    "Andean Mountains"
+   ],
+   "kind": "range",
+   "tier": 1,
+   "center": [
+    -16.72,
+    -71.77
+   ],
+   "radiusKm": 4306,
+   "coastKm": 44,
+   "bounds": [
+    -80.6,
+    -55.29,
+    -63.09,
+    11.41
+   ]
+  },
+  {
+   "id": "rocky-mountains",
+   "name": "Rocky Mountains",
+   "aliases": [
+    "Rockies"
+   ],
+   "kind": "range",
+   "tier": 1,
+   "center": [
+    45.57,
+    -111.98
+   ],
+   "radiusKm": 1835,
+   "coastKm": 437,
+   "bounds": [
+    -127.19,
+    35.27,
+    -104.12,
+    59.71
+   ]
+  },
+  {
+   "id": "alps",
+   "name": "Alps",
+   "aliases": [
+    "The Alps",
+    "Alpine Mountains"
+   ],
+   "kind": "range",
+   "tier": 1,
+   "center": [
+    46.46,
+    10.15
+   ],
+   "radiusKm": 485,
+   "coastKm": 199,
+   "bounds": [
+    5.16,
+    43.67,
+    16.18,
+    48.15
+   ]
+  },
+  {
+   "id": "ural-mountains",
+   "name": "Ural Mountains",
+   "aliases": [
+    "Urals",
+    "Ural"
+   ],
+   "kind": "range",
+   "tier": 1,
+   "center": [
+    58.61,
+    58.98
+   ],
+   "radiusKm": 1143,
+   "coastKm": 1025,
+   "bounds": [
+    56.22,
+    51.57,
+    66.91,
+    68.36
+   ]
+  },
+  {
+   "id": "appalachian-mountains",
+   "name": "Appalachian Mountains",
+   "aliases": [
+    "Appalachians"
+   ],
+   "kind": "range",
+   "tier": 1,
+   "center": [
+    40.19,
+    -79.05
+   ],
+   "radiusKm": 1517,
+   "coastKm": 226,
+   "bounds": [
+    -88.54,
+    32.61,
+    -64.21,
+    49.25
+   ]
+  },
+  {
+   "id": "atlas-mountains",
+   "name": "Atlas Mountains",
+   "aliases": [
+    "Atlas"
+   ],
+   "kind": "range",
+   "tier": 1,
+   "center": [
+    33.72,
+    -1.22
+   ],
+   "radiusKm": 1109,
+   "coastKm": 165,
+   "bounds": [
+    -10.99,
+    28.31,
+    10.47,
+    37.31
+   ]
+  },
+  {
+   "id": "caucasus-mountains",
+   "name": "Caucasus Mountains",
+   "aliases": [
+    "Caucasus",
+    "Greater Caucasus"
+   ],
+   "kind": "range",
+   "tier": 1,
+   "center": [
+    43.04,
+    43.85
+   ],
+   "radiusKm": 575,
+   "coastKm": 197,
+   "bounds": [
+    37.21,
+    40.37,
+    49.46,
+    45.1
+   ]
+  },
+  {
+   "id": "pyrenees",
+   "name": "Pyrenees",
+   "aliases": [
+    "Pyrénées",
+    "Pirineos"
+   ],
+   "kind": "range",
+   "tier": 1,
+   "center": [
+    42.75,
+    0.65
+   ],
+   "radiusKm": 247,
+   "coastKm": 189,
+   "bounds": [
+    -2.29,
+    41.96,
+    3.18,
+    43.47
+   ]
+  },
+  {
+   "id": "sahara",
+   "name": "Sahara",
+   "aliases": [
+    "Sahara Desert"
+   ],
+   "kind": "desert",
+   "tier": 1,
+   "center": [
+    21.94,
+    12.1
+   ],
+   "radiusKm": 3080,
+   "coastKm": 1111,
+   "bounds": [
+    -17.07,
+    9.34,
+    38.46,
+    34.61
+   ]
+  },
+  {
+   "id": "gobi-desert",
+   "name": "Gobi Desert",
+   "aliases": [
+    "Gobi"
+   ],
+   "kind": "desert",
+   "tier": 1,
+   "center": [
+    43.13,
+    106.01
+   ],
+   "radiusKm": 1019,
+   "coastKm": 932,
+   "bounds": [
+    94.46,
+    37.84,
+    117.72,
+    47.79
+   ]
+  },
+  {
+   "id": "kalahari-desert",
+   "name": "Kalahari Desert",
+   "aliases": [
+    "Kalahari"
+   ],
+   "kind": "desert",
+   "tier": 1,
+   "center": [
+    -23.56,
+    20.19
+   ],
+   "radiusKm": 1188,
+   "coastKm": 567,
+   "bounds": [
+    13.15,
+    -30.53,
+    25.43,
+    -15.19
+   ]
+  },
+  {
+   "id": "arabian-peninsula",
+   "name": "Arabian Peninsula",
+   "aliases": [
+    "Arabia"
+   ],
+   "kind": "peninsula",
+   "tier": 1,
+   "center": [
+    22.56,
+    46.67
+   ],
+   "radiusKm": 1406,
+   "coastKm": 485,
+   "bounds": [
+    34.62,
+    12.61,
+    59.81,
+    31.07
+   ]
+  },
+  {
+   "id": "scandinavian-peninsula",
+   "name": "Scandinavian Peninsula",
+   "aliases": [
+    "Scandinavia"
+   ],
+   "kind": "peninsula",
+   "tier": 1,
+   "center": [
+    63.49,
+    15.25
+   ],
+   "radiusKm": 1022,
+   "coastKm": 149,
+   "bounds": [
+    4.8,
+    55.35,
+    30.96,
+    71.14
+   ]
+  },
+  {
+   "id": "iberian-peninsula",
+   "name": "Iberian Peninsula",
+   "aliases": [
+    "Iberia"
+   ],
+   "kind": "peninsula",
+   "tier": 1,
+   "center": [
+    40.27,
+    -4.26
+   ],
+   "radiusKm": 658,
+   "coastKm": 346,
+   "bounds": [
+    -9.48,
+    36.03,
+    3.25,
+    43.76
+   ]
+  },
+  {
+   "id": "balkan-peninsula",
+   "name": "Balkan Peninsula",
+   "aliases": [
+    "Balkans"
+   ],
+   "kind": "peninsula",
+   "tier": 1,
+   "center": [
+    42.35,
+    22.07
+   ],
+   "radiusKm": 788,
+   "coastKm": 207,
+   "bounds": [
+    13.52,
+    36.45,
+    29.68,
+    46.1
+   ]
+  },
+  {
+   "id": "kamchatka",
+   "name": "Kamchatka",
+   "aliases": [
+    "Kamchatka Peninsula"
+   ],
+   "kind": "peninsula",
+   "tier": 1,
+   "center": [
+    56.55,
+    159.71
+   ],
+   "radiusKm": 746,
+   "coastKm": 155,
+   "bounds": [
+    155.6,
+    50.98,
+    166.31,
+    62.56
+   ]
+  },
+  {
+   "id": "borneo",
+   "name": "Borneo",
+   "aliases": [
+    "Kalimantan"
+   ],
+   "kind": "island",
+   "tier": 1,
+   "center": [
+    0.86,
+    114.21
+   ],
+   "radiusKm": 755,
+   "coastKm": 290,
+   "bounds": [
+    108.91,
+    -4.17,
+    119.27,
+    6.99
+   ]
+  },
+  {
+   "id": "new-guinea",
+   "name": "New Guinea",
+   "aliases": [
+    "Papua"
+   ],
+   "kind": "island",
+   "tier": 1,
+   "center": [
+    -5.34,
+    140.92
+   ],
+   "radiusKm": 1222,
+   "coastKm": 282,
+   "bounds": [
+    131,
+    -10.65,
+    150.85,
+    -0.35
+   ]
+  },
+  {
+   "id": "tasmania",
+   "name": "Tasmania",
+   "aliases": [],
+   "kind": "island",
+   "tier": 1,
+   "center": [
+    -42.01,
+    146.59
+   ],
+   "radiusKm": 215,
+   "coastKm": 96,
+   "bounds": [
+    144.65,
+    -43.62,
+    148.34,
+    -40.67
+   ]
+  },
+  {
+   "id": "sicily",
+   "name": "Sicily",
+   "aliases": [
+    "Sicilia"
+   ],
+   "kind": "island",
+   "tier": 1,
+   "center": [
+    37.59,
+    14.16
+   ],
+   "radiusKm": 153,
+   "coastKm": 49,
+   "bounds": [
+    12.44,
+    36.69,
+    15.63,
+    38.3
+   ]
+  },
+  {
+   "id": "tibetan-plateau",
+   "name": "Tibetan Plateau",
+   "aliases": [
+    "Plateau of Tibet",
+    "Tibet",
+    "Qinghai-Tibet Plateau"
+   ],
+   "kind": "plateau",
+   "tier": 1,
+   "center": [
+    33.51,
+    90.3
+   ],
+   "radiusKm": 1593,
+   "coastKm": 1103,
+   "bounds": [
+    73.04,
+    26.86,
+    104.11,
+    40.14
+   ]
+  },
+  {
+   "id": "amazon-basin",
+   "name": "Amazon Basin",
+   "aliases": [
+    "Amazon",
+    "Amazonia",
+    "Amazon rainforest"
+   ],
+   "kind": "lowland",
+   "tier": 1,
+   "center": [
+    -6.98,
+    -61.89
+   ],
+   "radiusKm": 1935,
+   "coastKm": 1188,
+   "bounds": [
+    -78.77,
+    -20.12,
+    -46.17,
+    4.82
+   ]
+  },
+  {
+   "id": "lake-superior",
+   "name": "Lake Superior",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 1,
+   "center": [
+    47.55,
+    -87.76
+   ],
+   "radiusKm": 340,
+   "coastKm": 9,
+   "bounds": [
+    -92.11,
+    46.42,
+    -84.36,
+    49.03
+   ]
+  },
+  {
+   "id": "lake-michigan",
+   "name": "Lake Michigan",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 1,
+   "center": [
+    43.99,
+    -86.78
+   ],
+   "radiusKm": 267,
+   "coastKm": 22,
+   "bounds": [
+    -88.04,
+    41.63,
+    -84.77,
+    46.12
+   ]
+  },
+  {
+   "id": "lake-huron",
+   "name": "Lake Huron",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 1,
+   "center": [
+    44.96,
+    -82.25
+   ],
+   "radiusKm": 225,
+   "coastKm": 51,
+   "bounds": [
+    -84.78,
+    43.02,
+    -79.66,
+    46.36
+   ]
+  },
+  {
+   "id": "lake-erie",
+   "name": "Lake Erie",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 1,
+   "center": [
+    42.16,
+    -81.25
+   ],
+   "radiusKm": 217,
+   "coastKm": 43,
+   "bounds": [
+    -83.47,
+    41.39,
+    -78.87,
+    43.11
+   ]
+  },
+  {
+   "id": "lake-ontario",
+   "name": "Lake Ontario",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 1,
+   "center": [
+    43.68,
+    -77.76
+   ],
+   "radiusKm": 182,
+   "coastKm": 36,
+   "bounds": [
+    -79.77,
+    43.19,
+    -75.77,
+    44.5
+   ]
+  },
+  {
+   "id": "lake-victoria",
+   "name": "Lake Victoria",
+   "aliases": [
+    "Victoria Nyanza"
+   ],
+   "kind": "lake",
+   "tier": 1,
+   "center": [
+    -1.1,
+    32.91
+   ],
+   "radiusKm": 234,
+   "coastKm": 80,
+   "bounds": [
+    31.61,
+    -3.01,
+    34.85,
+    0.5
+   ]
+  },
+  {
+   "id": "lake-baikal",
+   "name": "Lake Baikal",
+   "aliases": [
+    "Baikal"
+   ],
+   "kind": "lake",
+   "tier": 1,
+   "center": [
+    53.4,
+    107.62
+   ],
+   "radiusKm": 326,
+   "coastKm": 7,
+   "bounds": [
+    103.71,
+    51.47,
+    109.96,
+    55.79
+   ]
+  },
+  {
+   "id": "adriatic-sea",
+   "name": "Adriatic Sea",
+   "aliases": [
+    "Adriatic"
+   ],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    42.72,
+    16.12
+   ],
+   "radiusKm": 462,
+   "coastKm": 52,
+   "bounds": [
+    12.23,
+    39.74,
+    20,
+    45.77
+   ]
+  },
+  {
+   "id": "aegean-sea",
+   "name": "Aegean Sea",
+   "aliases": [
+    "Aegean"
+   ],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    38.78,
+    25.22
+   ],
+   "radiusKm": 330,
+   "coastKm": 47,
+   "bounds": [
+    22.57,
+    36.51,
+    28.24,
+    40.99
+   ]
+  },
+  {
+   "id": "tyrrhenian-sea",
+   "name": "Tyrrhenian Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    40.14,
+    12.18
+   ],
+   "radiusKm": 483,
+   "coastKm": 145,
+   "bounds": [
+    8.9,
+    37.73,
+    16.21,
+    44.09
+   ]
+  },
+  {
+   "id": "irish-sea",
+   "name": "Irish Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    53.36,
+    -4.89
+   ],
+   "radiusKm": 214,
+   "coastKm": 22,
+   "bounds": [
+    -6.62,
+    51.68,
+    -2.75,
+    54.96
+   ]
+  },
+  {
+   "id": "norwegian-sea",
+   "name": "Norwegian Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    68.4,
+    3.13
+   ],
+   "radiusKm": 1022,
+   "coastKm": 406,
+   "bounds": [
+    -13.85,
+    60.4,
+    27.6,
+    76.65
+   ]
+  },
+  {
+   "id": "barents-sea",
+   "name": "Barents Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    74.78,
+    42.58
+   ],
+   "radiusKm": 928,
+   "coastKm": 355,
+   "bounds": [
+    17.04,
+    66.8,
+    68.92,
+    81.86
+   ]
+  },
+  {
+   "id": "white-sea",
+   "name": "White Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    66.3,
+    39.11
+   ],
+   "radiusKm": 331,
+   "coastKm": 20,
+   "bounds": [
+    31.9,
+    63.81,
+    44.49,
+    68.67
+   ]
+  },
+  {
+   "id": "sea-of-okhotsk",
+   "name": "Sea of Okhotsk",
+   "aliases": [
+    "Okhotsk Sea"
+   ],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    52.47,
+    148.21
+   ],
+   "radiusKm": 1042,
+   "coastKm": 330,
+   "bounds": [
+    137.22,
+    43.28,
+    157.14,
+    59.77
+   ]
+  },
+  {
+   "id": "east-china-sea",
+   "name": "East China Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    28.69,
+    125.23
+   ],
+   "radiusKm": 705,
+   "coastKm": 303,
+   "bounds": [
+    119.14,
+    23.65,
+    130.85,
+    33.27
+   ]
+  },
+  {
+   "id": "philippine-sea",
+   "name": "Philippine Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    18.53,
+    133.58
+   ],
+   "radiusKm": 1914,
+   "coastKm": 1034,
+   "bounds": [
+    120.82,
+    2.62,
+    146.31,
+    35.12
+   ]
+  },
+  {
+   "id": "java-sea",
+   "name": "Java Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    -5.14,
+    111.94
+   ],
+   "radiusKm": 834,
+   "coastKm": 102,
+   "bounds": [
+    104.61,
+    -7.77,
+    119.46,
+    -2.52
+   ]
+  },
+  {
+   "id": "andaman-sea",
+   "name": "Andaman Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    10.98,
+    95.46
+   ],
+   "radiusKm": 620,
+   "coastKm": 281,
+   "bounds": [
+    92.2,
+    5.57,
+    98.88,
+    16.51
+   ]
+  },
+  {
+   "id": "timor-sea",
+   "name": "Timor Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    -10.98,
+    127.99
+   ],
+   "radiusKm": 556,
+   "coastKm": 240,
+   "bounds": [
+    122.9,
+    -13.81,
+    132.71,
+    -8.17
+   ]
+  },
+  {
+   "id": "arafura-sea",
+   "name": "Arafura Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    -8.85,
+    136.11
+   ],
+   "radiusKm": 732,
+   "coastKm": 177,
+   "bounds": [
+    130.77,
+    -12.44,
+    142.17,
+    -3.04
+   ]
+  },
+  {
+   "id": "coral-sea",
+   "name": "Coral Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    -18.26,
+    156.81
+   ],
+   "radiusKm": 1799,
+   "coastKm": 344,
+   "bounds": [
+    142.78,
+    -29.91,
+    169.84,
+    -8.94
+   ]
+  },
+  {
+   "id": "tasman-sea",
+   "name": "Tasman Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    -39.71,
+    160.56
+   ],
+   "radiusKm": 1300,
+   "coastKm": 799,
+   "bounds": [
+    146.36,
+    -50.79,
+    175.25,
+    -29.88
+   ]
+  },
+  {
+   "id": "labrador-sea",
+   "name": "Labrador Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    56.16,
+    -53.82
+   ],
+   "radiusKm": 969,
+   "coastKm": 286,
+   "bounds": [
+    -64.77,
+    47.46,
+    -43.94,
+    60.59
+   ]
+  },
+  {
+   "id": "baffin-bay",
+   "name": "Baffin Bay",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 2,
+   "center": [
+    73.47,
+    -66.7
+   ],
+   "radiusKm": 617,
+   "coastKm": 273,
+   "bounds": [
+    -82.07,
+    69.92,
+    -54.26,
+    78.65
+   ]
+  },
+  {
+   "id": "greenland-sea",
+   "name": "Greenland Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    74.76,
+    -11.17
+   ],
+   "radiusKm": 1118,
+   "coastKm": 183,
+   "bounds": [
+    -32.03,
+    65.27,
+    17.96,
+    83.28
+   ]
+  },
+  {
+   "id": "kara-sea",
+   "name": "Kara Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    75.91,
+    74.35
+   ],
+   "radiusKm": 868,
+   "coastKm": 162,
+   "bounds": [
+    55.3,
+    68.31,
+    102.32,
+    81.31
+   ]
+  },
+  {
+   "id": "laptev-sea",
+   "name": "Laptev Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    76.6,
+    122.28
+   ],
+   "radiusKm": 749,
+   "coastKm": 235,
+   "bounds": [
+    96.19,
+    70.74,
+    138.84,
+    81.27
+   ]
+  },
+  {
+   "id": "chukchi-sea",
+   "name": "Chukchi Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    69.33,
+    -170.71
+   ],
+   "radiusKm": 578,
+   "coastKm": 185,
+   "bounds": [
+    175.62,
+    65.66,
+    -156.47,
+    71.61
+   ]
+  },
+  {
+   "id": "gulf-of-bothnia",
+   "name": "Gulf of Bothnia",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 2,
+   "center": [
+    62.49,
+    20.64
+   ],
+   "radiusKm": 421,
+   "coastKm": 26,
+   "bounds": [
+    17.13,
+    59.66,
+    25.37,
+    65.87
+   ]
+  },
+  {
+   "id": "gulf-of-finland",
+   "name": "Gulf of Finland",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 2,
+   "center": [
+    59.94,
+    26.37
+   ],
+   "radiusKm": 212,
+   "coastKm": 43,
+   "bounds": [
+    22.94,
+    59.07,
+    30.17,
+    60.68
+   ]
+  },
+  {
+   "id": "bay-of-biscay",
+   "name": "Bay of Biscay",
+   "aliases": [
+    "Biscay"
+   ],
+   "kind": "gulf",
+   "tier": 2,
+   "center": [
+    45.54,
+    -4.35
+   ],
+   "radiusKm": 354,
+   "coastKm": 226,
+   "bounds": [
+    -8,
+    43.32,
+    -0.55,
+    48.47
+   ]
+  },
+  {
+   "id": "gulf-of-guinea",
+   "name": "Gulf of Guinea",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 2,
+   "center": [
+    3.07,
+    2.79
+   ],
+   "radiusKm": 1153,
+   "coastKm": 357,
+   "bounds": [
+    -7.53,
+    -0.71,
+    10,
+    5.81
+   ]
+  },
+  {
+   "id": "gulf-of-aden",
+   "name": "Gulf of Aden",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 2,
+   "center": [
+    12.53,
+    47.63
+   ],
+   "radiusKm": 566,
+   "coastKm": 127,
+   "bounds": [
+    42.52,
+    10.43,
+    51.27,
+    15.21
+   ]
+  },
+  {
+   "id": "gulf-of-oman",
+   "name": "Gulf of Oman",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 2,
+   "center": [
+    24.54,
+    58.77
+   ],
+   "radiusKm": 304,
+   "coastKm": 101,
+   "bounds": [
+    56.3,
+    22.46,
+    61.41,
+    26.28
+   ]
+  },
+  {
+   "id": "gulf-of-thailand",
+   "name": "Gulf of Thailand",
+   "aliases": [
+    "Gulf of Siam"
+   ],
+   "kind": "gulf",
+   "tier": 2,
+   "center": [
+    9.7,
+    101.87
+   ],
+   "radiusKm": 458,
+   "coastKm": 189,
+   "bounds": [
+    99.16,
+    6.16,
+    105.09,
+    13.57
+   ]
+  },
+  {
+   "id": "gulf-of-alaska",
+   "name": "Gulf of Alaska",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 2,
+   "center": [
+    58.06,
+    -149.54
+   ],
+   "radiusKm": 928,
+   "coastKm": 145,
+   "bounds": [
+    -163.38,
+    54.05,
+    -136.59,
+    60.67
+   ]
+  },
+  {
+   "id": "gulf-of-california",
+   "name": "Gulf of California",
+   "aliases": [
+    "Sea of Cortez",
+    "Golfo de California"
+   ],
+   "kind": "gulf",
+   "tier": 2,
+   "center": [
+    27.02,
+    -111.03
+   ],
+   "radiusKm": 661,
+   "coastKm": 64,
+   "bounds": [
+    -114.93,
+    23.27,
+    -106.92,
+    31.9
+   ]
+  },
+  {
+   "id": "gulf-of-carpentaria",
+   "name": "Gulf of Carpentaria",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 2,
+   "center": [
+    -14.54,
+    139.01
+   ],
+   "radiusKm": 392,
+   "coastKm": 216,
+   "bounds": [
+    135.41,
+    -17.7,
+    141.93,
+    -12.23
+   ]
+  },
+  {
+   "id": "great-australian-bight",
+   "name": "Great Australian Bight",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 2,
+   "center": [
+    -37.18,
+    132.23
+   ],
+   "radiusKm": 1370,
+   "coastKm": 389,
+   "bounds": [
+    118.04,
+    -43.42,
+    146.23,
+    -31.5
+   ]
+  },
+  {
+   "id": "gulf-of-saint-lawrence",
+   "name": "Gulf of Saint Lawrence",
+   "aliases": [
+    "Gulf of St. Lawrence",
+    "Gulf of St Lawrence"
+   ],
+   "kind": "gulf",
+   "tier": 2,
+   "center": [
+    48.28,
+    -60.91
+   ],
+   "radiusKm": 461,
+   "coastKm": 80,
+   "bounds": [
+    -66.7,
+    45.62,
+    -54.78,
+    51.48
+   ]
+  },
+  {
+   "id": "english-channel",
+   "name": "English Channel",
+   "aliases": [
+    "La Manche",
+    "The Channel"
+   ],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    49.76,
+    -2.65
+   ],
+   "radiusKm": 335,
+   "coastKm": 29,
+   "bounds": [
+    -6.57,
+    48.42,
+    1.71,
+    51.16
+   ]
+  },
+  {
+   "id": "mozambique-channel",
+   "name": "Mozambique Channel",
+   "aliases": [],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    -19.08,
+    41.07
+   ],
+   "radiusKm": 1180,
+   "coastKm": 315,
+   "bounds": [
+    32.59,
+    -26.57,
+    49.26,
+    -10.66
+   ]
+  },
+  {
+   "id": "celebes-sea",
+   "name": "Celebes Sea",
+   "aliases": [
+    "Sulawesi Sea"
+   ],
+   "kind": "sea",
+   "tier": 2,
+   "center": [
+    3.72,
+    121.93
+   ],
+   "radiusKm": 541,
+   "coastKm": 249,
+   "bounds": [
+    117.06,
+    0.84,
+    125.64,
+    7.83
+   ]
+  },
+  {
+   "id": "zagros-mountains",
+   "name": "Zagros Mountains",
+   "aliases": [
+    "Zagros"
+   ],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    30.81,
+    51.23
+   ],
+   "radiusKm": 716,
+   "coastKm": 130,
+   "bounds": [
+    46.12,
+    26.77,
+    56.54,
+    35.92
+   ]
+  },
+  {
+   "id": "hindu-kush",
+   "name": "Hindu Kush",
+   "aliases": [],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    35.79,
+    71.46
+   ],
+   "radiusKm": 434,
+   "coastKm": 1044,
+   "bounds": [
+    66.67,
+    34.08,
+    75.72,
+    37.52
+   ]
+  },
+  {
+   "id": "karakoram",
+   "name": "Karakoram",
+   "aliases": [
+    "Karakoram Range"
+   ],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    35.52,
+    77.51
+   ],
+   "radiusKm": 307,
+   "coastKm": 1088,
+   "bounds": [
+    74.92,
+    33.34,
+    79.86,
+    37.91
+   ]
+  },
+  {
+   "id": "pamirs",
+   "name": "Pamirs",
+   "aliases": [
+    "Pamir",
+    "Pamir Mountains"
+   ],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    38.42,
+    73.67
+   ],
+   "radiusKm": 296,
+   "coastKm": 728,
+   "bounds": [
+    71.2,
+    37.08,
+    77.03,
+    39.56
+   ]
+  },
+  {
+   "id": "tian-shan",
+   "name": "Tian Shan",
+   "aliases": [
+    "Tien Shan"
+   ],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    42.44,
+    81.8
+   ],
+   "radiusKm": 1097,
+   "coastKm": 495,
+   "bounds": [
+    72.98,
+    39.66,
+    95.22,
+    44.17
+   ]
+  },
+  {
+   "id": "altai-mountains",
+   "name": "Altai Mountains",
+   "aliases": [
+    "Altai",
+    "Altay",
+    "Altay Mountains"
+   ],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    47.71,
+    90.9
+   ],
+   "radiusKm": 852,
+   "coastKm": 887,
+   "bounds": [
+    81.93,
+    43.25,
+    100.79,
+    52.3
+   ]
+  },
+  {
+   "id": "kunlun-mountains",
+   "name": "Kunlun Mountains",
+   "aliases": [
+    "Kunlun"
+   ],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    36.42,
+    87.91
+   ],
+   "radiusKm": 1047,
+   "coastKm": 1336,
+   "bounds": [
+    77.96,
+    35.09,
+    99.48,
+    37.71
+   ]
+  },
+  {
+   "id": "carpathian-mountains",
+   "name": "Carpathian Mountains",
+   "aliases": [
+    "Carpathians"
+   ],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    47.43,
+    23.06
+   ],
+   "radiusKm": 466,
+   "coastKm": 528,
+   "bounds": [
+    17.48,
+    44.6,
+    27.2,
+    50.07
+   ]
+  },
+  {
+   "id": "apennines",
+   "name": "Apennines",
+   "aliases": [
+    "Appennini",
+    "Apennine Mountains"
+   ],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    42.64,
+    13.03
+   ],
+   "radiusKm": 415,
+   "coastKm": 77,
+   "bounds": [
+    8.94,
+    39.9,
+    16.2,
+    45.07
+   ]
+  },
+  {
+   "id": "scandinavian-mountains",
+   "name": "Scandinavian Mountains",
+   "aliases": [
+    "Kjølen",
+    "Kjolen",
+    "Scandes"
+   ],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    64.09,
+    11.87
+   ],
+   "radiusKm": 841,
+   "coastKm": 22,
+   "bounds": [
+    5.59,
+    58.52,
+    24.45,
+    70.06
+   ]
+  },
+  {
+   "id": "great-dividing-range",
+   "name": "Great Dividing Range",
+   "aliases": [
+    "Eastern Highlands"
+   ],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    -25.78,
+    148.05
+   ],
+   "radiusKm": 1557,
+   "coastKm": 383,
+   "bounds": [
+    142.68,
+    -38.03,
+    153.3,
+    -12.66
+   ]
+  },
+  {
+   "id": "sierra-madre-occidental",
+   "name": "Sierra Madre Occidental",
+   "aliases": [],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    25.95,
+    -106.77
+   ],
+   "radiusKm": 687,
+   "coastKm": 162,
+   "bounds": [
+    -110.76,
+    20.77,
+    -102.22,
+    31.14
+   ]
+  },
+  {
+   "id": "sierra-madre-oriental",
+   "name": "Sierra Madre Oriental",
+   "aliases": [],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    25.4,
+    -100.85
+   ],
+   "radiusKm": 641,
+   "coastKm": 339,
+   "bounds": [
+    -103.41,
+    20.16,
+    -97.77,
+    29.85
+   ]
+  },
+  {
+   "id": "brooks-range",
+   "name": "Brooks Range",
+   "aliases": [],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    68.9,
+    -152.92
+   ],
+   "radiusKm": 625,
+   "coastKm": 177,
+   "bounds": [
+    -166.79,
+    66.61,
+    -137.24,
+    71.41
+   ]
+  },
+  {
+   "id": "alaska-range",
+   "name": "Alaska Range",
+   "aliases": [],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    62.88,
+    -149.34
+   ],
+   "radiusKm": 343,
+   "coastKm": 153,
+   "bounds": [
+    -154.61,
+    60.88,
+    -142.58,
+    64.35
+   ]
+  },
+  {
+   "id": "cascade-range",
+   "name": "Cascade Range",
+   "aliases": [
+    "Cascades"
+   ],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    46.38,
+    -121.45
+   ],
+   "radiusKm": 697,
+   "coastKm": 123,
+   "bounds": [
+    -123.08,
+    40.11,
+    -119.01,
+    50.99
+   ]
+  },
+  {
+   "id": "sierra-nevada",
+   "name": "Sierra Nevada",
+   "aliases": [],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    37.85,
+    -119.7
+   ],
+   "radiusKm": 345,
+   "coastKm": 162,
+   "bounds": [
+    -121.79,
+    34.87,
+    -117.88,
+    40.59
+   ]
+  },
+  {
+   "id": "drakensberg",
+   "name": "Drakensberg",
+   "aliases": [],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    -29.22,
+    28.86
+   ],
+   "radiusKm": 793,
+   "coastKm": 217,
+   "bounds": [
+    23.53,
+    -33.51,
+    32.34,
+    -22.38
+   ]
+  },
+  {
+   "id": "ethiopian-highlands",
+   "name": "Ethiopian Highlands",
+   "aliases": [
+    "Abyssinian Highlands"
+   ],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    9.91,
+    38.05
+   ],
+   "radiusKm": 903,
+   "coastKm": 522,
+   "bounds": [
+    33.95,
+    4.1,
+    43.38,
+    18.03
+   ]
+  },
+  {
+   "id": "alborz-mountains",
+   "name": "Alborz Mountains",
+   "aliases": [
+    "Alborz",
+    "Elburz",
+    "Elburz Mountains"
+   ],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    36.51,
+    51.83
+   ],
+   "radiusKm": 339,
+   "coastKm": 13,
+   "bounds": [
+    48.18,
+    35.38,
+    55.15,
+    37.85
+   ]
+  },
+  {
+   "id": "western-ghats",
+   "name": "Western Ghats",
+   "aliases": [],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    15.51,
+    74.72
+   ],
+   "radiusKm": 603,
+   "coastKm": 85,
+   "bounds": [
+    72.85,
+    10.55,
+    77.4,
+    20.81
+   ]
+  },
+  {
+   "id": "eastern-ghats",
+   "name": "Eastern Ghats",
+   "aliases": [],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    16.83,
+    81.17
+   ],
+   "radiusKm": 699,
+   "coastKm": 56,
+   "bounds": [
+    77.68,
+    11.29,
+    85.24,
+    20.74
+   ]
+  },
+  {
+   "id": "southern-alps",
+   "name": "Southern Alps",
+   "aliases": [],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    -43.96,
+    169.73
+   ],
+   "radiusKm": 403,
+   "coastKm": 41,
+   "bounds": [
+    166.77,
+    -46.02,
+    173.3,
+    -41.41
+   ]
+  },
+  {
+   "id": "taurus-mountains",
+   "name": "Taurus Mountains",
+   "aliases": [
+    "Taurus"
+   ],
+   "kind": "range",
+   "tier": 2,
+   "center": [
+    37.03,
+    33.18
+   ],
+   "radiusKm": 184,
+   "coastKm": 100,
+   "bounds": [
+    31.27,
+    36.1,
+    35.06,
+    37.82
+   ]
+  },
+  {
+   "id": "atacama-desert",
+   "name": "Atacama Desert",
+   "aliases": [
+    "Atacama"
+   ],
+   "kind": "desert",
+   "tier": 2,
+   "center": [
+    -23.09,
+    -69.52
+   ],
+   "radiusKm": 578,
+   "coastKm": 87,
+   "bounds": [
+    -70.91,
+    -28,
+    -67.87,
+    -17.89
+   ]
+  },
+  {
+   "id": "namib-desert",
+   "name": "Namib Desert",
+   "aliases": [
+    "Namib"
+   ],
+   "kind": "desert",
+   "tier": 2,
+   "center": [
+    -21.24,
+    14.1
+   ],
+   "radiusKm": 970,
+   "coastKm": 37,
+   "bounds": [
+    11.72,
+    -27,
+    17.2,
+    -12.55
+   ]
+  },
+  {
+   "id": "rub-al-khali",
+   "name": "Rub’ al Khali",
+   "aliases": [
+    "Rub' al Khali",
+    "Rub al Khali",
+    "Empty Quarter"
+   ],
+   "kind": "desert",
+   "tier": 2,
+   "center": [
+    20.22,
+    50.51
+   ],
+   "radiusKm": 677,
+   "coastKm": 443,
+   "bounds": [
+    44.77,
+    16.54,
+    56.2,
+    24.26
+   ]
+  },
+  {
+   "id": "taklamakan-desert",
+   "name": "Taklamakan Desert",
+   "aliases": [
+    "Taklamakan",
+    "Taklimakan"
+   ],
+   "kind": "desert",
+   "tier": 2,
+   "center": [
+    39.01,
+    83.06
+   ],
+   "radiusKm": 414,
+   "coastKm": 887,
+   "bounds": [
+    78.28,
+    37.24,
+    87.65,
+    40.58
+   ]
+  },
+  {
+   "id": "thar-desert",
+   "name": "Thar Desert",
+   "aliases": [
+    "Thar",
+    "Great Indian Desert"
+   ],
+   "kind": "desert",
+   "tier": 2,
+   "center": [
+    27.45,
+    71.8
+   ],
+   "radiusKm": 468,
+   "coastKm": 502,
+   "bounds": [
+    68.36,
+    24.41,
+    75.67,
+    30.51
+   ]
+  },
+  {
+   "id": "syrian-desert",
+   "name": "Syrian Desert",
+   "aliases": [],
+   "kind": "desert",
+   "tier": 2,
+   "center": [
+    32.34,
+    40.15
+   ],
+   "radiusKm": 320,
+   "coastKm": 458,
+   "bounds": [
+    36.86,
+    30.47,
+    43.55,
+    34.12
+   ]
+  },
+  {
+   "id": "great-victoria-desert",
+   "name": "Great Victoria Desert",
+   "aliases": [],
+   "kind": "desert",
+   "tier": 2,
+   "center": [
+    -28.26,
+    127.93
+   ],
+   "radiusKm": 434,
+   "coastKm": 395,
+   "bounds": [
+    123.76,
+    -29.76,
+    132.36,
+    -26.59
+   ]
+  },
+  {
+   "id": "great-sandy-desert",
+   "name": "Great Sandy Desert",
+   "aliases": [],
+   "kind": "desert",
+   "tier": 2,
+   "center": [
+    -20.62,
+    124.93
+   ],
+   "radiusKm": 379,
+   "coastKm": 373,
+   "bounds": [
+    121.3,
+    -22.62,
+    128.45,
+    -18.62
+   ]
+  },
+  {
+   "id": "karakum-desert",
+   "name": "Karakum Desert",
+   "aliases": [
+    "Karakum",
+    "Garagum",
+    "Kara Kum"
+   ],
+   "kind": "desert",
+   "tier": 2,
+   "center": [
+    39.63,
+    60.8
+   ],
+   "radiusKm": 658,
+   "coastKm": 535,
+   "bounds": [
+    55.85,
+    36.22,
+    67.22,
+    45.48
+   ]
+  },
+  {
+   "id": "kyzylkum-desert",
+   "name": "Kyzylkum Desert",
+   "aliases": [
+    "Kyzylkum",
+    "Qizilqum",
+    "Kyzyl Kum"
+   ],
+   "kind": "desert",
+   "tier": 2,
+   "center": [
+    43.35,
+    63.98
+   ],
+   "radiusKm": 496,
+   "coastKm": 388,
+   "bounds": [
+    59.03,
+    39.12,
+    69.11,
+    47.49
+   ]
+  },
+  {
+   "id": "sonoran-desert",
+   "name": "Sonoran Desert",
+   "aliases": [],
+   "kind": "desert",
+   "tier": 2,
+   "center": [
+    31.9,
+    -112.92
+   ],
+   "radiusKm": 551,
+   "coastKm": 77,
+   "bounds": [
+    -116.72,
+    27.57,
+    -109.92,
+    35
+   ]
+  },
+  {
+   "id": "chihuahuan-desert",
+   "name": "Chihuahuan Desert",
+   "aliases": [],
+   "kind": "desert",
+   "tier": 2,
+   "center": [
+    29.65,
+    -104.99
+   ],
+   "radiusKm": 686,
+   "coastKm": 545,
+   "bounds": [
+    -111.02,
+    24.25,
+    -100.47,
+    34.3
+   ]
+  },
+  {
+   "id": "nubian-desert",
+   "name": "Nubian Desert",
+   "aliases": [],
+   "kind": "desert",
+   "tier": 2,
+   "center": [
+    20.36,
+    33.65
+   ],
+   "radiusKm": 385,
+   "coastKm": 353,
+   "bounds": [
+    30.37,
+    17.78,
+    37.21,
+    22.12
+   ]
+  },
+  {
+   "id": "deccan-plateau",
+   "name": "Deccan Plateau",
+   "aliases": [
+    "Deccan"
+   ],
+   "kind": "plateau",
+   "tier": 2,
+   "center": [
+    17.06,
+    77.34
+   ],
+   "radiusKm": 512,
+   "coastKm": 349,
+   "bounds": [
+    74.2,
+    12.46,
+    81.26,
+    20.11
+   ]
+  },
+  {
+   "id": "colorado-plateau",
+   "name": "Colorado Plateau",
+   "aliases": [],
+   "kind": "plateau",
+   "tier": 2,
+   "center": [
+    37.06,
+    -109.87
+   ],
+   "radiusKm": 440,
+   "coastKm": 457,
+   "bounds": [
+    -113.96,
+    33.63,
+    -106.66,
+    40.79
+   ]
+  },
+  {
+   "id": "altiplano",
+   "name": "Altiplano",
+   "aliases": [],
+   "kind": "plateau",
+   "tier": 2,
+   "center": [
+    -20.01,
+    -68.2
+   ],
+   "radiusKm": 781,
+   "coastKm": 205,
+   "bounds": [
+    -71.5,
+    -27.04,
+    -65.41,
+    -13.97
+   ]
+  },
+  {
+   "id": "brazilian-highlands",
+   "name": "Brazilian Highlands",
+   "aliases": [
+    "Brazilian Plateau"
+   ],
+   "kind": "plateau",
+   "tier": 2,
+   "center": [
+    -15.25,
+    -46.17
+   ],
+   "radiusKm": 1821,
+   "coastKm": 767,
+   "bounds": [
+    -57.74,
+    -29.98,
+    -34.89,
+    -1.16
+   ]
+  },
+  {
+   "id": "congo-basin",
+   "name": "Congo Basin",
+   "aliases": [],
+   "kind": "lowland",
+   "tier": 2,
+   "center": [
+    -1.06,
+    21.45
+   ],
+   "radiusKm": 1225,
+   "coastKm": 893,
+   "bounds": [
+    11.98,
+    -11.8,
+    31,
+    9.54
+   ]
+  },
+  {
+   "id": "great-plains",
+   "name": "Great Plains",
+   "aliases": [],
+   "kind": "lowland",
+   "tier": 2,
+   "center": [
+    42.23,
+    -102.45
+   ],
+   "radiusKm": 1576,
+   "coastKm": 800,
+   "bounds": [
+    -114.17,
+    28.16,
+    -95.56,
+    54.13
+   ]
+  },
+  {
+   "id": "pampas",
+   "name": "Pampas",
+   "aliases": [
+    "The Pampas"
+   ],
+   "kind": "lowland",
+   "tier": 2,
+   "center": [
+    -33.87,
+    -63.01
+   ],
+   "radiusKm": 941,
+   "coastKm": 413,
+   "bounds": [
+    -68.03,
+    -39.87,
+    -56.67,
+    -25.46
+   ]
+  },
+  {
+   "id": "patagonia",
+   "name": "Patagonia",
+   "aliases": [],
+   "kind": "lowland",
+   "tier": 2,
+   "center": [
+    -43.66,
+    -69.29
+   ],
+   "radiusKm": 1355,
+   "coastKm": 257,
+   "bounds": [
+    -75.71,
+    -55.78,
+    -62.25,
+    -32.04
+   ]
+  },
+  {
+   "id": "sahel",
+   "name": "Sahel",
+   "aliases": [],
+   "kind": "lowland",
+   "tier": 2,
+   "center": [
+    16.4,
+    14.53
+   ],
+   "radiusKm": 3312,
+   "coastKm": 1448,
+   "bounds": [
+    -16.49,
+    9.31,
+    38.43,
+    22.99
+   ]
+  },
+  {
+   "id": "yucatan-peninsula",
+   "name": "Yucatán Peninsula",
+   "aliases": [
+    "Yucatan Peninsula",
+    "Yucatán",
+    "Yucatan"
+   ],
+   "kind": "peninsula",
+   "tier": 2,
+   "center": [
+    18.85,
+    -89.33
+   ],
+   "radiusKm": 388,
+   "coastKm": 117,
+   "bounds": [
+    -91.89,
+    15.9,
+    -86.83,
+    21.6
+   ]
+  },
+  {
+   "id": "baja-california",
+   "name": "Baja California",
+   "aliases": [
+    "Baja California Peninsula",
+    "Baja"
+   ],
+   "kind": "peninsula",
+   "tier": 2,
+   "center": [
+    27.79,
+    -113.26
+   ],
+   "radiusKm": 642,
+   "coastKm": 51,
+   "bounds": [
+    -116.69,
+    22.89,
+    -109.42,
+    31.97
+   ]
+  },
+  {
+   "id": "crimea",
+   "name": "Crimea",
+   "aliases": [
+    "Crimean Peninsula"
+   ],
+   "kind": "peninsula",
+   "tier": 2,
+   "center": [
+    45.29,
+    34.33
+   ],
+   "radiusKm": 176,
+   "coastKm": 62,
+   "bounds": [
+    32.51,
+    44.39,
+    36.58,
+    46.2
+   ]
+  },
+  {
+   "id": "malay-peninsula",
+   "name": "Malay Peninsula",
+   "aliases": [],
+   "kind": "peninsula",
+   "tier": 2,
+   "center": [
+    5.14,
+    101.51
+   ],
+   "radiusKm": 573,
+   "coastKm": 113,
+   "bounds": [
+    98.23,
+    1.27,
+    104.29,
+    9.31
+   ]
+  },
+  {
+   "id": "kola-peninsula",
+   "name": "Kola Peninsula",
+   "aliases": [],
+   "kind": "peninsula",
+   "tier": 2,
+   "center": [
+    67.57,
+    36.74
+   ],
+   "radiusKm": 230,
+   "coastKm": 112,
+   "bounds": [
+    32.48,
+    66.06,
+    41.36,
+    69.31
+   ]
+  },
+  {
+   "id": "horn-of-africa",
+   "name": "Horn of Africa",
+   "aliases": [
+    "Somali Peninsula"
+   ],
+   "kind": "peninsula",
+   "tier": 2,
+   "center": [
+    5.62,
+    44.49
+   ],
+   "radiusKm": 1011,
+   "coastKm": 371,
+   "bounds": [
+    38.14,
+    -2.51,
+    51.38,
+    11.98
+   ]
+  },
+  {
+   "id": "jutland",
+   "name": "Jutland",
+   "aliases": [
+    "Jutland Peninsula",
+    "Jylland"
+   ],
+   "kind": "lowland",
+   "tier": 2,
+   "center": [
+    56.04,
+    9.35
+   ],
+   "radiusKm": 204,
+   "coastKm": 41,
+   "bounds": [
+    8.12,
+    54.29,
+    10.93,
+    57.74
+   ]
+  },
+  {
+   "id": "anatolia",
+   "name": "Anatolia",
+   "aliases": [
+    "Asia Minor"
+   ],
+   "kind": "lowland",
+   "tier": 2,
+   "center": [
+    39.07,
+    35.32
+   ],
+   "radiusKm": 795,
+   "coastKm": 249,
+   "bounds": [
+    26.1,
+    36.04,
+    44.45,
+    42.06
+   ]
+  },
+  {
+   "id": "honshu",
+   "name": "Honshu",
+   "aliases": [
+    "Honshū"
+   ],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    36.64,
+    137.89
+   ],
+   "radiusKm": 699,
+   "coastKm": 47,
+   "bounds": [
+    130.89,
+    33.49,
+    141.99,
+    41.51
+   ]
+  },
+  {
+   "id": "hokkaido",
+   "name": "Hokkaido",
+   "aliases": [
+    "Hokkaidō"
+   ],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    43.38,
+    142.58
+   ],
+   "radiusKm": 298,
+   "coastKm": 94,
+   "bounds": [
+    139.82,
+    41.42,
+    145.82,
+    45.51
+   ]
+  },
+  {
+   "id": "luzon",
+   "name": "Luzon",
+   "aliases": [],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    15.97,
+    121.41
+   ],
+   "radiusKm": 474,
+   "coastKm": 20,
+   "bounds": [
+    119.76,
+    12.57,
+    124.14,
+    18.62
+   ]
+  },
+  {
+   "id": "mindanao",
+   "name": "Mindanao",
+   "aliases": [],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    7.67,
+    124.85
+   ],
+   "radiusKm": 331,
+   "coastKm": 77,
+   "bounds": [
+    121.9,
+    5.6,
+    126.59,
+    9.76
+   ]
+  },
+  {
+   "id": "java",
+   "name": "Java",
+   "aliases": [
+    "Jawa"
+   ],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    -7.3,
+    109.92
+   ],
+   "radiusKm": 539,
+   "coastKm": 43,
+   "bounds": [
+    105.24,
+    -8.77,
+    114.6,
+    -5.91
+   ]
+  },
+  {
+   "id": "sumatra",
+   "name": "Sumatra",
+   "aliases": [
+    "Sumatera"
+   ],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    -0.45,
+    101.51
+   ],
+   "radiusKm": 967,
+   "coastKm": 137,
+   "bounds": [
+    95.21,
+    -5.91,
+    106.06,
+    5.63
+   ]
+  },
+  {
+   "id": "sulawesi",
+   "name": "Sulawesi",
+   "aliases": [
+    "Celebes"
+   ],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    -2,
+    121.12
+   ],
+   "radiusKm": 606,
+   "coastKm": 26,
+   "bounds": [
+    118.78,
+    -5.69,
+    125.23,
+    1.7
+   ]
+  },
+  {
+   "id": "sakhalin",
+   "name": "Sakhalin",
+   "aliases": [],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    50.25,
+    142.71
+   ],
+   "radiusKm": 484,
+   "coastKm": 40,
+   "bounds": [
+    141.66,
+    45.92,
+    144.71,
+    54.42
+   ]
+  },
+  {
+   "id": "sardinia",
+   "name": "Sardinia",
+   "aliases": [
+    "Sardegna"
+   ],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    40.09,
+    9.03
+   ],
+   "radiusKm": 135,
+   "coastKm": 48,
+   "bounds": [
+    8.18,
+    38.91,
+    9.81,
+    41.26
+   ]
+  },
+  {
+   "id": "corsica",
+   "name": "Corsica",
+   "aliases": [
+    "Corse"
+   ],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    42.16,
+    9.1
+   ],
+   "radiusKm": 99,
+   "coastKm": 34,
+   "bounds": [
+    8.57,
+    41.38,
+    9.56,
+    43.02
+   ]
+  },
+  {
+   "id": "hispaniola",
+   "name": "Hispaniola",
+   "aliases": [],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    18.91,
+    -71.25
+   ],
+   "radiusKm": 341,
+   "coastKm": 75,
+   "bounds": [
+    -74.45,
+    17.66,
+    -68.36,
+    19.93
+   ]
+  },
+  {
+   "id": "newfoundland",
+   "name": "Newfoundland",
+   "aliases": [
+    "Island of Newfoundland"
+   ],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    48.72,
+    -56.06
+   ],
+   "radiusKm": 319,
+   "coastKm": 65,
+   "bounds": [
+    -59.36,
+    46.65,
+    -52.69,
+    51.56
+   ]
+  },
+  {
+   "id": "baffin-island",
+   "name": "Baffin Island",
+   "aliases": [],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    68.33,
+    -73.25
+   ],
+   "radiusKm": 792,
+   "coastKm": 3,
+   "bounds": [
+    -89.99,
+    61.87,
+    -61.34,
+    73.85
+   ]
+  },
+  {
+   "id": "tierra-del-fuego",
+   "name": "Tierra del Fuego",
+   "aliases": [],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    -54.19,
+    -68.85
+   ],
+   "radiusKm": 242,
+   "coastKm": 27,
+   "bounds": [
+    -72.21,
+    -55.88,
+    -65.2,
+    -52.49
+   ]
+  },
+  {
+   "id": "north-island",
+   "name": "North Island",
+   "aliases": [
+    "Te Ika-a-Māui"
+   ],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    -38.6,
+    175.74
+   ],
+   "radiusKm": 534,
+   "coastKm": 96,
+   "bounds": [
+    172.71,
+    -41.61,
+    178.54,
+    -34.43
+   ]
+  },
+  {
+   "id": "south-island",
+   "name": "South Island",
+   "aliases": [
+    "Te Waipounamu"
+   ],
+   "kind": "island",
+   "tier": 2,
+   "center": [
+    -43.96,
+    170.6
+   ],
+   "radiusKm": 446,
+   "coastKm": 61,
+   "bounds": [
+    166.48,
+    -46.63,
+    174.33,
+    -40.5
+   ]
+  },
+  {
+   "id": "canary-islands",
+   "name": "Canary Islands",
+   "aliases": [
+    "Canaries",
+    "Islas Canarias"
+   ],
+   "kind": "islands",
+   "tier": 2,
+   "center": [
+    28.5,
+    -15.93
+   ],
+   "radiusKm": 295,
+   "coastKm": 19,
+   "bounds": [
+    -18.5,
+    27.21,
+    -13.11,
+    29.72
+   ]
+  },
+  {
+   "id": "balearic-islands",
+   "name": "Balearic Islands",
+   "aliases": [
+    "Balearics",
+    "Islas Baleares"
+   ],
+   "kind": "islands",
+   "tier": 2,
+   "center": [
+    39.46,
+    2.75
+   ],
+   "radiusKm": 174,
+   "coastKm": 6,
+   "bounds": [
+    1.01,
+    38.42,
+    4.6,
+    40.29
+   ]
+  },
+  {
+   "id": "hawaiian-islands",
+   "name": "Hawaiian Islands",
+   "aliases": [
+    "Hawaii"
+   ],
+   "kind": "islands",
+   "tier": 2,
+   "center": [
+    24.23,
+    -165.18
+   ],
+   "radiusKm": 1496,
+   "coastKm": 570,
+   "bounds": [
+    -179.19,
+    18.15,
+    -154.27,
+    29.59
+   ]
+  },
+  {
+   "id": "aleutian-islands",
+   "name": "Aleutian Islands",
+   "aliases": [
+    "Aleutians"
+   ],
+   "kind": "islands",
+   "tier": 2,
+   "center": [
+    53.27,
+    -172.37
+   ],
+   "radiusKm": 1014,
+   "coastKm": 98,
+   "bounds": [
+    172.41,
+    50.9,
+    -158.89,
+    55.73
+   ]
+  },
+  {
+   "id": "novaya-zemlya",
+   "name": "Novaya Zemlya",
+   "aliases": [],
+   "kind": "islands",
+   "tier": 2,
+   "center": [
+    73.93,
+    57.49
+   ],
+   "radiusKm": 482,
+   "coastKm": 10,
+   "bounds": [
+    51.18,
+    70.22,
+    69.08,
+    77.37
+   ]
+  },
+  {
+   "id": "nile-delta",
+   "name": "Nile Delta",
+   "aliases": [],
+   "kind": "delta",
+   "tier": 2,
+   "center": [
+    30.93,
+    31.04
+   ],
+   "radiusKm": 124,
+   "coastKm": 59,
+   "bounds": [
+    29.76,
+    30.08,
+    32.12,
+    31.59
+   ]
+  },
+  {
+   "id": "lake-titicaca",
+   "name": "Lake Titicaca",
+   "aliases": [
+    "Titicaca",
+    "Lago Titicaca"
+   ],
+   "kind": "lake",
+   "tier": 2,
+   "center": [
+    -15.88,
+    -69.37
+   ],
+   "radiusKm": 97,
+   "coastKm": 16,
+   "bounds": [
+    -70.04,
+    -16.6,
+    -68.58,
+    -15.24
+   ]
+  },
+  {
+   "id": "lake-tanganyika",
+   "name": "Lake Tanganyika",
+   "aliases": [
+    "Tanganyika"
+   ],
+   "kind": "lake",
+   "tier": 2,
+   "center": [
+    -6.21,
+    29.88
+   ],
+   "radiusKm": 328,
+   "coastKm": 19,
+   "bounds": [
+    29.04,
+    -8.8,
+    31.2,
+    -3.33
+   ]
+  },
+  {
+   "id": "lake-malawi",
+   "name": "Lake Malawi",
+   "aliases": [
+    "Lake Nyasa",
+    "Lake Niassa"
+   ],
+   "kind": "lake",
+   "tier": 2,
+   "center": [
+    -11.96,
+    34.51
+   ],
+   "radiusKm": 283,
+   "coastKm": 25,
+   "bounds": [
+    33.9,
+    -14.4,
+    35.29,
+    -9.48
+   ]
+  },
+  {
+   "id": "lake-ladoga",
+   "name": "Lake Ladoga",
+   "aliases": [
+    "Ladoga"
+   ],
+   "kind": "lake",
+   "tier": 2,
+   "center": [
+    60.85,
+    31.47
+   ],
+   "radiusKm": 109,
+   "coastKm": 46,
+   "bounds": [
+    29.8,
+    59.9,
+    32.95,
+    61.78
+   ]
+  },
+  {
+   "id": "lake-onega",
+   "name": "Lake Onega",
+   "aliases": [
+    "Onega"
+   ],
+   "kind": "lake",
+   "tier": 2,
+   "center": [
+    61.78,
+    35.39
+   ],
+   "radiusKm": 135,
+   "coastKm": 11,
+   "bounds": [
+    33.93,
+    60.85,
+    36.46,
+    62.92
+   ]
+  },
+  {
+   "id": "lake-balkhash",
+   "name": "Lake Balkhash",
+   "aliases": [
+    "Balkhash"
+   ],
+   "kind": "lake",
+   "tier": 2,
+   "center": [
+    46.3,
+    75.6
+   ],
+   "radiusKm": 283,
+   "coastKm": 19,
+   "bounds": [
+    73.42,
+    44.96,
+    79.26,
+    46.85
+   ]
+  },
+  {
+   "id": "great-bear-lake",
+   "name": "Great Bear Lake",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 2,
+   "center": [
+    66.02,
+    -120.95
+   ],
+   "radiusKm": 189,
+   "coastKm": 14,
+   "bounds": [
+    -125.12,
+    64.81,
+    -117.46,
+    67.05
+   ]
+  },
+  {
+   "id": "great-slave-lake",
+   "name": "Great Slave Lake",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 2,
+   "center": [
+    61.7,
+    -114.07
+   ],
+   "radiusKm": 252,
+   "coastKm": 34,
+   "bounds": [
+    -117.69,
+    60.83,
+    -109.68,
+    62.8
+   ]
+  },
+  {
+   "id": "lake-winnipeg",
+   "name": "Lake Winnipeg",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 2,
+   "center": [
+    52.59,
+    -97.79
+   ],
+   "radiusKm": 256,
+   "coastKm": 14,
+   "bounds": [
+    -99.25,
+    50.39,
+    -96.26,
+    54.42
+   ]
+  },
+  {
+   "id": "vanern",
+   "name": "Vänern",
+   "aliases": [
+    "Vanern",
+    "Lake Vänern"
+   ],
+   "kind": "lake",
+   "tier": 2,
+   "center": [
+    58.91,
+    13.27
+   ],
+   "radiusKm": 81,
+   "coastKm": 1,
+   "bounds": [
+    12.3,
+    58.36,
+    14.12,
+    59.41
+   ]
+  },
+  {
+   "id": "great-salt-lake",
+   "name": "Great Salt Lake",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 2,
+   "center": [
+    41.18,
+    -112.51
+   ],
+   "radiusKm": 64,
+   "coastKm": 7,
+   "bounds": [
+    -113.03,
+    40.69,
+    -111.93,
+    41.68
+   ]
+  },
+  {
+   "id": "lake-nicaragua",
+   "name": "Lake Nicaragua",
+   "aliases": [
+    "Lago de Nicaragua",
+    "Cocibolca"
+   ],
+   "kind": "lake",
+   "tier": 2,
+   "center": [
+    11.53,
+    -85.39
+   ],
+   "radiusKm": 84,
+   "coastKm": 10,
+   "bounds": [
+    -85.94,
+    11.03,
+    -84.77,
+    12.12
+   ]
+  },
+  {
+   "id": "lake-turkana",
+   "name": "Lake Turkana",
+   "aliases": [
+    "Lake Rudolf"
+   ],
+   "kind": "lake",
+   "tier": 2,
+   "center": [
+    3.58,
+    36.18
+   ],
+   "radiusKm": 140,
+   "coastKm": 6,
+   "bounds": [
+    35.83,
+    2.39,
+    36.71,
+    4.66
+   ]
+  },
+  {
+   "id": "aral-sea",
+   "name": "Aral Sea",
+   "aliases": [
+    "Aral"
+   ],
+   "kind": "lake",
+   "tier": 2,
+   "center": [
+    45.81,
+    59.62
+   ],
+   "radiusKm": 187,
+   "coastKm": 30,
+   "bounds": [
+    58.22,
+    44.42,
+    61.53,
+    46.78
+   ]
+  },
+  {
+   "id": "strait-of-gibraltar",
+   "name": "Strait of Gibraltar",
+   "aliases": [
+    "Gibraltar Strait"
+   ],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    35.97,
+    -5.65
+   ],
+   "radiusKm": 42,
+   "coastKm": 7,
+   "bounds": [
+    -6.03,
+    35.78,
+    -5.28,
+    36.19
+   ]
+  },
+  {
+   "id": "bosporus",
+   "name": "Bosporus",
+   "aliases": [
+    "Bosphorus",
+    "Istanbul Strait"
+   ],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    41.1,
+    29.04
+   ],
+   "radiusKm": 14,
+   "coastKm": 2,
+   "bounds": [
+    28.96,
+    41.01,
+    29.13,
+    41.22
+   ]
+  },
+  {
+   "id": "dardanelles",
+   "name": "Dardanelles",
+   "aliases": [
+    "Çanakkale Strait",
+    "Hellespont"
+   ],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    40.2,
+    26.45
+   ],
+   "radiusKm": 33,
+   "coastKm": 2,
+   "bounds": [
+    26.18,
+    39.99,
+    26.74,
+    40.43
+   ]
+  },
+  {
+   "id": "sea-of-marmara",
+   "name": "Sea of Marmara",
+   "aliases": [
+    "Marmara Sea"
+   ],
+   "kind": "sea",
+   "tier": 3,
+   "center": [
+    40.69,
+    28.17
+   ],
+   "radiusKm": 141,
+   "coastKm": 27,
+   "bounds": [
+    26.68,
+    40.32,
+    29.85,
+    41.08
+   ]
+  },
+  {
+   "id": "bab-el-mandeb",
+   "name": "Bab-el-Mandeb",
+   "aliases": [
+    "Bab el Mandeb",
+    "Bab al-Mandab"
+   ],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    12.7,
+    43.35
+   ],
+   "radiusKm": 63,
+   "coastKm": 15,
+   "bounds": [
+    43,
+    12.18,
+    43.93,
+    13.23
+   ]
+  },
+  {
+   "id": "strait-of-malacca",
+   "name": "Strait of Malacca",
+   "aliases": [
+    "Malacca Strait"
+   ],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    4.95,
+    99.26
+   ],
+   "radiusKm": 626,
+   "coastKm": 110,
+   "bounds": [
+    95.45,
+    0.69,
+    103.5,
+    8.34
+   ]
+  },
+  {
+   "id": "singapore-strait",
+   "name": "Singapore Strait",
+   "aliases": [
+    "Strait of Singapore"
+   ],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    1.25,
+    103.93
+   ],
+   "radiusKm": 64,
+   "coastKm": 10,
+   "bounds": [
+    103.37,
+    1.05,
+    104.49,
+    1.62
+   ]
+  },
+  {
+   "id": "bass-strait",
+   "name": "Bass Strait",
+   "aliases": [],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    -39.47,
+    146.35
+   ],
+   "radiusKm": 328,
+   "coastKm": 36,
+   "bounds": [
+    143.55,
+    -41.17,
+    149.44,
+    -37.78
+   ]
+  },
+  {
+   "id": "cook-strait",
+   "name": "Cook Strait",
+   "aliases": [],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    -41.33,
+    174.58
+   ],
+   "radiusKm": 72,
+   "coastKm": 6,
+   "bounds": [
+    174.04,
+    -41.75,
+    175.24,
+    -40.79
+   ]
+  },
+  {
+   "id": "taiwan-strait",
+   "name": "Taiwan Strait",
+   "aliases": [
+    "Formosa Strait"
+   ],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    24.24,
+    119.36
+   ],
+   "radiusKm": 202,
+   "coastKm": 83,
+   "bounds": [
+    117.43,
+    23.05,
+    121.09,
+    25.27
+   ]
+  },
+  {
+   "id": "korea-strait",
+   "name": "Korea Strait",
+   "aliases": [
+    "Tsushima Strait"
+   ],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    34.03,
+    128.73
+   ],
+   "radiusKm": 239,
+   "coastKm": 44,
+   "bounds": [
+    126.36,
+    32.45,
+    130.94,
+    36.06
+   ]
+  },
+  {
+   "id": "tsugaru-strait",
+   "name": "Tsugaru Strait",
+   "aliases": [],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    41.37,
+    140.82
+   ],
+   "radiusKm": 60,
+   "coastKm": 7,
+   "bounds": [
+    140.14,
+    40.83,
+    141.46,
+    41.82
+   ]
+  },
+  {
+   "id": "la-perouse-strait",
+   "name": "La Pérouse Strait",
+   "aliases": [
+    "La Perouse Strait",
+    "Soya Strait"
+   ],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    45.56,
+    141.87
+   ],
+   "radiusKm": 54,
+   "coastKm": 8,
+   "bounds": [
+    141.69,
+    45.39,
+    142.08,
+    46.04
+   ]
+  },
+  {
+   "id": "tatar-strait",
+   "name": "Tatar Strait",
+   "aliases": [
+    "Strait of Tartary"
+   ],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    52.71,
+    141.51
+   ],
+   "radiusKm": 90,
+   "coastKm": 18,
+   "bounds": [
+    140.84,
+    51.91,
+    141.87,
+    53.38
+   ]
+  },
+  {
+   "id": "makassar-strait",
+   "name": "Makassar Strait",
+   "aliases": [],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    -2.03,
+    118.22
+   ],
+   "radiusKm": 471,
+   "coastKm": 98,
+   "bounds": [
+    116.15,
+    -5.32,
+    120.88,
+    1.29
+   ]
+  },
+  {
+   "id": "palk-strait",
+   "name": "Palk Strait",
+   "aliases": [],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    9.67,
+    79.62
+   ],
+   "radiusKm": 91,
+   "coastKm": 25,
+   "bounds": [
+    78.92,
+    8.91,
+    80.43,
+    10.33
+   ]
+  },
+  {
+   "id": "davis-strait",
+   "name": "Davis Strait",
+   "aliases": [],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    64.72,
+    -57.84
+   ],
+   "radiusKm": 813,
+   "coastKm": 237,
+   "bounds": [
+    -69.34,
+    60.17,
+    -44.74,
+    70.06
+   ]
+  },
+  {
+   "id": "denmark-strait",
+   "name": "Denmark Strait",
+   "aliases": [],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    66.73,
+    -26.26
+   ],
+   "radiusKm": 272,
+   "coastKm": 134,
+   "bounds": [
+    -30.99,
+    64.87,
+    -21.76,
+    68.43
+   ]
+  },
+  {
+   "id": "hudson-strait",
+   "name": "Hudson Strait",
+   "aliases": [],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    62.6,
+    -72.22
+   ],
+   "radiusKm": 467,
+   "coastKm": 58,
+   "bounds": [
+    -80.98,
+    60.29,
+    -64.73,
+    64.83
+   ]
+  },
+  {
+   "id": "strait-of-belle-isle",
+   "name": "Strait of Belle Isle",
+   "aliases": [],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    51.69,
+    -56.08
+   ],
+   "radiusKm": 72,
+   "coastKm": 14,
+   "bounds": [
+    -57.03,
+    51.27,
+    -55.39,
+    52.14
+   ]
+  },
+  {
+   "id": "straits-of-florida",
+   "name": "Straits of Florida",
+   "aliases": [
+    "Florida Straits",
+    "Strait of Florida"
+   ],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    24.61,
+    -80.27
+   ],
+   "radiusKm": 333,
+   "coastKm": 50,
+   "bounds": [
+    -83.04,
+    23,
+    -78.16,
+    26.67
+   ]
+  },
+  {
+   "id": "yucatan-channel",
+   "name": "Yucatán Channel",
+   "aliases": [
+    "Yucatan Channel"
+   ],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    21.53,
+    -86.96
+   ],
+   "radiusKm": 221,
+   "coastKm": 9,
+   "bounds": [
+    -87.03,
+    21.42,
+    -84.85,
+    21.88
+   ]
+  },
+  {
+   "id": "strait-of-magellan",
+   "name": "Strait of Magellan",
+   "aliases": [
+    "Magellan Strait",
+    "Estrecho de Magallanes"
+   ],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    -53.1,
+    -71.4
+   ],
+   "radiusKm": 220,
+   "coastKm": 1,
+   "bounds": [
+    -74.63,
+    -54.14,
+    -68.7,
+    -52.21
+   ]
+  },
+  {
+   "id": "drake-passage",
+   "name": "Drake Passage",
+   "aliases": [],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    -63.88,
+    -65.03
+   ],
+   "radiusKm": 918,
+   "coastKm": 83,
+   "bounds": [
+    -68.05,
+    -66.7,
+    -59.62,
+    -55.7
+   ]
+  },
+  {
+   "id": "bristol-channel",
+   "name": "Bristol Channel",
+   "aliases": [],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    51.15,
+    -5.04
+   ],
+   "radiusKm": 192,
+   "coastKm": 41,
+   "bounds": [
+    -6.4,
+    50.11,
+    -2.43,
+    51.75
+   ]
+  },
+  {
+   "id": "skagerrak",
+   "name": "Skagerrak",
+   "aliases": [],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    58.1,
+    9.44
+   ],
+   "radiusKm": 196,
+   "coastKm": 58,
+   "bounds": [
+    7.13,
+    56.84,
+    11.39,
+    59.76
+   ]
+  },
+  {
+   "id": "kattegat",
+   "name": "Kattegat",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 3,
+   "center": [
+    56.96,
+    11.47
+   ],
+   "radiusKm": 158,
+   "coastKm": 41,
+   "bounds": [
+    10.28,
+    55.7,
+    12.92,
+    58.38
+   ]
+  },
+  {
+   "id": "resund",
+   "name": "Øresund",
+   "aliases": [
+    "Oresund",
+    "The Sound",
+    "Öresund"
+   ],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    55.63,
+    12.65
+   ],
+   "radiusKm": 51,
+   "coastKm": 2,
+   "bounds": [
+    12.21,
+    55.3,
+    12.98,
+    56.08
+   ]
+  },
+  {
+   "id": "hecate-strait",
+   "name": "Hecate Strait",
+   "aliases": [],
+   "kind": "strait",
+   "tier": 3,
+   "center": [
+    53.77,
+    -131.09
+   ],
+   "radiusKm": 184,
+   "coastKm": 29,
+   "bounds": [
+    -132.52,
+    52.27,
+    -129.63,
+    55.41
+   ]
+  },
+  {
+   "id": "gulf-of-riga",
+   "name": "Gulf of Riga",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    57.9,
+    23.38
+   ],
+   "radiusKm": 125,
+   "coastKm": 53,
+   "bounds": [
+    21.74,
+    56.97,
+    24.55,
+    59.03
+   ]
+  },
+  {
+   "id": "gulf-of-sidra",
+   "name": "Gulf of Sidra",
+   "aliases": [
+    "Gulf of Sirte",
+    "Gulf of Sirt"
+   ],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    31.43,
+    18.09
+   ],
+   "radiusKm": 271,
+   "coastKm": 61,
+   "bounds": [
+    15.36,
+    30.27,
+    20.15,
+    32.15
+   ]
+  },
+  {
+   "id": "gulf-of-gabes",
+   "name": "Gulf of Gabès",
+   "aliases": [
+    "Gulf of Gabes"
+   ],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    34.29,
+    10.66
+   ],
+   "radiusKm": 112,
+   "coastKm": 31,
+   "bounds": [
+    10.04,
+    33.66,
+    11.19,
+    35.23
+   ]
+  },
+  {
+   "id": "gulf-of-suez",
+   "name": "Gulf of Suez",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    28.5,
+    33.24
+   ],
+   "radiusKm": 176,
+   "coastKm": 8,
+   "bounds": [
+    32.36,
+    27.22,
+    34.21,
+    29.97
+   ]
+  },
+  {
+   "id": "gulf-of-aqaba",
+   "name": "Gulf of Aqaba",
+   "aliases": [
+    "Gulf of Eilat"
+   ],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    28.7,
+    34.69
+   ],
+   "radiusKm": 99,
+   "coastKm": 10,
+   "bounds": [
+    34.39,
+    27.98,
+    34.98,
+    29.56
+   ]
+  },
+  {
+   "id": "gulf-of-tonkin",
+   "name": "Gulf of Tonkin",
+   "aliases": [
+    "Beibu Gulf"
+   ],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    19.86,
+    107.76
+   ],
+   "radiusKm": 289,
+   "coastKm": 113,
+   "bounds": [
+    105.62,
+    17.9,
+    110.1,
+    21.9
+   ]
+  },
+  {
+   "id": "bohai-sea",
+   "name": "Bohai Sea",
+   "aliases": [
+    "Bo Hai",
+    "Bohai",
+    "Gulf of Bohai"
+   ],
+   "kind": "sea",
+   "tier": 3,
+   "center": [
+    38.98,
+    120
+   ],
+   "radiusKm": 271,
+   "coastKm": 82,
+   "bounds": [
+    117.55,
+    37.12,
+    122.28,
+    40.97
+   ]
+  },
+  {
+   "id": "ligurian-sea",
+   "name": "Ligurian Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 3,
+   "center": [
+    43.81,
+    8.94
+   ],
+   "radiusKm": 95,
+   "coastKm": 61,
+   "bounds": [
+    7.82,
+    43.02,
+    9.76,
+    44.42
+   ]
+  },
+  {
+   "id": "balearic-sea",
+   "name": "Balearic Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 3,
+   "center": [
+    40.11,
+    1.92
+   ],
+   "radiusKm": 235,
+   "coastKm": 67,
+   "bounds": [
+    -0.33,
+    38.66,
+    4.28,
+    41.96
+   ]
+  },
+  {
+   "id": "sea-of-crete",
+   "name": "Sea of Crete",
+   "aliases": [
+    "Cretan Sea"
+   ],
+   "kind": "sea",
+   "tier": 3,
+   "center": [
+    36.34,
+    25.11
+   ],
+   "radiusKm": 271,
+   "coastKm": 23,
+   "bounds": [
+    22.73,
+    35.12,
+    28.14,
+    38.03
+   ]
+  },
+  {
+   "id": "sea-of-azov",
+   "name": "Sea of Azov",
+   "aliases": [
+    "Azov Sea"
+   ],
+   "kind": "sea",
+   "tier": 3,
+   "center": [
+    46.18,
+    36.81
+   ],
+   "radiusKm": 218,
+   "coastKm": 59,
+   "bounds": [
+    34.84,
+    45.27,
+    39.29,
+    47.27
+   ]
+  },
+  {
+   "id": "gulf-of-ob",
+   "name": "Gulf of Ob",
+   "aliases": [
+    "Ob Bay"
+   ],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    69.24,
+    73.6
+   ],
+   "radiusKm": 416,
+   "coastKm": 8,
+   "bounds": [
+    69.01,
+    66.25,
+    78.92,
+    72.97
+   ]
+  },
+  {
+   "id": "bay-of-fundy",
+   "name": "Bay of Fundy",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    44.99,
+    -65.77
+   ],
+   "radiusKm": 193,
+   "coastKm": 27,
+   "bounds": [
+    -67.19,
+    44.15,
+    -63.37,
+    45.95
+   ]
+  },
+  {
+   "id": "chesapeake-bay",
+   "name": "Chesapeake Bay",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    38.04,
+    -76.29
+   ],
+   "radiusKm": 174,
+   "coastKm": 7,
+   "bounds": [
+    -77.31,
+    36.89,
+    -75.66,
+    39.58
+   ]
+  },
+  {
+   "id": "james-bay",
+   "name": "James Bay",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    53.17,
+    -80.4
+   ],
+   "radiusKm": 277,
+   "coastKm": 28,
+   "bounds": [
+    -82.42,
+    50.76,
+    -78.45,
+    54.84
+   ]
+  },
+  {
+   "id": "ungava-bay",
+   "name": "Ungava Bay",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    59.56,
+    -67.6
+   ],
+   "radiusKm": 202,
+   "coastKm": 84,
+   "bounds": [
+    -70.65,
+    57.9,
+    -64.88,
+    60.84
+   ]
+  },
+  {
+   "id": "foxe-basin",
+   "name": "Foxe Basin",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    66.89,
+    -78.95
+   ],
+   "radiusKm": 413,
+   "coastKm": 94,
+   "bounds": [
+    -86.75,
+    63.76,
+    -72.22,
+    70.6
+   ]
+  },
+  {
+   "id": "gulf-of-maine",
+   "name": "Gulf of Maine",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    43.34,
+    -68.49
+   ],
+   "radiusKm": 223,
+   "coastKm": 93,
+   "bounds": [
+    -70.83,
+    41.69,
+    -65.74,
+    44.7
+   ]
+  },
+  {
+   "id": "cook-inlet",
+   "name": "Cook Inlet",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    59.98,
+    -152.18
+   ],
+   "radiusKm": 229,
+   "coastKm": 23,
+   "bounds": [
+    -154.18,
+    58.89,
+    -149.07,
+    61.5
+   ]
+  },
+  {
+   "id": "bristol-bay",
+   "name": "Bristol Bay",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    57.67,
+    -159.96
+   ],
+   "radiusKm": 246,
+   "coastKm": 101,
+   "bounds": [
+    -162.13,
+    55.75,
+    -156.81,
+    59.13
+   ]
+  },
+  {
+   "id": "salish-sea",
+   "name": "Salish Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 3,
+   "center": [
+    48.82,
+    -123.55
+   ],
+   "radiusKm": 204,
+   "coastKm": 5,
+   "bounds": [
+    -125.24,
+    47.11,
+    -122.24,
+    50.37
+   ]
+  },
+  {
+   "id": "gulf-of-honduras",
+   "name": "Gulf of Honduras",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    16.26,
+    -88
+   ],
+   "radiusKm": 129,
+   "coastKm": 44,
+   "bounds": [
+    -88.91,
+    15.7,
+    -86.91,
+    17.31
+   ]
+  },
+  {
+   "id": "gulf-of-panama",
+   "name": "Gulf of Panama",
+   "aliases": [
+    "Golfo de Panamá"
+   ],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    8.15,
+    -79.24
+   ],
+   "radiusKm": 163,
+   "coastKm": 16,
+   "bounds": [
+    -80.47,
+    7.5,
+    -77.76,
+    9.02
+   ]
+  },
+  {
+   "id": "bay-of-campeche",
+   "name": "Bay of Campeche",
+   "aliases": [
+    "Bahía de Campeche",
+    "Campeche Bay"
+   ],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    19.81,
+    -93.56
+   ],
+   "radiusKm": 395,
+   "coastKm": 153,
+   "bounds": [
+    -97.2,
+    18.17,
+    -90.35,
+    21.01
+   ]
+  },
+  {
+   "id": "rio-de-la-plata",
+   "name": "Río de la Plata",
+   "aliases": [
+    "Rio de la Plata",
+    "River Plate"
+   ],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    -35.13,
+    -56.82
+   ],
+   "radiusKm": 322,
+   "coastKm": 41,
+   "bounds": [
+    -58.55,
+    -36.35,
+    -54.91,
+    -32.47
+   ]
+  },
+  {
+   "id": "lake-maracaibo",
+   "name": "Lake Maracaibo",
+   "aliases": [
+    "Lago de Maracaibo"
+   ],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    9.76,
+    -71.55
+   ],
+   "radiusKm": 113,
+   "coastKm": 47,
+   "bounds": [
+    -72.11,
+    9.05,
+    -71.05,
+    10.78
+   ]
+  },
+  {
+   "id": "gulf-of-kutch",
+   "name": "Gulf of Kutch",
+   "aliases": [
+    "Gulf of Kachchh"
+   ],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    22.68,
+    69.56
+   ],
+   "radiusKm": 106,
+   "coastKm": 14,
+   "bounds": [
+    68.8,
+    22.29,
+    70.51,
+    23.09
+   ]
+  },
+  {
+   "id": "gulf-of-mannar",
+   "name": "Gulf of Mannar",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    8.37,
+    78.98
+   ],
+   "radiusKm": 187,
+   "coastKm": 83,
+   "bounds": [
+    77.3,
+    7.32,
+    79.94,
+    9.27
+   ]
+  },
+  {
+   "id": "gulf-of-papua",
+   "name": "Gulf of Papua",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    -8.41,
+    144.76
+   ],
+   "radiusKm": 282,
+   "coastKm": 72,
+   "bounds": [
+    142.21,
+    -8.95,
+    146.63,
+    -7.46
+   ]
+  },
+  {
+   "id": "shark-bay",
+   "name": "Shark Bay",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    -25.55,
+    113.77
+   ],
+   "radiusKm": 148,
+   "coastKm": 22,
+   "bounds": [
+    113.4,
+    -26.39,
+    114.23,
+    -24.25
+   ]
+  },
+  {
+   "id": "bay-of-plenty",
+   "name": "Bay of Plenty",
+   "aliases": [],
+   "kind": "gulf",
+   "tier": 3,
+   "center": [
+    -37.45,
+    176.82
+   ],
+   "radiusKm": 129,
+   "coastKm": 46,
+   "bounds": [
+    175.77,
+    -37.99,
+    178.27,
+    -36.74
+   ]
+  },
+  {
+   "id": "sulu-sea",
+   "name": "Sulu Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 3,
+   "center": [
+    8.55,
+    120.16
+   ],
+   "radiusKm": 481,
+   "coastKm": 199,
+   "bounds": [
+    116.76,
+    5.06,
+    123.4,
+    12.83
+   ]
+  },
+  {
+   "id": "banda-sea",
+   "name": "Banda Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 3,
+   "center": [
+    -5.41,
+    126.15
+   ],
+   "radiusKm": 771,
+   "coastKm": 186,
+   "bounds": [
+    120.25,
+    -8.75,
+    133.11,
+    -0.87
+   ]
+  },
+  {
+   "id": "bismarck-sea",
+   "name": "Bismarck Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 3,
+   "center": [
+    -3.59,
+    147.37
+   ],
+   "radiusKm": 603,
+   "coastKm": 147,
+   "bounds": [
+    141.97,
+    -5.98,
+    152.7,
+    -1.39
+   ]
+  },
+  {
+   "id": "solomon-sea",
+   "name": "Solomon Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 3,
+   "center": [
+    -8.62,
+    154.29
+   ],
+   "radiusKm": 892,
+   "coastKm": 152,
+   "bounds": [
+    146.95,
+    -11.76,
+    162.12,
+    -4.29
+   ]
+  },
+  {
+   "id": "east-siberian-sea",
+   "name": "East Siberian Sea",
+   "aliases": [],
+   "kind": "sea",
+   "tier": 3,
+   "center": [
+    73.44,
+    160.5
+   ],
+   "radiusKm": 697,
+   "coastKm": 279,
+   "bounds": [
+    138.84,
+    68.54,
+    179.53,
+    77.47
+   ]
+  },
+  {
+   "id": "dinaric-alps",
+   "name": "Dinaric Alps",
+   "aliases": [
+    "Dinarides"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    44,
+    18.09
+   ],
+   "radiusKm": 418,
+   "coastKm": 116,
+   "bounds": [
+    13.6,
+    41.8,
+    21.64,
+    46.22
+   ]
+  },
+  {
+   "id": "balkan-mountains",
+   "name": "Balkan Mountains",
+   "aliases": [
+    "Stara Planina"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    43.08,
+    24.94
+   ],
+   "radiusKm": 222,
+   "coastKm": 219,
+   "bounds": [
+    22.33,
+    42.51,
+    27.43,
+    43.81
+   ]
+  },
+  {
+   "id": "tatra-mountains",
+   "name": "Tatra Mountains",
+   "aliases": [
+    "Tatras",
+    "High Tatras"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    49.45,
+    20.25
+   ],
+   "radiusKm": 210,
+   "coastKm": 552,
+   "bounds": [
+    18,
+    48.82,
+    23.06,
+    50.07
+   ]
+  },
+  {
+   "id": "transylvanian-alps",
+   "name": "Transylvanian Alps",
+   "aliases": [
+    "Southern Carpathians"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    45.36,
+    24.06
+   ],
+   "radiusKm": 208,
+   "coastKm": 380,
+   "bounds": [
+    21.63,
+    44.62,
+    26.71,
+    45.96
+   ]
+  },
+  {
+   "id": "cantabrian-mountains",
+   "name": "Cantabrian Mountains",
+   "aliases": [
+    "Cordillera Cantábrica"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    43.07,
+    -4.81
+   ],
+   "radiusKm": 236,
+   "coastKm": 45,
+   "bounds": [
+    -7.41,
+    42.68,
+    -1.91,
+    43.43
+   ]
+  },
+  {
+   "id": "vosges",
+   "name": "Vosges",
+   "aliases": [],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    48.81,
+    7.29
+   ],
+   "radiusKm": 124,
+   "coastKm": 360,
+   "bounds": [
+    6.52,
+    47.81,
+    8.16,
+    49.82
+   ]
+  },
+  {
+   "id": "jura-mountains",
+   "name": "Jura Mountains",
+   "aliases": [
+    "Jura"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    47.04,
+    6.65
+   ],
+   "radiusKm": 129,
+   "coastKm": 334,
+   "bounds": [
+    5.68,
+    46.05,
+    8.04,
+    47.66
+   ]
+  },
+  {
+   "id": "harz",
+   "name": "Harz",
+   "aliases": [
+    "Harz Mountains"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    51.73,
+    10.53
+   ],
+   "radiusKm": 72,
+   "coastKm": 209,
+   "bounds": [
+    9.58,
+    51.28,
+    11.52,
+    52.18
+   ]
+  },
+  {
+   "id": "ardennes",
+   "name": "Ardennes",
+   "aliases": [],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    49.96,
+    5.08
+   ],
+   "radiusKm": 78,
+   "coastKm": 170,
+   "bounds": [
+    4.16,
+    49.46,
+    6.15,
+    50.42
+   ]
+  },
+  {
+   "id": "ore-mountains",
+   "name": "Ore Mountains",
+   "aliases": [
+    "Erzgebirge",
+    "Krušné hory"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    50.44,
+    12.76
+   ],
+   "radiusKm": 102,
+   "coastKm": 377,
+   "bounds": [
+    11.67,
+    49.88,
+    14.06,
+    50.9
+   ]
+  },
+  {
+   "id": "sudetes",
+   "name": "Sudetes",
+   "aliases": [
+    "Sudeten",
+    "Sudetes Mountains"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    50.71,
+    15.95
+   ],
+   "radiusKm": 135,
+   "coastKm": 339,
+   "bounds": [
+    14.19,
+    49.9,
+    17.49,
+    51.3
+   ]
+  },
+  {
+   "id": "grampian-mountains",
+   "name": "Grampian Mountains",
+   "aliases": [
+    "Grampians"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    56.71,
+    -3.84
+   ],
+   "radiusKm": 137,
+   "coastKm": 50,
+   "bounds": [
+    -5.54,
+    55.92,
+    -2.09,
+    57.24
+   ]
+  },
+  {
+   "id": "massif-central",
+   "name": "Massif Central",
+   "aliases": [],
+   "kind": "plateau",
+   "tier": 3,
+   "center": [
+    44.78,
+    3.19
+   ],
+   "radiusKm": 179,
+   "coastKm": 147,
+   "bounds": [
+    1.43,
+    43.4,
+    4.89,
+    46.31
+   ]
+  },
+  {
+   "id": "pindus-mountains",
+   "name": "Pindus Mountains",
+   "aliases": [
+    "Pindus"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    39.85,
+    20.91
+   ],
+   "radiusKm": 192,
+   "coastKm": 70,
+   "bounds": [
+    19.93,
+    38.45,
+    22.12,
+    41.51
+   ]
+  },
+  {
+   "id": "pontic-mountains",
+   "name": "Pontic Mountains",
+   "aliases": [
+    "Pontic Alps"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    40.93,
+    37.99
+   ],
+   "radiusKm": 343,
+   "coastKm": 10,
+   "bounds": [
+    34.05,
+    40.14,
+    42.03,
+    41.92
+   ]
+  },
+  {
+   "id": "mount-lebanon",
+   "name": "Mount Lebanon",
+   "aliases": [
+    "Lebanon Mountains"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    33.92,
+    35.85
+   ],
+   "radiusKm": 86,
+   "coastKm": 25,
+   "bounds": [
+    35.31,
+    33.23,
+    36.36,
+    34.61
+   ]
+  },
+  {
+   "id": "hajar-mountains",
+   "name": "Hajar Mountains",
+   "aliases": [
+    "Al Hajar Mountains",
+    "Hajar"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    23.68,
+    57.36
+   ],
+   "radiusKm": 297,
+   "coastKm": 29,
+   "bounds": [
+    55.86,
+    22.19,
+    59.44,
+    26.16
+   ]
+  },
+  {
+   "id": "kopet-dag",
+   "name": "Kopet Dag",
+   "aliases": [
+    "Kopet Dagh",
+    "Köpetdag"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    37.85,
+    57.98
+   ],
+   "radiusKm": 295,
+   "coastKm": 362,
+   "bounds": [
+    55.46,
+    36.2,
+    60.66,
+    39.39
+   ]
+  },
+  {
+   "id": "sulaiman-mountains",
+   "name": "Sulaiman Mountains",
+   "aliases": [
+    "Sulaiman Range",
+    "Sulaiman"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    31.6,
+    69.89
+   ],
+   "radiusKm": 281,
+   "coastKm": 750,
+   "bounds": [
+    68.93,
+    29.08,
+    70.64,
+    33.73
+   ]
+  },
+  {
+   "id": "hejaz-mountains",
+   "name": "Hejaz Mountains",
+   "aliases": [
+    "Hijaz Mountains",
+    "Hejaz"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    25.98,
+    37.77
+   ],
+   "radiusKm": 426,
+   "coastKm": 93,
+   "bounds": [
+    35.42,
+    22.61,
+    40.02,
+    28.87
+   ]
+  },
+  {
+   "id": "ahaggar-mountains",
+   "name": "Ahaggar Mountains",
+   "aliases": [
+    "Ahaggar",
+    "Hoggar",
+    "Hoggar Mountains"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    24.21,
+    5.45
+   ],
+   "radiusKm": 449,
+   "coastKm": 1150,
+   "bounds": [
+    1.07,
+    21.67,
+    8.93,
+    26.98
+   ]
+  },
+  {
+   "id": "tibesti-mountains",
+   "name": "Tibesti Mountains",
+   "aliases": [
+    "Tibesti"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    21.55,
+    18.13
+   ],
+   "radiusKm": 320,
+   "coastKm": 974,
+   "bounds": [
+    15.68,
+    19.49,
+    19.86,
+    24.09
+   ]
+  },
+  {
+   "id": "verkhoyansk-range",
+   "name": "Verkhoyansk Range",
+   "aliases": [],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    66.07,
+    130.96
+   ],
+   "radiusKm": 543,
+   "coastKm": 520,
+   "bounds": [
+    126.3,
+    62.72,
+    139.52,
+    70.61
+   ]
+  },
+  {
+   "id": "stanovoy-range",
+   "name": "Stanovoy Range",
+   "aliases": [],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    55.99,
+    130.24
+   ],
+   "radiusKm": 491,
+   "coastKm": 337,
+   "bounds": [
+    123.1,
+    54.31,
+    138.13,
+    57.4
+   ]
+  },
+  {
+   "id": "sikhote-alin",
+   "name": "Sikhote-Alin",
+   "aliases": [
+    "Sikhote-Alin Range",
+    "Sikhote-Alin'"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    46.91,
+    136.75
+   ],
+   "radiusKm": 573,
+   "coastKm": 122,
+   "bounds": [
+    132.52,
+    42.83,
+    140.56,
+    51.5
+   ]
+  },
+  {
+   "id": "greater-khingan",
+   "name": "Greater Khingan",
+   "aliases": [
+    "Greater Khingan Range",
+    "Da Hinggan"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    48.37,
+    121.1
+   ],
+   "radiusKm": 644,
+   "coastKm": 824,
+   "bounds": [
+    117.38,
+    43.16,
+    125.16,
+    53.52
+   ]
+  },
+  {
+   "id": "qinling-mountains",
+   "name": "Qinling Mountains",
+   "aliases": [
+    "Qinling"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    33.78,
+    109.61
+   ],
+   "radiusKm": 440,
+   "coastKm": 885,
+   "bounds": [
+    105.03,
+    32.53,
+    114.2,
+    34.86
+   ]
+  },
+  {
+   "id": "annamite-range",
+   "name": "Annamite Range",
+   "aliases": [
+    "Annamite Mountains",
+    "Truong Son",
+    "Chaîne Annamitique"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    16.39,
+    106.24
+   ],
+   "radiusKm": 650,
+   "coastKm": 115,
+   "bounds": [
+    102.48,
+    10.74,
+    109.33,
+    21.72
+   ]
+  },
+  {
+   "id": "arakan-mountains",
+   "name": "Arakan Mountains",
+   "aliases": [
+    "Arakan Yoma",
+    "Rakhine Yoma"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    19.53,
+    94.34
+   ],
+   "radiusKm": 267,
+   "coastKm": 37,
+   "bounds": [
+    93.26,
+    17.23,
+    95.13,
+    21.34
+   ]
+  },
+  {
+   "id": "vindhya-range",
+   "name": "Vindhya Range",
+   "aliases": [
+    "Vindhyas"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    23.2,
+    76.9
+   ],
+   "radiusKm": 364,
+   "coastKm": 421,
+   "bounds": [
+    73.53,
+    21.85,
+    79.68,
+    24.54
+   ]
+  },
+  {
+   "id": "aravalli-range",
+   "name": "Aravalli Range",
+   "aliases": [
+    "Aravalli",
+    "Aravallis"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    25.86,
+    73.29
+   ],
+   "radiusKm": 170,
+   "coastKm": 404,
+   "bounds": [
+    72.1,
+    24.6,
+    74.52,
+    27.11
+   ]
+  },
+  {
+   "id": "macdonnell-ranges",
+   "name": "MacDonnell Ranges",
+   "aliases": [],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    -23.4,
+    133.01
+   ],
+   "radiusKm": 284,
+   "coastKm": 919,
+   "bounds": [
+    130.25,
+    -23.83,
+    135.53,
+    -22.94
+   ]
+  },
+  {
+   "id": "flinders-ranges",
+   "name": "Flinders Ranges",
+   "aliases": [],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    -31.65,
+    138.81
+   ],
+   "radiusKm": 219,
+   "coastKm": 142,
+   "bounds": [
+    138,
+    -33.34,
+    139.79,
+    -29.79
+   ]
+  },
+  {
+   "id": "owen-stanley-range",
+   "name": "Owen Stanley Range",
+   "aliases": [],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    -9.05,
+    148.03
+   ],
+   "radiusKm": 242,
+   "coastKm": 56,
+   "bounds": [
+    146.74,
+    -10.24,
+    149.9,
+    -7.61
+   ]
+  },
+  {
+   "id": "coast-mountains",
+   "name": "Coast Mountains",
+   "aliases": [],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    54.52,
+    -128.37
+   ],
+   "radiusKm": 845,
+   "coastKm": 69,
+   "bounds": [
+    -136.83,
+    49.13,
+    -121.39,
+    60.91
+   ]
+  },
+  {
+   "id": "mackenzie-mountains",
+   "name": "Mackenzie Mountains",
+   "aliases": [],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    63.06,
+    -128.95
+   ],
+   "radiusKm": 460,
+   "coastKm": 354,
+   "bounds": [
+    -137.35,
+    59.34,
+    -123.16,
+    65.95
+   ]
+  },
+  {
+   "id": "adirondack-mountains",
+   "name": "Adirondack Mountains",
+   "aliases": [
+    "Adirondacks"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    44,
+    -74.37
+   ],
+   "radiusKm": 146,
+   "coastKm": 115,
+   "bounds": [
+    -75.82,
+    42.8,
+    -73.29,
+    45.15
+   ]
+  },
+  {
+   "id": "black-hills",
+   "name": "Black Hills",
+   "aliases": [],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    44.14,
+    -103.9
+   ],
+   "radiusKm": 90,
+   "coastKm": 732,
+   "bounds": [
+    -104.85,
+    43.41,
+    -103.09,
+    44.75
+   ]
+  },
+  {
+   "id": "sierra-madre-del-sur",
+   "name": "Sierra Madre del Sur",
+   "aliases": [],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    18.38,
+    -99.88
+   ],
+   "radiusKm": 641,
+   "coastKm": 158,
+   "bounds": [
+    -105.59,
+    15.69,
+    -95.08,
+    20.97
+   ]
+  },
+  {
+   "id": "guiana-highlands",
+   "name": "Guiana Highlands",
+   "aliases": [],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    5.29,
+    -63.4
+   ],
+   "radiusKm": 559,
+   "coastKm": 417,
+   "bounds": [
+    -67.8,
+    2.74,
+    -58.38,
+    7.85
+   ]
+  },
+  {
+   "id": "serra-do-mar",
+   "name": "Serra do Mar",
+   "aliases": [],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    -26.89,
+    -49.2
+   ],
+   "radiusKm": 345,
+   "coastKm": 56,
+   "bounds": [
+    -50.28,
+    -29.89,
+    -47.73,
+    -24.55
+   ]
+  },
+  {
+   "id": "vatnajokull",
+   "name": "Vatnajökull",
+   "aliases": [
+    "Vatnajokull"
+   ],
+   "kind": "range",
+   "tier": 3,
+   "center": [
+    64.49,
+    -16.77
+   ],
+   "radiusKm": 75,
+   "coastKm": 54,
+   "bounds": [
+    -18.17,
+    64,
+    -15.35,
+    64.91
+   ]
+  },
+  {
+   "id": "negev",
+   "name": "Negev",
+   "aliases": [
+    "Negev Desert"
+   ],
+   "kind": "desert",
+   "tier": 3,
+   "center": [
+    30.71,
+    34.88
+   ],
+   "radiusKm": 127,
+   "coastKm": 94,
+   "bounds": [
+    34.25,
+    29.58,
+    35.43,
+    31.39
+   ]
+  },
+  {
+   "id": "simpson-desert",
+   "name": "Simpson Desert",
+   "aliases": [],
+   "kind": "desert",
+   "tier": 3,
+   "center": [
+    -25.22,
+    137.28
+   ],
+   "radiusKm": 189,
+   "coastKm": 820,
+   "bounds": [
+    135.76,
+    -26.92,
+    138.95,
+    -23.72
+   ]
+  },
+  {
+   "id": "gibson-desert",
+   "name": "Gibson Desert",
+   "aliases": [],
+   "kind": "desert",
+   "tier": 3,
+   "center": [
+    -24.49,
+    124.99
+   ],
+   "radiusKm": 216,
+   "coastKm": 681,
+   "bounds": [
+    122.92,
+    -25.82,
+    127.12,
+    -23.04
+   ]
+  },
+  {
+   "id": "tanami-desert",
+   "name": "Tanami Desert",
+   "aliases": [],
+   "kind": "desert",
+   "tier": 3,
+   "center": [
+    -19.65,
+    131.67
+   ],
+   "radiusKm": 150,
+   "coastKm": 546,
+   "bounds": [
+    130.25,
+    -20.67,
+    133.06,
+    -18.63
+   ]
+  },
+  {
+   "id": "dasht-e-lut",
+   "name": "Dasht-e Lut",
+   "aliases": [
+    "Lut Desert",
+    "Dasht-e-Lut"
+   ],
+   "kind": "desert",
+   "tier": 3,
+   "center": [
+    31.62,
+    57.99
+   ],
+   "radiusKm": 257,
+   "coastKm": 514,
+   "bounds": [
+    56.3,
+    29.8,
+    59.94,
+    33.67
+   ]
+  },
+  {
+   "id": "dasht-e-kavir",
+   "name": "Dasht-e Kavir",
+   "aliases": [
+    "Great Salt Desert",
+    "Kavir Desert",
+    "Dasht-e-Kavir"
+   ],
+   "kind": "desert",
+   "tier": 3,
+   "center": [
+    34.58,
+    55.15
+   ],
+   "radiusKm": 221,
+   "coastKm": 271,
+   "bounds": [
+    52.77,
+    33.41,
+    56.99,
+    35.66
+   ]
+  },
+  {
+   "id": "nafud",
+   "name": "Nafud",
+   "aliases": [
+    "An Nafud",
+    "Nafud Desert",
+    "Great Nafud"
+   ],
+   "kind": "desert",
+   "tier": 3,
+   "center": [
+    28.96,
+    42.13
+   ],
+   "radiusKm": 293,
+   "coastKm": 545,
+   "bounds": [
+    39.57,
+    27.64,
+    44.78,
+    29.92
+   ]
+  },
+  {
+   "id": "tenere",
+   "name": "Ténéré",
+   "aliases": [
+    "Tenere"
+   ],
+   "kind": "desert",
+   "tier": 3,
+   "center": [
+    18.69,
+    12.61
+   ],
+   "radiusKm": 806,
+   "coastKm": 1439,
+   "bounds": [
+    8.29,
+    13.87,
+    16.34,
+    24.92
+   ]
+  },
+  {
+   "id": "grand-erg-oriental",
+   "name": "Grand Erg Oriental",
+   "aliases": [],
+   "kind": "desert",
+   "tier": 3,
+   "center": [
+    30.42,
+    7.31
+   ],
+   "radiusKm": 346,
+   "coastKm": 464,
+   "bounds": [
+    4.04,
+    28.58,
+    9.79,
+    32.85
+   ]
+  },
+  {
+   "id": "grand-erg-occidental",
+   "name": "Grand Erg Occidental",
+   "aliases": [],
+   "kind": "desert",
+   "tier": 3,
+   "center": [
+    30.66,
+    0.79
+   ],
+   "radiusKm": 295,
+   "coastKm": 553,
+   "bounds": [
+    -2.3,
+    29.18,
+    3.36,
+    32.37
+   ]
+  },
+  {
+   "id": "salar-de-uyuni",
+   "name": "Salar de Uyuni",
+   "aliases": [
+    "Uyuni Salt Flat"
+   ],
+   "kind": "desert",
+   "tier": 3,
+   "center": [
+    -20.25,
+    -67.39
+   ],
+   "radiusKm": 112,
+   "coastKm": 288,
+   "bounds": [
+    -68.05,
+    -21.26,
+    -66.73,
+    -19.24
+   ]
+  },
+  {
+   "id": "loess-plateau",
+   "name": "Loess Plateau",
+   "aliases": [],
+   "kind": "plateau",
+   "tier": 3,
+   "center": [
+    36.19,
+    107.46
+   ],
+   "radiusKm": 364,
+   "coastKm": 931,
+   "bounds": [
+    103.6,
+    34.56,
+    111.28,
+    37.77
+   ]
+  },
+  {
+   "id": "ustyurt-plateau",
+   "name": "Ustyurt Plateau",
+   "aliases": [
+    "Ustyurt"
+   ],
+   "kind": "plateau",
+   "tier": 3,
+   "center": [
+    43.93,
+    55.29
+   ],
+   "radiusKm": 185,
+   "coastKm": 227,
+   "bounds": [
+    53.17,
+    42.72,
+    57.36,
+    45.3
+   ]
+  },
+  {
+   "id": "tarim-basin",
+   "name": "Tarim Basin",
+   "aliases": [],
+   "kind": "lowland",
+   "tier": 3,
+   "center": [
+    39.34,
+    83.19
+   ],
+   "radiusKm": 651,
+   "coastKm": 857,
+   "bounds": [
+    76.14,
+    36.59,
+    90.74,
+    41.7
+   ]
+  },
+  {
+   "id": "sichuan-basin",
+   "name": "Sichuan Basin",
+   "aliases": [
+    "Red Basin"
+   ],
+   "kind": "lowland",
+   "tier": 3,
+   "center": [
+    30.32,
+    105.25
+   ],
+   "radiusKm": 244,
+   "coastKm": 990,
+   "bounds": [
+    103.27,
+    28.69,
+    107.74,
+    32.05
+   ]
+  },
+  {
+   "id": "great-basin",
+   "name": "Great Basin",
+   "aliases": [],
+   "kind": "lowland",
+   "tier": 3,
+   "center": [
+    39.54,
+    -116.61
+   ],
+   "radiusKm": 665,
+   "coastKm": 360,
+   "bounds": [
+    -121.77,
+    33.81,
+    -111.82,
+    44.24
+   ]
+  },
+  {
+   "id": "nullarbor-plain",
+   "name": "Nullarbor Plain",
+   "aliases": [
+    "Nullarbor"
+   ],
+   "kind": "lowland",
+   "tier": 3,
+   "center": [
+    -31.07,
+    128
+   ],
+   "radiusKm": 426,
+   "coastKm": 105,
+   "bounds": [
+    124.26,
+    -32.65,
+    132.41,
+    -29.92
+   ]
+  },
+  {
+   "id": "gran-chaco",
+   "name": "Gran Chaco",
+   "aliases": [
+    "Chaco"
+   ],
+   "kind": "lowland",
+   "tier": 3,
+   "center": [
+    -23.77,
+    -60.83
+   ],
+   "radiusKm": 895,
+   "coastKm": 973,
+   "bounds": [
+    -64.53,
+    -31.82,
+    -57.07,
+    -17.46
+   ]
+  },
+  {
+   "id": "llanos",
+   "name": "Llanos",
+   "aliases": [
+    "Los Llanos"
+   ],
+   "kind": "lowland",
+   "tier": 3,
+   "center": [
+    7.12,
+    -68.49
+   ],
+   "radiusKm": 738,
+   "coastKm": 377,
+   "bounds": [
+    -73.72,
+    2.63,
+    -61.97,
+    10
+   ]
+  },
+  {
+   "id": "pantanal",
+   "name": "Pantanal",
+   "aliases": [],
+   "kind": "lowland",
+   "tier": 3,
+   "center": [
+    -18.01,
+    -57.11
+   ],
+   "radiusKm": 441,
+   "coastKm": 1190,
+   "bounds": [
+    -60.63,
+    -21.39,
+    -54.88,
+    -15.59
+   ]
+  },
+  {
+   "id": "sudd",
+   "name": "Sudd",
+   "aliases": [
+    "The Sudd"
+   ],
+   "kind": "lowland",
+   "tier": 3,
+   "center": [
+    7.82,
+    31.49
+   ],
+   "radiusKm": 426,
+   "coastKm": 610,
+   "bounds": [
+    27.83,
+    4.83,
+    33.6,
+    9.98
+   ]
+  },
+  {
+   "id": "fergana-valley",
+   "name": "Fergana Valley",
+   "aliases": [
+    "Ferghana Valley"
+   ],
+   "kind": "valley",
+   "tier": 3,
+   "center": [
+    40.65,
+    71.64
+   ],
+   "radiusKm": 163,
+   "coastKm": 521,
+   "bounds": [
+    69.79,
+    40.18,
+    73.12,
+    41.17
+   ]
+  },
+  {
+   "id": "central-valley",
+   "name": "Central Valley",
+   "aliases": [
+    "California Central Valley"
+   ],
+   "kind": "valley",
+   "tier": 3,
+   "center": [
+    37.72,
+    -120.76
+   ],
+   "radiusKm": 367,
+   "coastKm": 77,
+   "bounds": [
+    -122.78,
+    35.07,
+    -118.8,
+    40.74
+   ]
+  },
+  {
+   "id": "grand-canyon",
+   "name": "Grand Canyon",
+   "aliases": [],
+   "kind": "valley",
+   "tier": 3,
+   "center": [
+    36.26,
+    -112.65
+   ],
+   "radiusKm": 137,
+   "coastKm": 493,
+   "bounds": [
+    -114.09,
+    35.27,
+    -111.36,
+    37.25
+   ]
+  },
+  {
+   "id": "great-rift-valley",
+   "name": "Great Rift Valley",
+   "aliases": [
+    "Rift Valley",
+    "East African Rift"
+   ],
+   "kind": "valley",
+   "tier": 3,
+   "center": [
+    1.66,
+    36.03
+   ],
+   "radiusKm": 1924,
+   "coastKm": 100,
+   "bounds": [
+    28.86,
+    -15.65,
+    44.18,
+    15.37
+   ]
+  },
+  {
+   "id": "caspian-depression",
+   "name": "Caspian Depression",
+   "aliases": [
+    "Caspian Lowland"
+   ],
+   "kind": "lowland",
+   "tier": 3,
+   "center": [
+    47.01,
+    49.78
+   ],
+   "radiusKm": 471,
+   "coastKm": 43,
+   "bounds": [
+    44.36,
+    44.1,
+    55.54,
+    49.23
+   ]
+  },
+  {
+   "id": "mekong-delta",
+   "name": "Mekong Delta",
+   "aliases": [],
+   "kind": "delta",
+   "tier": 3,
+   "center": [
+    10.29,
+    105.98
+   ],
+   "radiusKm": 126,
+   "coastKm": 19,
+   "bounds": [
+    105.21,
+    9.39,
+    107.12,
+    10.99
+   ]
+  },
+  {
+   "id": "ganges-delta",
+   "name": "Ganges Delta",
+   "aliases": [
+    "Ganges-Brahmaputra Delta",
+    "Bengal Delta",
+    "Sundarbans"
+   ],
+   "kind": "delta",
+   "tier": 3,
+   "center": [
+    23.01,
+    89.25
+   ],
+   "radiusKm": 240,
+   "coastKm": 85,
+   "bounds": [
+    87.54,
+    21.58,
+    91.48,
+    24.43
+   ]
+  },
+  {
+   "id": "mississippi-delta",
+   "name": "Mississippi Delta",
+   "aliases": [],
+   "kind": "delta",
+   "tier": 3,
+   "center": [
+    29.25,
+    -89.37
+   ],
+   "radiusKm": 43,
+   "coastKm": 9,
+   "bounds": [
+    -89.77,
+    28.98,
+    -89.03,
+    29.47
+   ]
+  },
+  {
+   "id": "niger-delta",
+   "name": "Niger Delta",
+   "aliases": [],
+   "kind": "delta",
+   "tier": 3,
+   "center": [
+    5.25,
+    6.26
+   ],
+   "radiusKm": 203,
+   "coastKm": 81,
+   "bounds": [
+    4.69,
+    4.28,
+    7.58,
+    6.21
+   ]
+  },
+  {
+   "id": "volga-delta",
+   "name": "Volga Delta",
+   "aliases": [],
+   "kind": "delta",
+   "tier": 3,
+   "center": [
+    46.14,
+    48.11
+   ],
+   "radiusKm": 72,
+   "coastKm": 37,
+   "bounds": [
+    47.53,
+    45.51,
+    48.86,
+    46.75
+   ]
+  },
+  {
+   "id": "danube-delta",
+   "name": "Danube Delta",
+   "aliases": [],
+   "kind": "delta",
+   "tier": 3,
+   "center": [
+    45.12,
+    29.23
+   ],
+   "radiusKm": 51,
+   "coastKm": 19,
+   "bounds": [
+    28.72,
+    44.75,
+    29.73,
+    45.43
+   ]
+  },
+  {
+   "id": "lena-delta",
+   "name": "Lena Delta",
+   "aliases": [],
+   "kind": "delta",
+   "tier": 3,
+   "center": [
+    72.98,
+    126.35
+   ],
+   "radiusKm": 139,
+   "coastKm": 40,
+   "bounds": [
+    123.3,
+    72.08,
+    129.41,
+    73.75
+   ]
+  },
+  {
+   "id": "yamal-peninsula",
+   "name": "Yamal Peninsula",
+   "aliases": [
+    "Yamal"
+   ],
+   "kind": "peninsula",
+   "tier": 3,
+   "center": [
+    69.78,
+    70.36
+   ],
+   "radiusKm": 360,
+   "coastKm": 86,
+   "bounds": [
+    66.65,
+    66.54,
+    73.59,
+    72.98
+   ]
+  },
+  {
+   "id": "taymyr-peninsula",
+   "name": "Taymyr Peninsula",
+   "aliases": [
+    "Taimyr Peninsula",
+    "Taymyr",
+    "Taimyr"
+   ],
+   "kind": "peninsula",
+   "tier": 3,
+   "center": [
+    75.32,
+    105.79
+   ],
+   "radiusKm": 269,
+   "coastKm": 132,
+   "bounds": [
+    98.81,
+    73.14,
+    113.87,
+    77.71
+   ]
+  },
+  {
+   "id": "chukchi-peninsula",
+   "name": "Chukchi Peninsula",
+   "aliases": [
+    "Chukotka Peninsula",
+    "Chukotka"
+   ],
+   "kind": "peninsula",
+   "tier": 3,
+   "center": [
+    66.34,
+    -175.16
+   ],
+   "radiusKm": 288,
+   "coastKm": 33,
+   "bounds": [
+    -179.13,
+    64.29,
+    -169.73,
+    68.54
+   ]
+  },
+  {
+   "id": "cape-york-peninsula",
+   "name": "Cape York Peninsula",
+   "aliases": [
+    "Cape York"
+   ],
+   "kind": "peninsula",
+   "tier": 3,
+   "center": [
+    -13.31,
+    142.54
+   ],
+   "radiusKm": 289,
+   "coastKm": 88,
+   "bounds": [
+    141.47,
+    -15.1,
+    143.82,
+    -10.71
+   ]
+  },
+  {
+   "id": "arnhem-land",
+   "name": "Arnhem Land",
+   "aliases": [],
+   "kind": "peninsula",
+   "tier": 3,
+   "center": [
+    -13.29,
+    134.27
+   ],
+   "radiusKm": 309,
+   "coastKm": 139,
+   "bounds": [
+    132.38,
+    -14.96,
+    136.94,
+    -11.39
+   ]
+  },
+  {
+   "id": "alaska-peninsula",
+   "name": "Alaska Peninsula",
+   "aliases": [],
+   "kind": "peninsula",
+   "tier": 3,
+   "center": [
+    57.68,
+    -157.22
+   ],
+   "radiusKm": 429,
+   "coastKm": 24,
+   "bounds": [
+    -162.61,
+    55.1,
+    -153.42,
+    59.78
+   ]
+  },
+  {
+   "id": "labrador-peninsula",
+   "name": "Labrador Peninsula",
+   "aliases": [
+    "Labrador",
+    "Labrador-Ungava"
+   ],
+   "kind": "peninsula",
+   "tier": 3,
+   "center": [
+    55.76,
+    -61.45
+   ],
+   "radiusKm": 558,
+   "coastKm": 24,
+   "bounds": [
+    -66.14,
+    51.45,
+    -55.68,
+    60.4
+   ]
+  },
+  {
+   "id": "gaspe-peninsula",
+   "name": "Gaspé Peninsula",
+   "aliases": [
+    "Gaspe Peninsula",
+    "Gaspésie"
+   ],
+   "kind": "peninsula",
+   "tier": 3,
+   "center": [
+    48.66,
+    -65.73
+   ],
+   "radiusKm": 113,
+   "coastKm": 54,
+   "bounds": [
+    -67.21,
+    48,
+    -64.22,
+    49.26
+   ]
+  },
+  {
+   "id": "shandong-peninsula",
+   "name": "Shandong Peninsula",
+   "aliases": [],
+   "kind": "peninsula",
+   "tier": 3,
+   "center": [
+    36.75,
+    120.4
+   ],
+   "radiusKm": 228,
+   "coastKm": 39,
+   "bounds": [
+    119.02,
+    34.96,
+    122.67,
+    37.83
+   ]
+  },
+  {
+   "id": "liaodong-peninsula",
+   "name": "Liaodong Peninsula",
+   "aliases": [],
+   "kind": "peninsula",
+   "tier": 3,
+   "center": [
+    40.12,
+    122.82
+   ],
+   "radiusKm": 210,
+   "coastKm": 53,
+   "bounds": [
+    121.11,
+    38.73,
+    124.3,
+    41.22
+   ]
+  },
+  {
+   "id": "kathiawar-peninsula",
+   "name": "Kathiawar Peninsula",
+   "aliases": [
+    "Kathiawar",
+    "Saurashtra"
+   ],
+   "kind": "peninsula",
+   "tier": 3,
+   "center": [
+    21.82,
+    70.82
+   ],
+   "radiusKm": 200,
+   "coastKm": 107,
+   "bounds": [
+    68.97,
+    20.71,
+    72.31,
+    22.8
+   ]
+  },
+  {
+   "id": "musandam-peninsula",
+   "name": "Musandam Peninsula",
+   "aliases": [
+    "Musandam"
+   ],
+   "kind": "peninsula",
+   "tier": 3,
+   "center": [
+    25.99,
+    56.28
+   ],
+   "radiusKm": 42,
+   "coastKm": 19,
+   "bounds": [
+    56.11,
+    25.62,
+    56.43,
+    26.36
+   ]
+  },
+  {
+   "id": "absheron-peninsula",
+   "name": "Absheron Peninsula",
+   "aliases": [
+    "Apsheron Peninsula"
+   ],
+   "kind": "peninsula",
+   "tier": 3,
+   "center": [
+    40.41,
+    49.81
+   ],
+   "radiusKm": 49,
+   "coastKm": 14,
+   "bounds": [
+    49.41,
+    40.19,
+    50.37,
+    40.61
+   ]
+  },
+  {
+   "id": "kyushu",
+   "name": "Kyushu",
+   "aliases": [
+    "Kyūshū"
+   ],
+   "kind": "island",
+   "tier": 3,
+   "center": [
+    32.64,
+    130.88
+   ],
+   "radiusKm": 181,
+   "coastKm": 23,
+   "bounds": [
+    129.58,
+    31.02,
+    132.01,
+    33.93
+   ]
+  },
+  {
+   "id": "shikoku",
+   "name": "Shikoku",
+   "aliases": [],
+   "kind": "island",
+   "tier": 3,
+   "center": [
+    33.66,
+    133.47
+   ],
+   "radiusKm": 138,
+   "coastKm": 22,
+   "bounds": [
+    132.03,
+    32.75,
+    134.74,
+    34.36
+   ]
+  },
+  {
+   "id": "hainan",
+   "name": "Hainan",
+   "aliases": [],
+   "kind": "island",
+   "tier": 3,
+   "center": [
+    19.2,
+    109.74
+   ],
+   "radiusKm": 151,
+   "coastKm": 79,
+   "bounds": [
+    108.64,
+    18.22,
+    111.01,
+    20.14
+   ]
+  },
+  {
+   "id": "palawan",
+   "name": "Palawan",
+   "aliases": [],
+   "kind": "island",
+   "tier": 3,
+   "center": [
+    9.72,
+    118.56
+   ],
+   "radiusKm": 211,
+   "coastKm": 9,
+   "bounds": [
+    117.22,
+    8.37,
+    119.69,
+    11.35
+   ]
+  },
+  {
+   "id": "vancouver-island",
+   "name": "Vancouver Island",
+   "aliases": [],
+   "kind": "island",
+   "tier": 3,
+   "center": [
+    49.64,
+    -125.67
+   ],
+   "radiusKm": 227,
+   "coastKm": 33,
+   "bounds": [
+    -128.35,
+    48.34,
+    -123.3,
+    50.86
+   ]
+  },
+  {
+   "id": "cape-breton-island",
+   "name": "Cape Breton Island",
+   "aliases": [],
+   "kind": "island",
+   "tier": 3,
+   "center": [
+    46.17,
+    -60.73
+   ],
+   "radiusKm": 96,
+   "coastKm": 9,
+   "bounds": [
+    -61.49,
+    45.49,
+    -59.86,
+    47.01
+   ]
+  },
+  {
+   "id": "prince-edward-island",
+   "name": "Prince Edward Island",
+   "aliases": [
+    "PEI"
+   ],
+   "kind": "island",
+   "tier": 3,
+   "center": [
+    46.39,
+    -63.25
+   ],
+   "radiusKm": 95,
+   "coastKm": 8,
+   "bounds": [
+    -64.4,
+    45.97,
+    -62.03,
+    47.01
+   ]
+  },
+  {
+   "id": "victoria-island",
+   "name": "Victoria Island",
+   "aliases": [],
+   "kind": "island",
+   "tier": 3,
+   "center": [
+    70.85,
+    -110.26
+   ],
+   "radiusKm": 379,
+   "coastKm": 77,
+   "bounds": [
+    -118.99,
+    68.48,
+    -100.91,
+    73.37
+   ]
+  },
+  {
+   "id": "ellesmere-island",
+   "name": "Ellesmere Island",
+   "aliases": [],
+   "kind": "island",
+   "tier": 3,
+   "center": [
+    80.02,
+    -79.21
+   ],
+   "radiusKm": 455,
+   "coastKm": 43,
+   "bounds": [
+    -91.65,
+    76.24,
+    -61.21,
+    83.11
+   ]
+  },
+  {
+   "id": "banks-island",
+   "name": "Banks Island",
+   "aliases": [],
+   "kind": "island",
+   "tier": 3,
+   "center": [
+    73.02,
+    -121.37
+   ],
+   "radiusKm": 222,
+   "coastKm": 86,
+   "bounds": [
+    -125.85,
+    71.09,
+    -115.39,
+    74.55
+   ]
+  },
+  {
+   "id": "chiloe",
+   "name": "Chiloé",
+   "aliases": [
+    "Chiloe",
+    "Chiloé Island",
+    "Isla de Chiloé"
+   ],
+   "kind": "island",
+   "tier": 3,
+   "center": [
+    -42.62,
+    -73.88
+   ],
+   "radiusKm": 89,
+   "coastKm": 8,
+   "bounds": [
+    -74.39,
+    -43.37,
+    -73.42,
+    -41.82
+   ]
+  },
+  {
+   "id": "halmahera",
+   "name": "Halmahera",
+   "aliases": [],
+   "kind": "island",
+   "tier": 3,
+   "center": [
+    0.87,
+    128.01
+   ],
+   "radiusKm": 201,
+   "coastKm": 10,
+   "bounds": [
+    127.42,
+    -0.89,
+    128.9,
+    2.2
+   ]
+  },
+  {
+   "id": "new-britain",
+   "name": "New Britain",
+   "aliases": [],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    -5.47,
+    150.65
+   ],
+   "radiusKm": 258,
+   "coastKm": 6,
+   "bounds": [
+    148.32,
+    -6.32,
+    152.42,
+    -4.14
+   ]
+  },
+  {
+   "id": "svalbard",
+   "name": "Svalbard",
+   "aliases": [
+    "Spitsbergen"
+   ],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    78.48,
+    21.47
+   ],
+   "radiusKm": 519,
+   "coastKm": 12,
+   "bounds": [
+    9.63,
+    73.85,
+    37.56,
+    81.49
+   ]
+  },
+  {
+   "id": "franz-josef-land",
+   "name": "Franz Josef Land",
+   "aliases": [],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    80.76,
+    55.35
+   ],
+   "radiusKm": 205,
+   "coastKm": 4,
+   "bounds": [
+    44.6,
+    79.45,
+    65.77,
+    82.16
+   ]
+  },
+  {
+   "id": "severnaya-zemlya",
+   "name": "Severnaya Zemlya",
+   "aliases": [],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    79.68,
+    97.27
+   ],
+   "radiusKm": 325,
+   "coastKm": 12,
+   "bounds": [
+    89.26,
+    77.59,
+    105.79,
+    82.43
+   ]
+  },
+  {
+   "id": "new-siberian-islands",
+   "name": "New Siberian Islands",
+   "aliases": [],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    74.89,
+    142.58
+   ],
+   "radiusKm": 251,
+   "coastKm": 6,
+   "bounds": [
+    135.94,
+    72.97,
+    151.23,
+    76.45
+   ]
+  },
+  {
+   "id": "kuril-islands",
+   "name": "Kuril Islands",
+   "aliases": [
+    "Kurils",
+    "Kurile Islands"
+   ],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    47,
+    150.84
+   ],
+   "radiusKm": 606,
+   "coastKm": 68,
+   "bounds": [
+    145.23,
+    43.43,
+    156.71,
+    51.16
+   ]
+  },
+  {
+   "id": "ryukyu-islands",
+   "name": "Ryukyu Islands",
+   "aliases": [
+    "Ryūkyū Islands",
+    "Nansei Islands"
+   ],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    26.2,
+    128.47
+   ],
+   "radiusKm": 609,
+   "coastKm": 52,
+   "bounds": [
+    122.67,
+    23.93,
+    131.84,
+    31.05
+   ]
+  },
+  {
+   "id": "faroe-islands",
+   "name": "Faroe Islands",
+   "aliases": [
+    "Faroes",
+    "Føroyar",
+    "Faeroe Islands"
+   ],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    61.97,
+    -6.86
+   ],
+   "radiusKm": 80,
+   "coastKm": 3,
+   "bounds": [
+    -7.64,
+    61.26,
+    -6.26,
+    62.49
+   ]
+  },
+  {
+   "id": "shetland",
+   "name": "Shetland",
+   "aliases": [
+    "Shetland Islands",
+    "Shetlands"
+   ],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    60.19,
+    -1.29
+   ],
+   "radiusKm": 107,
+   "coastKm": 2,
+   "bounds": [
+    -1.88,
+    59.23,
+    -0.58,
+    60.98
+   ]
+  },
+  {
+   "id": "orkney",
+   "name": "Orkney",
+   "aliases": [
+    "Orkney Islands",
+    "Orkneys"
+   ],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    59.09,
+    -2.92
+   ],
+   "radiusKm": 48,
+   "coastKm": 6,
+   "bounds": [
+    -3.53,
+    58.67,
+    -2.29,
+    59.49
+   ]
+  },
+  {
+   "id": "outer-hebrides",
+   "name": "Outer Hebrides",
+   "aliases": [
+    "Western Isles"
+   ],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    57.79,
+    -7
+   ],
+   "radiusKm": 116,
+   "coastKm": 3,
+   "bounds": [
+    -7.8,
+    56.8,
+    -6,
+    58.66
+   ]
+  },
+  {
+   "id": "frisian-islands",
+   "name": "Frisian Islands",
+   "aliases": [],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    53.55,
+    6.23
+   ],
+   "radiusKm": 124,
+   "coastKm": 6,
+   "bounds": [
+    4.6,
+    52.98,
+    8.03,
+    53.94
+   ]
+  },
+  {
+   "id": "cyclades",
+   "name": "Cyclades",
+   "aliases": [],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    37.08,
+    25.04
+   ],
+   "radiusKm": 113,
+   "coastKm": 8,
+   "bounds": [
+    23.97,
+    36.23,
+    26.09,
+    37.98
+   ]
+  },
+  {
+   "id": "ionian-islands",
+   "name": "Ionian Islands",
+   "aliases": [],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    38.66,
+    20.38
+   ],
+   "radiusKm": 149,
+   "coastKm": 15,
+   "bounds": [
+    19.54,
+    37.54,
+    21.03,
+    39.89
+   ]
+  },
+  {
+   "id": "azores",
+   "name": "Azores",
+   "aliases": [
+    "Açores"
+   ],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    38.66,
+    -27.64
+   ],
+   "radiusKm": 412,
+   "coastKm": 17,
+   "bounds": [
+    -32.08,
+    36.46,
+    -23.66,
+    40.59
+   ]
+  },
+  {
+   "id": "galapagos-islands",
+   "name": "Galápagos Islands",
+   "aliases": [
+    "Galapagos Islands",
+    "Galápagos",
+    "Galapagos"
+   ],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    -0.49,
+    -90.57
+   ],
+   "radiusKm": 187,
+   "coastKm": 11,
+   "bounds": [
+    -92.04,
+    -1.77,
+    -89.09,
+    1
+   ]
+  },
+  {
+   "id": "falkland-islands",
+   "name": "Falkland Islands",
+   "aliases": [
+    "Falklands",
+    "Islas Malvinas",
+    "Malvinas"
+   ],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    -51.74,
+    -59.54
+   ],
+   "radiusKm": 136,
+   "coastKm": 7,
+   "bounds": [
+    -61.48,
+    -52.43,
+    -57.62,
+    -51.12
+   ]
+  },
+  {
+   "id": "lesser-antilles",
+   "name": "Lesser Antilles",
+   "aliases": [],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    13.72,
+    -63.09
+   ],
+   "radiusKm": 799,
+   "coastKm": 203,
+   "bounds": [
+    -70.41,
+    9.9,
+    -59.2,
+    19.16
+   ]
+  },
+  {
+   "id": "andaman-islands",
+   "name": "Andaman Islands",
+   "aliases": [
+    "Andamans"
+   ],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    11.95,
+    92.64
+   ],
+   "radiusKm": 267,
+   "coastKm": 3,
+   "bounds": [
+    91.7,
+    10,
+    93.46,
+    14.29
+   ]
+  },
+  {
+   "id": "nicobar-islands",
+   "name": "Nicobar Islands",
+   "aliases": [],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    7.81,
+    93.34
+   ],
+   "radiusKm": 206,
+   "coastKm": 8,
+   "bounds": [
+    92.43,
+    6.27,
+    94.3,
+    9.53
+   ]
+  },
+  {
+   "id": "moluccas",
+   "name": "Moluccas",
+   "aliases": [
+    "Maluku",
+    "Maluku Islands",
+    "Spice Islands"
+   ],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    -4.15,
+    128.79
+   ],
+   "radiusKm": 798,
+   "coastKm": 61,
+   "bounds": [
+    124.24,
+    -8.43,
+    135.68,
+    2.75
+   ]
+  },
+  {
+   "id": "lesser-sunda-islands",
+   "name": "Lesser Sunda Islands",
+   "aliases": [
+    "Nusa Tenggara"
+   ],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    -8.95,
+    121.09
+   ],
+   "radiusKm": 738,
+   "coastKm": 3,
+   "bounds": [
+    114.42,
+    -11.2,
+    127.48,
+    -6.78
+   ]
+  },
+  {
+   "id": "mascarene-islands",
+   "name": "Mascarene Islands",
+   "aliases": [
+    "Mascarenes"
+   ],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    -20.34,
+    61.04
+   ],
+   "radiusKm": 712,
+   "coastKm": 339,
+   "bounds": [
+    54.51,
+    -21.85,
+    67.81,
+    -18.71
+   ]
+  },
+  {
+   "id": "whitsunday-islands",
+   "name": "Whitsunday Islands",
+   "aliases": [
+    "Whitsundays"
+   ],
+   "kind": "islands",
+   "tier": 3,
+   "center": [
+    -20.28,
+    149.01
+   ],
+   "radiusKm": 35,
+   "coastKm": 3,
+   "bounds": [
+    148.83,
+    -20.59,
+    149.18,
+    -20.01
+   ]
+  },
+  {
+   "id": "lake-geneva",
+   "name": "Lake Geneva",
+   "aliases": [
+    "Lac Léman",
+    "Lac Leman",
+    "Léman"
+   ],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    46.43,
+    6.53
+   ],
+   "radiusKm": 39,
+   "coastKm": 280,
+   "bounds": [
+    6.13,
+    46.2,
+    6.94,
+    46.52
+   ]
+  },
+  {
+   "id": "lake-van",
+   "name": "Lake Van",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    38.65,
+    42.96
+   ],
+   "radiusKm": 69,
+   "coastKm": 332,
+   "bounds": [
+    42.3,
+    38.31,
+    43.66,
+    39
+   ]
+  },
+  {
+   "id": "dead-sea",
+   "name": "Dead Sea",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    31.45,
+    35.48
+   ],
+   "radiusKm": 40,
+   "coastKm": 91,
+   "bounds": [
+    35.36,
+    31.09,
+    35.59,
+    31.77
+   ]
+  },
+  {
+   "id": "issyk-kul",
+   "name": "Issyk-Kul",
+   "aliases": [
+    "Issyk Kul",
+    "Ysyk-Köl"
+   ],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    42.44,
+    77.27
+   ],
+   "radiusKm": 91,
+   "coastKm": 377,
+   "bounds": [
+    76.2,
+    42.15,
+    78.33,
+    42.75
+   ]
+  },
+  {
+   "id": "lake-eyre",
+   "name": "Lake Eyre",
+   "aliases": [
+    "Kati Thanda",
+    "Kati Thanda-Lake Eyre"
+   ],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    -28.49,
+    137.3
+   ],
+   "radiusKm": 98,
+   "coastKm": 457,
+   "bounds": [
+    136.78,
+    -29.11,
+    138.05,
+    -27.85
+   ]
+  },
+  {
+   "id": "lake-tana",
+   "name": "Lake Tana",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    12.02,
+    37.3
+   ],
+   "radiusKm": 45,
+   "coastKm": 437,
+   "bounds": [
+    36.99,
+    11.62,
+    37.6,
+    12.31
+   ]
+  },
+  {
+   "id": "lake-okeechobee",
+   "name": "Lake Okeechobee",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    26.94,
+    -80.82
+   ],
+   "radiusKm": 30,
+   "coastKm": 66,
+   "bounds": [
+    -81.1,
+    26.69,
+    -80.61,
+    27.2
+   ]
+  },
+  {
+   "id": "tonle-sap",
+   "name": "Tonlé Sap",
+   "aliases": [
+    "Tonle Sap"
+   ],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    12.89,
+    104.07
+   ],
+   "radiusKm": 82,
+   "coastKm": 172,
+   "bounds": [
+    103.69,
+    12.38,
+    104.62,
+    13.27
+   ]
+  },
+  {
+   "id": "qinghai-lake",
+   "name": "Qinghai Lake",
+   "aliases": [
+    "Qinghai Hu",
+    "Koko Nor"
+   ],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    36.88,
+    100.2
+   ],
+   "radiusKm": 58,
+   "coastKm": 1536,
+   "bounds": [
+    99.62,
+    36.54,
+    100.77,
+    37.23
+   ]
+  },
+  {
+   "id": "lake-peipus",
+   "name": "Lake Peipus",
+   "aliases": [
+    "Peipus",
+    "Peipsi"
+   ],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    58.69,
+    27.45
+   ],
+   "radiusKm": 52,
+   "coastKm": 84,
+   "bounds": [
+    26.95,
+    58.22,
+    27.84,
+    59.02
+   ]
+  },
+  {
+   "id": "lake-kivu",
+   "name": "Lake Kivu",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    -2.01,
+    29.1
+   ],
+   "radiusKm": 59,
+   "coastKm": 147,
+   "bounds": [
+    28.83,
+    -2.48,
+    29.36,
+    -1.59
+   ]
+  },
+  {
+   "id": "lake-albert",
+   "name": "Lake Albert",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    1.64,
+    30.92
+   ],
+   "radiusKm": 105,
+   "coastKm": 223,
+   "bounds": [
+    30.39,
+    1.01,
+    31.47,
+    2.41
+   ]
+  },
+  {
+   "id": "lake-athabasca",
+   "name": "Lake Athabasca",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    59.18,
+    -109.38
+   ],
+   "radiusKm": 192,
+   "coastKm": 311,
+   "bounds": [
+    -111.33,
+    58.48,
+    -106.02,
+    59.62
+   ]
+  },
+  {
+   "id": "lake-champlain",
+   "name": "Lake Champlain",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    44.61,
+    -73.31
+   ],
+   "radiusKm": 96,
+   "coastKm": 91,
+   "bounds": [
+    -73.46,
+    43.75,
+    -73.08,
+    45.09
+   ]
+  },
+  {
+   "id": "vattern",
+   "name": "Vättern",
+   "aliases": [
+    "Vattern",
+    "Lake Vättern"
+   ],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    58.33,
+    14.52
+   ],
+   "radiusKm": 65,
+   "coastKm": 60,
+   "bounds": [
+    14.09,
+    57.78,
+    14.99,
+    58.88
+   ]
+  },
+  {
+   "id": "saimaa",
+   "name": "Saimaa",
+   "aliases": [
+    "Lake Saimaa"
+   ],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    62.02,
+    28.45
+   ],
+   "radiusKm": 193,
+   "coastKm": 108,
+   "bounds": [
+    26.88,
+    61.06,
+    30.02,
+    63.6
+   ]
+  },
+  {
+   "id": "lake-taupo",
+   "name": "Lake Taupō",
+   "aliases": [
+    "Lake Taupo",
+    "Taupō",
+    "Taupo"
+   ],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    -38.79,
+    175.9
+   ],
+   "radiusKm": 22,
+   "coastKm": 111,
+   "bounds": [
+    175.74,
+    -38.96,
+    176.08,
+    -38.66
+   ]
+  },
+  {
+   "id": "lough-neagh",
+   "name": "Lough Neagh",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    54.61,
+    -6.42
+   ],
+   "radiusKm": 16,
+   "coastKm": 35,
+   "bounds": [
+    -6.61,
+    54.48,
+    -6.24,
+    54.75
+   ]
+  },
+  {
+   "id": "ijsselmeer",
+   "name": "IJsselmeer",
+   "aliases": [
+    "Ijsselmeer",
+    "Lake IJssel"
+   ],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    52.68,
+    5.34
+   ],
+   "radiusKm": 47,
+   "coastKm": 36,
+   "bounds": [
+    4.97,
+    52.26,
+    5.87,
+    53.08
+   ]
+  },
+  {
+   "id": "lake-tahoe",
+   "name": "Lake Tahoe",
+   "aliases": [],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    39.1,
+    -120.02
+   ],
+   "radiusKm": 19,
+   "coastKm": 175,
+   "bounds": [
+    -120.16,
+    38.94,
+    -119.92,
+    39.26
+   ]
+  },
+  {
+   "id": "lake-khovsgol",
+   "name": "Lake Khövsgöl",
+   "aliases": [
+    "Khövsgöl",
+    "Khuvsgul",
+    "Lake Khuvsgul",
+    "Hovsgol"
+   ],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    51.08,
+    100.48
+   ],
+   "radiusKm": 73,
+   "coastKm": 234,
+   "bounds": [
+    100.16,
+    50.45,
+    100.8,
+    51.62
+   ]
+  },
+  {
+   "id": "lake-zaysan",
+   "name": "Lake Zaysan",
+   "aliases": [
+    "Zaysan",
+    "Zaisan"
+   ],
+   "kind": "lake",
+   "tier": 3,
+   "center": [
+    48.39,
+    83.8
+   ],
+   "radiusKm": 152,
+   "coastKm": 389,
+   "bounds": [
+    83,
+    47.71,
+    84.56,
+    49.75
+   ]
+  }
+ ]
+}

@@ -211,6 +211,15 @@ const ART: Record<string, () => ReactNode> = {
       <Dot at={art.halfway.answer} className="art-dot art-found" />
     </>
   ),
+  'blank-atlas': () => (
+    <>
+      <Area d={art.atlas.sea} tone="start" />
+      <Land d={art.atlas.land} />
+      <text className="art-mark" x={art.atlas.point[0]} y={art.atlas.point[1]! + 2}>
+        ?
+      </text>
+    </>
+  ),
   'border-blitz': () => (
     <>
       <Land d={art.blitz.land} />

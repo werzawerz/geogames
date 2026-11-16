@@ -8,7 +8,9 @@
     ".": "./src/index.ts",
     "./cities": "./src/cities.ts",
     "./countries.json": "./data/countries.json",
-    "./shapes": "./src/shapes.ts"
+    "./shapes": "./src/shapes.ts",
+    "./blank-atlas": "./src/blank-atlas.ts",
+    "./blank-atlas-shapes": "./src/blank-atlas-shapes.ts"
   },
   "scripts": {
     "build:data": "node scripts/build-countries.ts && node scripts/build-cities.ts"

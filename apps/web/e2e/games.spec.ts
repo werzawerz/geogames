@@ -1,10 +1,12 @@
 import { countries, getCountry, queryCountries } from '@geogames/geodata';
 import { loadGreatCircles } from '@geogames/geodata/cities';
+import { BLANK_ATLAS_KIND_LABELS } from '@geogames/geodata/blank-atlas';
 import {
   DEFAULT_SETTINGS,
   GAMES,
   HARD_MODE_GUESSES,
   arcadePools,
+  blankAtlasGame,
   citySizeStops,
   createCircleArcade,
   formatPopulationShort,
@@ -1500,3 +1502,127 @@ test('clockwork: plays from the keyboard, and everything fits with no scroll on 
   expect(box!.width).toBeGreaterThanOrEqual(44);
   expect(box!.height).toBeGreaterThanOrEqual(44);
 });
+test('blank atlas: pick the lit-up feature from four; a wrong pick shows where it really is and costs a life, like a skip', async ({ page }) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  const engine = await blankAtlasGame();
+  const nameOf = (id: string) => engine.features.get(id)!.name;
+  let state = engine.start(Math.floor(0.5 * 2 ** 32));
+  const lives = page.locator('.lives .life:not(.lost)');
+  const options = page.locator('.atlas-option');
+
+  await openGame(page, 'blank-atlas');
+  await expect(page.getByRole('radio', { name: /Europe/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Start game' }).click();
+  await expect(options.first()).toBeVisible({ timeout: 20_000 });
+
+  // The feature is lit up on shaded relief, with no borders, no text box and four names of its kind.
+  const target = engine.features.get(state.level.feature)!;
+  await expect(page.locator('.atlas-prompt')).toContainText(`Which ${BLANK_ATLAS_KIND_LABELS[target.kind].toLowerCase()} is lit up?`);
+  await expect(page.locator('.atlas-target')).toHaveAttribute('d', /.{10}/);
+  await expect(page.locator('.map-terrain')).toHaveCount(1, { timeout: 15_000 });
+  await expect(page.locator('.world-map .map-country')).toHaveCount(0);
+  await expect(page.getByRole('combobox')).toHaveCount(0);
+  await expect(options).toHaveText(state.level.options.map((id, i) => `${i + 1}${nameOf(id)}`));
+
+  // Key 1–4 picks: the right one gives +15 × the level and keeps lives full.
+  await page.keyboard.press(String(state.level.options.indexOf(target.id) + 1));
+  state = engine.guess(state, target.id).state;
+  await expect(page.locator('.atlas-result.solved')).toContainText(`Right! +${state.level.points}`);
+  await expect(page.locator('.option-right')).toContainText(target.name);
+  await expect(page.locator('.atlas-found')).toHaveCount(1);
+  await expect(page.locator('.marker-found text')).toContainText(target.name);
+  await expect(page.locator('.route-status')).toContainText(`Score ${state.score}`);
+  // The Next button has the focus, so Enter goes on.
+  await page.keyboard.press('Enter');
+  state = engine.nextLevel(state);
+  await expect(page.locator('.route-status')).toContainText('Level 2');
+
+  // A wrong pick (a tap) ends the level at once: −1 ♥, and the one picked is drawn where it really is.
+  const wrong = state.level.options.find((id) => id !== state.level.feature)!;
+  await options.nth(state.level.options.indexOf(wrong)).click();
+  state = engine.guess(state, wrong).state;
+  await expect(page.locator('.atlas-result.failed')).toContainText(`Not`);
+  await expect(page.locator('.atlas-result.failed')).toContainText('shown in red');
+  await expect(page.locator('.option-wrong')).toContainText(nameOf(wrong));
+  await expect(page.locator('.option-right')).toContainText(nameOf(state.level.feature));
+  await expect(page.locator('.atlas-guess')).toHaveCount(1);
+  await expect(page.locator('.atlas-lost')).toHaveCount(1);
+  await expect(page.locator('.marker-outside text')).toContainText(nameOf(wrong));
+  await expect(lives).toHaveCount(2);
+  await expect(options.first()).toBeDisabled();
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextLevel(state);
+
+  // A skip costs a life too and names the answer.
+  await page.getByRole('button', { name: /Skip/ }).click();
+  await expect(page.locator('.atlas-result.failed')).toContainText('Skipped: −1 ♥');
+  await expect(page.locator('.atlas-result.failed')).toContainText(nameOf(state.level.feature));
+  state = engine.skip(state);
+  await expect(lives).toHaveCount(1);
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextLevel(state);
+
+  // A right pick gives a lost life back.
+  await page.keyboard.press(String(state.level.options.indexOf(state.level.feature) + 1));
+  state = engine.guess(state, state.level.feature).state;
+  await expect(page.locator('.atlas-result.solved')).toContainText('+1 ♥');
+  await expect(lives).toHaveCount(2);
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextLevel(state);
+
+  // Skips until the lives are gone.
+  while (state.status !== 'over') {
+    if (state.status === 'level-over') {
+      await page.getByRole('button', { name: 'Next level' }).click();
+      state = engine.nextLevel(state);
+    }
+    await page.getByRole('button', { name: /Skip/ }).click();
+    state = engine.skip(state);
+  }
+  await expect(page.locator('.atlas-result.failed')).toContainText('Out of lives');
+  await page.getByRole('button', { name: 'See final score' }).click();
+  await expect(page.locator('.big-score')).toBeVisible();
+  await expect(page.getByText(`You reached level ${state.level.number}.`)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Change settings' })).toHaveCount(0);
+});
+
+for (const [device, viewport] of [
+  ['desktop', { width: 1280, height: 720 }],
+  ['phone', { width: 390, height: 844 }],
+] as const) {
+  test(`blank atlas: the question, map, options and Skip fit a ${viewport.width}×${viewport.height} ${device} screen with no scrolling`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => {
+      Math.random = () => 0.5;
+    });
+    await openGame(page, 'blank-atlas');
+    await page.getByRole('button', { name: 'Start game' }).click();
+    const options = page.locator('.atlas-option');
+    await expect(options.first()).toBeVisible({ timeout: 20_000 });
+    const inView = async (selector: string) => {
+      const box = (await page.locator(selector).first().boundingBox())!;
+      expect(box.y, selector).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height, selector).toBeLessThanOrEqual(viewport.height);
+    };
+    for (const selector of ['.route-status', '.atlas-prompt', '.world-map', '.atlas-option >> nth=3', '.atlas-skip']) await inView(selector);
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    // Options are big enough to tap, two by two on a phone.
+    const first = (await options.nth(0).boundingBox())!;
+    const second = (await options.nth(1).boundingBox())!;
+    const third = (await options.nth(2).boundingBox())!;
+    expect(first.height).toBeGreaterThanOrEqual(44);
+    if (device === 'phone') {
+      expect(second.y).toBeCloseTo(first.y, 0);
+      expect(third.y).toBeGreaterThan(first.y + first.height - 1);
+    } else {
+      expect(third.y).toBeCloseTo(first.y, 0);
+    }
+    // After a pick, the result and the Next button still fit.
+    await page.keyboard.press('1');
+    await inView('.atlas-result');
+    await inView('.atlas-result .btn');
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+  });
+}

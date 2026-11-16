@@ -1,6 +1,8 @@
 import { dataset, queryCountries } from '@geogames/geodata';
 import { cityIndex, loadGreatCircles } from '@geogames/geodata/cities';
 import type { GameDefinition } from './catalog.ts';
+import { loadBlankAtlas } from '@geogames/geodata/blank-atlas';
+import { createBlankAtlas, replayBlankAtlas, type BlankAtlas } from './blank-atlas.ts';
 import { createBorderBlitz, replayBorderBlitz } from './border-blitz.ts';
 import { createChoiceQuiz, replayChoiceQuiz } from './choice-quiz.ts';
 import { createCircleArcade, replayCircleArcade, type CircleArcade } from './circle-arcade.ts';
@@ -42,6 +44,10 @@ function arcadeFor(settings: GameSettings): Promise<CircleArcade> {
 // Halfway works out its fair pairs once per engine.
 let halfwayEngine: Promise<Halfway> | undefined;
 const halfway = () => (halfwayEngine ??= halfwayPools().then(createHalfway));
+
+let blankAtlasEngine: Promise<BlankAtlas> | undefined;
+/** The Blank Atlas engine, on its features (names and places, no outlines). */
+export const blankAtlasGame = () => (blankAtlasEngine ??= loadBlankAtlas().then((d) => createBlankAtlas(d.features)));
 
 /**
  * Plays a game again from its seed and the player's moves, with the same
@@ -111,6 +117,10 @@ export async function replayGame(
     }
     case 'halfway': {
       const state = replayHalfway(await halfway(), seed, moves);
+      return { score: state.score, finished: state.status === 'over' };
+    }
+    case 'blank-atlas': {
+      const state = replayBlankAtlas(await blankAtlasGame(), seed, moves);
       return { score: state.score, finished: state.status === 'over' };
     }
     case 'circle-arcade': {
