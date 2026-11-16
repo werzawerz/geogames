@@ -220,6 +220,14 @@ const ART: Record<string, () => ReactNode> = {
       </text>
     </>
   ),
+  'river-run': () => (
+    <>
+      <Land d={art.river.land} />
+      <path className="art-river" d={art.river.drawn} />
+      <Dot at={art.river.source} r={5} />
+      <Dot at={art.river.head} />
+    </>
+  ),
   'border-blitz': () => (
     <>
       <Land d={art.blitz.land} />

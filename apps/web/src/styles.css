@@ -284,6 +284,7 @@ a {
 .art-ring-placed { stroke-dasharray: 10 8; }
 .art-crosshair { stroke: #fff; stroke-width: 3; stroke-linecap: round; }
 .art-line { fill: none; stroke: #fff; stroke-width: 4; stroke-linecap: round; }
+.art-river { fill: none; stroke: #38bdf8; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
 .art-dash { fill: none; stroke: #f8fafc; stroke-width: 3.5; stroke-dasharray: 3 9; stroke-linecap: round; }
 .art-pin { fill: var(--tone-far, #ef4444); stroke: #0a1324; stroke-width: 2; }
 .art-pin-hole { fill: #fff; }
@@ -2021,4 +2022,83 @@ a {
 /* colour terrain (WorldMap `terrain`) */
 .map-terrain {
   pointer-events: none;
+}
+
+/* River Run */
+.river-line {
+  fill: none;
+  stroke: #38bdf8;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.river-line.river-cleared { stroke: #4ade80; }
+.river-line.river-lost { stroke: #f87171; }
+.river-wrong {
+  fill: none;
+  stroke: #94a3b8;
+  stroke-opacity: 0.55;
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.river-source { fill: #0b1324; stroke: #38bdf8; stroke-width: 2; }
+.river-head { fill: #f8fafc; stroke: #0b1324; stroke-width: 2; }
+.river-label { font-weight: 700; }
+.river-progress {
+  height: 6px;
+  margin: 0.25rem 0;
+  border-radius: 3px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.river-progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+/* The map fills the height the screen leaves it (set in RiverRunScreen); the sea shows past the frame. */
+.river-map .map-frame,
+.river-map .world-map {
+  height: 100%;
+}
+.river-map .world-map { background: #0b1324; }
+.river-run .route-hint { margin: 0.2rem 0; }
+.river-run .route-message { margin: 0.35rem 0; }
+.river-flawless {
+  margin: 0;
+  color: var(--correct);
+  font-weight: 700;
+}
+.river-choices {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.river-choice {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+.river-choice-key {
+  font-size: 0.75rem;
+  min-width: 1.3rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+}
+@media (max-width: 640px) {
+  .river-line { stroke-width: 5; }
+  .river-wrong { stroke-width: 3; }
+  .river-choices { grid-template-columns: 1fr 1fr; }
+  .river-choice-key { display: none; }
+  .river-run .route-hint { display: none; }
+  .river-run .route-message { font-size: 0.85rem; }
 }

@@ -16,6 +16,7 @@ import {
 import { getCountry } from '@geogames/geodata';
 import { loadWorldShapes } from '@geogames/geodata/shapes';
 import { loadBlankAtlasShapes } from '@geogames/geodata/blank-atlas-shapes';
+import { loadRivers } from '@geogames/geodata/rivers';
 
 const WIDTH = 640;
 const HEIGHT = 280;
@@ -116,6 +117,7 @@ function scene(projection: GeoProjection) {
       compact(path({ type: 'LineString', coordinates: [from, to] })),
     circle: (center: [number, number], km: number) =>
       compact(path(geoCircle().center(center).radius((km / EARTH_KM) * (180 / Math.PI))())),
+    projection,
     point: (lngLat: [number, number]) => projection(lngLat)!.map((n) => Math.round(n)) as [number, number],
     projection,
   };
@@ -167,6 +169,11 @@ const outlines = await loadBlankAtlasShapes();
 
 // Border Blitz: Germany lit up, some of its neighbours found, the rest still to name.
 const blitz = scene(framed(geoMercator(), [[-1, 55.5], [21, 44]], 10));
+
+// River Run: the Danube, two thirds drawn from its source.
+const river = scene(framed(geoMercator(), [[6, 50], [30, 42]], 10));
+const danube = (await loadRivers()).rivers.find((r) => r.id === 'danube')!.line;
+const danubeDrawn = danube.slice(0, Math.round(danube.length * 0.65));
 
 // Area: two countries at the same scale, so their sizes compare truly.
 function sameScale(id: string, x: number) {
@@ -243,6 +250,12 @@ const art = {
     land: atlas.land,
     sea: compact(geoPath(atlas.projection)(outlines['black-sea']!)),
     point: atlas.point([34.5, 43.2]),
+  },
+  river: {
+    land: river.land,
+    drawn: compact(geoPath(river.projection)({ type: 'LineString', coordinates: danubeDrawn })),
+    source: river.point(danube[0]!),
+    head: river.point(danubeDrawn.at(-1)!),
   },
   area: { left: sameScale('BRA', 180), right: sameScale('AUS', 460) },
 };

@@ -1,5 +1,6 @@
 import { countries, getCountry, queryCountries } from '@geogames/geodata';
 import { loadGreatCircles } from '@geogames/geodata/cities';
+import { loadRivers } from '@geogames/geodata/rivers';
 import { BLANK_ATLAS_KIND_LABELS } from '@geogames/geodata/blank-atlas';
 import {
   DEFAULT_SETTINGS,
@@ -19,6 +20,8 @@ import {
   createMysteryCountry,
   createPinDrop,
   createHalfway,
+  createRiverRun,
+  riverChoices,
   createClockwork,
   CLOCK_DATES,
   clockworkCountries,
@@ -1624,5 +1627,148 @@ for (const [device, viewport] of [
     await inView('.atlas-result');
     await inView('.atlas-result .btn');
     expect(await page.evaluate(() => scrollY)).toBe(0);
+  });
+}
+
+test('river-run: the river draws itself, a wrong name shows that river, and a skip, the line reaching its end or 3 misses each cost a life', async ({ page }) => {
+  test.slow();
+  await page.clock.install();
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  const data = await loadRivers();
+  const engine = createRiverRun(data);
+  const nameOf = (id: string) => engine.rivers.get(id)!.name;
+  let state = engine.start(Math.floor(0.5 * 2 ** 32));
+  // Great rivers with names no other river's starts with, to type as wrong guesses.
+  const wrongFor = (s: typeof state) =>
+    ['nile', 'amazon', 'volga', 'mekong', 'thames', 'murray'].filter((id) => id !== s.level.river && !s.level.guesses.some((g) => g.id === id));
+  const lives = page.locator('.lives .life:not(.lost)');
+
+  await openGame(page, 'river-run');
+  await page.getByRole('button', { name: 'Start game' }).click();
+  const input = page.getByRole('combobox');
+  await expect(input).toBeVisible({ timeout: 20_000 });
+
+  // The line grows from the source; no borders, and nothing names the river.
+  const line = page.locator('.river-line');
+  await expect(line).toHaveAttribute('d', /.{10}/);
+  const early = (await line.getAttribute('d'))!.length;
+  await page.clock.runFor(4000);
+  await expect.poll(async () => (await line.getAttribute('d'))!.length).toBeGreaterThan(early);
+  await expect(page.locator('.world-map .map-country')).toHaveCount(0);
+  await expect(page.locator('.river-label')).toHaveCount(0);
+  expect(await page.content()).not.toContain(nameOf(state.level.river));
+
+  // A wrong name is free, and that river is drawn in grey.
+  const miss = wrongFor(state)[0]!;
+  await input.fill(nameOf(miss));
+  await input.press('Enter');
+  state = engine.guess(state, miss, 0.1).state;
+  await expect(page.locator('.route-message')).toContainText(`Not the ${nameOf(miss)}`);
+  await expect(page.locator('.route-message')).toContainText('1 more free miss');
+  await expect(page.locator('.river-wrong')).toHaveCount(1);
+  await expect(page.locator('.river-misses')).toHaveText('1');
+  await expect(lives).toHaveCount(3);
+
+  // The right name clears it, typed with a "River" after it, and the whole river is shown with its name and length.
+  const answer = data.rivers.find((r) => r.id === state.level.river)!;
+  await input.fill(`${answer.name} River`);
+  await input.press('Enter');
+  await expect(page.locator('.route-summary.solved')).toContainText(`The ${answer.name}, with`);
+  await expect(page.locator('.route-summary.solved')).toContainText(`About ${new Intl.NumberFormat('en').format(answer.lengthKm)} km long.`);
+  await expect(page.locator('.river-label')).toHaveText(answer.name);
+  await expect(page.locator('.route-status')).not.toContainText('Score 0');
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextLevel(engine.guess(state, state.level.river, 0.2).state);
+  await expect(page.locator('.route-status')).toContainText('Level 2');
+
+  // A skip costs a life and names the river.
+  await page.getByRole('button', { name: /Skip/ }).click();
+  state = engine.skip(state);
+  await expect(page.locator('.route-summary.failed')).toContainText('Skipped: −1 ♥');
+  await expect(page.locator('.route-summary.failed')).toContainText(`It was the ${nameOf(state.level.river)}`);
+  await expect(lives).toHaveCount(2);
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextLevel(state);
+
+  // Left to reach its end, the river costs a life like a skip.
+  await page.clock.runFor(state.level.seconds * 1000 + 1000);
+  state = engine.timeout(state);
+  await expect(page.locator('.route-summary.failed')).toContainText('It reached its end unnamed: −1 ♥');
+  await expect(lives).toHaveCount(1);
+  await page.getByRole('button', { name: 'Next level' }).click();
+  state = engine.nextLevel(state);
+
+  // Three misses cost the last life, and the run ends.
+  for (const id of wrongFor(state).slice(0, 3)) {
+    await input.fill(nameOf(id));
+    await input.press('Enter');
+    state = engine.guess(state, id, 0.1).state;
+  }
+  expect(state.status).toBe('over');
+  await expect(page.locator('.route-summary.failed')).toContainText('3 misses: −1 ♥');
+  await expect(page.locator('.route-summary.failed')).toContainText('Out of lives');
+  await page.getByRole('button', { name: 'See final score' }).click();
+  await expect(page.locator('.eyebrow')).toContainText('Game over');
+  await expect(page.getByText('You reached level 4.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Change settings' })).toHaveCount(0);
+});
+
+for (const [label, viewport] of [
+  ['desktop', { width: 1280, height: 720 }],
+  ['phone', { width: 390, height: 844 }],
+] as const) {
+  test(`river-run (${label}): four names from half drawn, keys 1–4 pick, and it all fits with no scrolling`, async ({ page }) => {
+    test.slow();
+    await page.setViewportSize(viewport);
+    await page.clock.install();
+    await page.addInitScript(() => {
+      Math.random = () => 0.5;
+    });
+    const data = await loadRivers();
+    const engine = createRiverRun(data);
+    const seed = Math.floor(0.5 * 2 ** 32);
+    let state = engine.start(seed);
+    const lives = page.locator('.lives .life:not(.lost)');
+    const inView = async (selector: string) => {
+      const box = (await page.locator(selector).first().boundingBox())!;
+      expect(box.y, selector).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height, selector).toBeLessThanOrEqual(viewport.height);
+    };
+
+    await openGame(page, 'river-run');
+    await page.getByRole('button', { name: 'Start game' }).click();
+    await expect(page.getByRole('combobox')).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator('.river-choices')).toHaveCount(0);
+    for (const selector of ['.route-status', '.world-map', '[role=combobox]']) await inView(selector);
+
+    // Past half drawn, four real names, each a big enough target, with everything still in view.
+    await page.clock.runFor(state.level.seconds * 550);
+    const options = page.locator('.river-choice');
+    await expect(options).toHaveCount(4);
+    const choices = riverChoices(data.rivers, state.level.river, 1, seed);
+    await expect(options).toHaveText(choices.map((id) => new RegExp(engine.rivers.get(id)!.name)));
+    for (let i = 0; i < 4; i++) expect((await options.nth(i).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    for (const selector of ['.route-status', '.world-map', '[role=combobox]', '.river-choices', '.arcade-actions']) await inView(selector);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    if (label === 'phone') expect((await page.locator('.world-map').boundingBox())!.height).toBeGreaterThan(280);
+
+    // The right key: half points, and Enter goes on.
+    await page.keyboard.press(String(choices.indexOf(state.level.river) + 1));
+    await expect(page.locator('.route-summary.solved')).toContainText('(picked: half points)');
+    await inView('.route-summary');
+    await expect(page.getByRole('button', { name: 'Next level' })).toBeFocused();
+    await page.keyboard.press('Enter');
+    state = engine.nextLevel(engine.guess(state, state.level.river, 0.55, true).state);
+    await expect(page.locator('.route-status')).toContainText('Level 2');
+
+    // A wrong pick costs the life at once.
+    await page.clock.runFor(state.level.seconds * 550);
+    const second = riverChoices(data.rivers, state.level.river, 2, seed);
+    await expect(options).toHaveCount(4);
+    await page.keyboard.press(String(second.findIndex((id) => id !== state.level.river) + 1));
+    await expect(page.locator('.route-summary.failed')).toContainText('A wrong pick: −1 ♥');
+    await expect(lives).toHaveCount(2);
   });
 }

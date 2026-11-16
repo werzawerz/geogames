@@ -14,6 +14,8 @@ import {
   createChoiceQuiz,
   createCircleArcade,
   createHalfway,
+  createRiverRun,
+  riverChoices,
   halfwayPools,
   distanceKm,
   createMysteryCountry,
@@ -30,6 +32,7 @@ import {
   type RouteDefinition,
 } from '@geogames/games';
 import { queryCountries } from '@geogames/geodata';
+import { loadRivers } from '@geogames/geodata/rivers';
 import { bundle } from '../scripts/bundle.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -187,6 +190,33 @@ describe('the server bundle', () => {
       expect(full).toEqual({ score: end.score, finished: true });
       expect(await server.replayGame(definition, settings, 41, end.moves)).toEqual(full);
     }
+  });
+
+  it('scores River Run the same without the river lines, typed names on offer included', async () => {
+    const definition = GAMES.find((g) => g.kind === 'river-run')!;
+    const settings = normalizeSettings({}, definition);
+    const engine = createRiverRun(await loadRivers());
+    const wrong = (id: string) => [...engine.rivers.keys()].find((r) => r !== id)!;
+    let state = engine.start(43);
+    // Named at different points, with a miss on every third, then lives lost to misses, skips and timeouts.
+    for (let i = 0; i < 12; i++) {
+      if (i % 3 === 2) state = engine.guess(state, wrong(state.level.river), 0.05 * i).state;
+      state = engine.nextLevel(engine.guess(state, state.level.river, 0.07 * i, i % 4 === 3).state);
+    }
+    // A wrong name typed once the four are offered, and one of them: it costs the life at once, so
+    // the server needs the choice anchors to see it was on offer.
+    const offeredWrong = riverChoices((await loadRivers()).rivers, state.level.river, state.level.number, 43).find((id) => id !== state.level.river)!;
+    const lives = state.lives;
+    state = engine.guess(state, offeredWrong, 0.7).state;
+    expect(state.lives).toBe(lives - 1);
+    state = engine.nextLevel(state);
+    state = engine.nextLevel(engine.skip(state));
+    state = engine.nextLevel(engine.timeout(state));
+    while (state.status === 'playing') state = engine.guess(state, [...engine.rivers.keys()].find((r) => r !== state.level.river && !state.level.guesses.some((g) => g.id === r))!, 0.5).state;
+    const full = await replayGame(definition, settings, 43, state.moves);
+    expect(full).toEqual({ score: state.score, finished: true });
+    expect(full.score).toBeGreaterThan(0);
+    expect(await server.replayGame(definition, settings, 43, state.moves)).toEqual(full);
   });
 
   it('replays hard Border Route with its fixed guesses', async () => {

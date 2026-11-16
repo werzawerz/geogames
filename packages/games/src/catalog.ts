@@ -88,6 +88,11 @@ export interface ClockworkDefinition extends BaseDefinition {
   subject: 'country';
 }
 
+export interface RiverRunDefinition extends BaseDefinition {
+  kind: 'river-run';
+  subject: 'country';
+}
+
 export interface MysteryCountryDefinition extends BaseDefinition {
   kind: 'mystery-country';
   subject: 'country';
@@ -108,7 +113,8 @@ export type GameDefinition =
   | MysteryCountryDefinition
   | BorderBlitzDefinition
   | ClockworkDefinition
-  | BlankAtlasDefinition;
+  | BlankAtlasDefinition
+  | RiverRunDefinition;
 
 export const GAMES: readonly GameDefinition[] = [
   {
@@ -234,6 +240,14 @@ export const GAMES: readonly GameDefinition[] = [
     subject: 'city',
     title: 'Pin Drop',
     tagline: 'Click where the city is. Every kilometre off eats into your budget.',
+    status: 'live',
+  },
+  {
+    id: 'river-run',
+    kind: 'river-run',
+    subject: 'country',
+    title: 'River Run',
+    tagline: 'A river draws itself from its source to the sea. Name it before it gets there.',
     status: 'live',
   },
   {
