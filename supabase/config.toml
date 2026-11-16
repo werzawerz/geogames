@@ -2,8 +2,21 @@
 project_id = "geogames"
 
 [auth]
+# Mirrors the hosted project's settings for `supabase start`; the hosted project
+# is set in the dashboard (docs/google-sign-in.md), not from this file.
+site_url = "http://localhost:5317/"
+additional_redirect_urls = ["https://werzawerz.github.io/geogames/", "http://localhost:5317/**"]
 # Players start without an account; the API sees them as normal signed-in users.
 enable_anonymous_sign_ins = true
+# "Sign in with Google" links Google to the anonymous player, keeping their games.
+enable_manual_linking = true
+
+[auth.external.google]
+enabled = true
+# From the environment, never the repository.
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+skip_nonce_check = false
 
 [functions.api]
 # The API checks tokens itself: the global leaderboard and health check are public.

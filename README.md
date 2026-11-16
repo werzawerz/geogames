@@ -1,8 +1,8 @@
 # GeoGames
 
-Geography games for the browser. Live now: **Higher or Lower** on country population, area and GDP per capita, and on city population; **Border Route**, a map game where you connect two countries through as few neighbours as possible; the **Capitals** and **Flags** quizzes; **City Circle Arcade**, endless levels of naming the biggest cities inside ever smaller circles; **Pin Drop**, clicking where a city is against a distance budget; **Halfway**, naming a city near the midpoint of two others; **River Run**, naming a river as it draws itself from its source; **Great Circle**, naming the countries a straight line crosses; **Mystery Country**, working out a hidden country from the clues each guess gives; **Blank Atlas**, naming the sea, range, desert or lake lit up on a map with no labels; and **City Circle: Free Play** with your own region, radius and circles. In dev builds (`npm run dev`) plays are unlimited; production builds use the free-play limit. The code is laid out so that more games, accounts, leaderboards and a freemium plan can be added without restructuring.
+Geography games for the browser. Live now: **Higher or Lower** on country population, area and GDP per capita, and on city population; **Border Route**, a map game where you connect two countries through as few neighbours as possible; the **Capitals** and **Flags** quizzes; **City Circle Arcade**, endless levels of naming the biggest cities inside ever smaller circles; **Pin Drop**, clicking where a city is against a distance budget; **Halfway**, naming a city near the midpoint of two others; **River Run**, naming a river as it draws itself from its source; **Great Circle**, naming the countries a straight line crosses; **Mystery Country**, working out a hidden country from the clues each guess gives; **Blank Atlas**, naming the sea, range, desert or lake lit up on a map with no labels; and **City Circle: Free Play** with your own region, radius and circles. Everything is free and unlimited. Players start at once without an account; signing in with Google keeps their scores and puts them on the public leaderboards ([docs/google-sign-in.md](docs/google-sign-in.md)).
 
-Border Route, City Circle Arcade, Pin Drop and Mystery Country also have a **daily challenge**: the same run for everyone, one try a day (a new one at midnight UTC), no free play spent, with a leaderboard for the day and a spoiler-free result to share.
+Border Route, City Circle Arcade, Pin Drop and Mystery Country also have a **daily challenge**: the same run for everyone, one try a day (a new one at midnight UTC), with a leaderboard for the day and a spoiler-free result to share.
 
 The frontend (`apps/web`, GitHub Pages) and backend (`apps/api`, a Hono API on Supabase Edge Functions, with Postgres and sign-in from Supabase) deploy separately: see [docs/deploy.md](docs/deploy.md). Without a backend configured, the site runs in the browser alone.
 
@@ -31,9 +31,9 @@ packages/geodata   Country + city datasets and typed query API (framework-free)
   scripts/build-*.ts        fetch → normalize → merge → validate → write
 packages/games     Pure game logic + game catalog (no React; reusable on a server)
 apps/web           React + Vite front end
-  src/platform/        player, entitlements (free plays), scores: interfaces + local implementations
+  src/platform/        player, account (sign-in), scores: interfaces + local and API implementations
   src/games/           one screen per game kind, registered in registry.ts
-  src/pages/           home, game, leaderboard, premium
+  src/pages/           home, game, daily, leaderboard
 ```
 
 ## Country dataset
@@ -95,14 +95,14 @@ Maps (`apps/web/src/components/WorldMap.tsx`) zoom and pan with the mouse wheel,
 | Service | Now | Later |
 | --- | --- | --- |
 | `Player` | anonymous id + editable name in localStorage | auth account |
-| `EntitlementService` | 5 free plays/day, dev toggle for Premium | server-enforced plan from the subscription provider |
+| Account | none (`status: 'local'`) | anonymous Supabase user; "Sign in with Google" links Google to it |
 | `ScoreService` | personal scores in localStorage; global returns `null` | API with server-side replay verification |
 
-All implementations are chosen in `PlatformProvider.tsx`; components only see the interfaces. The local free-play limit is easy to bypass and is only a UX placeholder. Real enforcement must happen on the server.
+All implementations are chosen in `PlatformProvider.tsx`; components only see `usePlatform()`: `player`, `account`, `renamePlayer`, `startPlay`/`startDaily`/`finishPlay` (its `status` says whether the score was `saved` on the server or stayed in this browser: `local`, `offline`, `refused`), `signIn`, `signOut`, `deleteAccount`, `sendFeedback` and `scores`.
 
 ## Next steps
 
 1. Backend: planned in [docs/backend-plan.md](docs/backend-plan.md) (Hono API + Supabase, $0 hosting on Cloudflare). Deferred while we experiment with games.
-2. Payments (e.g. Stripe or Paddle) feeding the plan into `EntitlementService`.
+2. A paid tier, if ever: the API still has a daily play limit switch (`FREE_PLAYS_PER_DAY`, off by default).
 3. New game kinds: flag quiz, capitals, borders, "locate on map".
 4. Split the dataset into a lazily loaded chunk or per-game slices once it grows (the main JS bundle is ~157 KB gzip, mostly data).

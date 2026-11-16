@@ -41,7 +41,7 @@ export default defineConfig({
       command: 'npm run dev:api',
       url: `http://localhost:${API_PORT}/api/health`,
       reuseExistingServer: false,
-      env: { API_PORT: String(API_PORT), FREE_PLAYS_PER_DAY: '3' },
+      env: { API_PORT: String(API_PORT) },
     },
     {
       command: `npx vite apps/web --port ${API_WEB_PORT} --strictPort`,

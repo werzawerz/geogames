@@ -34,5 +34,8 @@ export async function createLocalDb() {
     return rows[0]?.result ?? null;
   };
   const addUser = (id: string) => db.query('insert into auth.users (id) values ($1) on conflict do nothing', [id]);
-  return { db, rpc, addUser };
+  const deleteUser = async (id: string) => {
+    await db.query('delete from auth.users where id = $1', [id]);
+  };
+  return { db, rpc, addUser, deleteUser };
 }

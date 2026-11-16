@@ -3,17 +3,18 @@ import { DATASET_VERSION, dailyVariant, dailySettings, type GameDefinition, type
 import { GameScreen } from '../games/registry.tsx';
 import type { GameOutcome } from '../games/types.ts';
 import { usePlatform } from '../platform/PlatformProvider.tsx';
-import type { Play } from '../platform/backend.ts';
+import type { FinishStatus, Play } from '../platform/backend.ts';
 import type { RankedScore } from '../platform/scores.ts';
 import { load, remove, save } from '../platform/storage.ts';
 import { href } from '../router.ts';
+import { AnonymousNote } from './ScoresPage.tsx';
 
 type Phase =
   | { name: 'loading' }
   | { name: 'unavailable' }
   | { name: 'update-required' }
   | { name: 'playing'; date: string; play: Play; moves: readonly string[] }
-  | { name: 'done'; date: string; score: number; message?: string; shareLine?: string; notice?: string };
+  | { name: 'done'; date: string; score: number; message?: string; shareLine?: string; notice?: string; status?: FinishStatus };
 
 /** What's kept to show or share a finished challenge again. */
 interface SavedResult {
@@ -71,7 +72,7 @@ export function DailyPage({ game }: { game: GameDefinition }) {
       const saved: SavedResult = { message, shareLine };
       save(`${key(game, date)}:result`, saved);
       remove(`${key(game, date)}:moves`);
-      setPhase({ name: 'done', date, score: result.score, message, shareLine, notice: result.notice });
+      setPhase({ name: 'done', date, score: result.score, message, shareLine, notice: result.notice, status: result.status });
     },
     [finishPlay, game, play, date],
   );
@@ -129,6 +130,7 @@ function DailyResult({
   message,
   shareLine,
   notice,
+  status,
 }: {
   game: GameDefinition;
   date: string;
@@ -136,8 +138,9 @@ function DailyResult({
   message?: string;
   shareLine?: string;
   notice?: string;
+  status?: FinishStatus;
 }) {
-  const { scores } = usePlatform();
+  const { scores, account } = usePlatform();
   const [entries, setEntries] = useState<RankedScore[] | null | undefined>(undefined);
   const [copied, setCopied] = useState(false);
 
@@ -162,7 +165,11 @@ function DailyResult({
         <p className="big-score">{score}</p>
         {message && <p className="lead">{message}</p>}
         {shareLine && <p className="daily-share-line">{shareLine}</p>}
-        {notice && <p className="muted score-notice">{notice}</p>}
+        {notice && (
+          <p className={`muted score-notice score-${status}`} role="status">
+            {notice}
+          </p>
+        )}
         <div className="row">
           <button className="btn btn-primary btn-lg" onClick={share}>
             {copied ? 'Copied!' : 'Copy result'}
@@ -178,6 +185,7 @@ function DailyResult({
         {entries === undefined && <p className="muted">Loading…</p>}
         {entries === null && <p className="muted">The global leaderboard isn't available right now.</p>}
         {entries?.length === 0 && <p className="muted">No scores yet today.</p>}
+        {account.status === 'anonymous' && <AnonymousNote />}
         {entries && entries.length > 0 && (
           <ol className="scores">
             {entries.map((e, i) => (
