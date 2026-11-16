@@ -11,7 +11,7 @@ test('home shows today\'s dailies and the four groups with every game', async ({
   expect(headings).toEqual(GROUP_TITLES);
   await expect(page.locator('.game-card')).toHaveCount(GAMES.length);
   const mapGames = page.locator('.game-group').first().locator('.game-card h2');
-  await expect(mapGames).toHaveText(['Pin Drop', 'Blank Atlas', 'River Run']);
+  await expect(mapGames).toHaveText(['Pin Drop', 'Blank Atlas', 'River Run', 'On the Grid']);
 });
 
 test('desktop header: Games menu, Daily, About, keyboard', async ({ page }) => {
