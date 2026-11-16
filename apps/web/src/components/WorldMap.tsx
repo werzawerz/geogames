@@ -6,7 +6,6 @@ import type { CountryId } from '@geogames/geodata';
 import type { WorldShapes } from '@geogames/geodata/shapes';
 import { mainland } from './mainland.ts';
 import { renderTerrain, type TerrainImage } from './terrain.ts';
-import { TERRAIN_SOURCE, type TerrainSource } from './terrain-bounds.ts';
 
 export type MapTone = 'start' | 'end' | 'optimal' | 'near' | 'far' | 'route';
 
@@ -66,19 +65,22 @@ const MAX_ZOOM = 20;
 /** The terrain covers the view and half a view around it, for panning; pixels per map unit. */
 const TERRAIN_MARGIN = 0.5;
 const TERRAIN_DENSITY = 1.25;
+/** A phone shows the 960-unit map about 360 px wide: fewer pixels a unit do, and save its memory. */
+const TERRAIN_DENSITY_NARROW = 0.8;
+const narrow = () => typeof matchMedia !== 'undefined' && matchMedia('(max-width: 640px)').matches;
 
 /** Shaded relief for the frame, drawn when the projection changes; null until it's ready. */
-function useTerrain(projection: GeoProjection, source: TerrainSource | null): TerrainImage | null {
+function useTerrain(projection: GeoProjection, on: boolean): TerrainImage | null {
   const [image, setImage] = useState<TerrainImage | null>(null);
   useEffect(() => {
-    if (!source) return;
+    if (!on) return;
     let cancelled = false;
     let made: TerrainImage | null = null;
     const extent: [[number, number], [number, number]] = [
       [-WIDTH * TERRAIN_MARGIN, -HEIGHT * TERRAIN_MARGIN],
       [WIDTH * (1 + TERRAIN_MARGIN), HEIGHT * (1 + TERRAIN_MARGIN)],
     ];
-    renderTerrain(projection, extent, TERRAIN_DENSITY, source).then(
+    renderTerrain(projection, extent, narrow() ? TERRAIN_DENSITY_NARROW : TERRAIN_DENSITY).then(
       (result) => {
         made = result;
         if (!cancelled) setImage(result);
@@ -92,7 +94,7 @@ function useTerrain(projection: GeoProjection, source: TerrainSource | null): Te
       setImage(null);
       if (made) URL.revokeObjectURL(made.href);
     };
-  }, [projection, source]);
+  }, [projection, on]);
   return image;
 }
 
@@ -135,8 +137,8 @@ export function WorldMap({
   label: string;
   /** False leaves out every border but those of `countries`: the others aren't in the page at all. */
   borders?: boolean;
-  /** Colour terrain over the plain land and sea, loaded lazily: true for TERRAIN_SOURCE, or a source by name. */
-  terrain?: boolean | TerrainSource;
+  /** Colour terrain over the plain land and sea, loaded lazily (TERRAIN_SOURCE in terrain.ts). */
+  terrain?: boolean;
   /** How far in the map zooms, compared to its starting view. */
   maxZoom?: number;
 }) {
@@ -170,7 +172,7 @@ export function WorldMap({
   }, [shapes, focusKey, frame]);
 
   const path = useMemo(() => geoPath(projection), [projection]);
-  const relief = useTerrain(projection, terrain === true ? TERRAIN_SOURCE : terrain || null);
+  const relief = useTerrain(projection, terrain);
   const landPath = useMemo(() => path(shapes.land) ?? '', [path, shapes.land]);
   // Base layer of every country; only recomputed when the frame changes, never while zooming.
   const base = useMemo(

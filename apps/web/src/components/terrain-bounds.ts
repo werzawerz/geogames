@@ -8,8 +8,7 @@
  */
 export const TERRAIN_SOURCES = ['NE1_50M_SR_W', 'HYP_50M_SR_W'] as const;
 export type TerrainSource = (typeof TERRAIN_SOURCES)[number];
-/** The picture WorldMap's `terrain` draws: switching is this one line. */
-export const TERRAIN_SOURCE: TerrainSource = 'NE1_50M_SR_W';
+/** Which of them the map draws is TERRAIN_SOURCE in terrain.ts, beside the tiles it ships. */
 
 /** The latitudes the terrain picture covers: up to the pole (a tall phone map can show the Arctic), but not inland Antarctica. */
 export const TERRAIN_BOUNDS = { north: 90, south: -66 } as const;

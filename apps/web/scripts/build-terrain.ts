@@ -1,6 +1,6 @@
 // Builds the colour terrain under WorldMap (`terrain` prop) from Natural Earth's
 // 1:50m colour rasters with shaded relief and water (public domain), one set of
-// tiles per source in TERRAIN_SOURCES. The map draws TERRAIN_SOURCE.
+// tiles per source in TERRAIN_SOURCES. The map draws TERRAIN_SOURCE (terrain.ts).
 //
 //   node apps/web/scripts/build-terrain.ts [--offline]
 //

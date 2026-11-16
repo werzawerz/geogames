@@ -3,28 +3,37 @@
 // reprojects the part a frame shows into the map's projection, as a picture drawn
 // over the plain land and sea (it has both).
 import type { GeoProjection } from 'd3-geo';
-import { TERRAIN_BOUNDS, TERRAIN_PER_DEGREE, TERRAIN_SOURCE, TERRAIN_TILE_DEGREES, type TerrainSource } from './terrain-bounds.ts';
+import { TERRAIN_BOUNDS, TERRAIN_PER_DEGREE, TERRAIN_TILE_DEGREES, type TerrainSource } from './terrain-bounds.ts';
 
-const TILE_URLS = import.meta.glob<string>('../assets/terrain/*/*.jpg', { query: '?url', import: 'default', eager: true });
-const tileUrl = (source: TerrainSource, i: number) =>
-  Object.entries(TILE_URLS).find(([path]) => path.endsWith(`/${source}/${i}.jpg`))?.[1];
+// The picture the map draws. To switch, change both lines: Vite needs the glob's path
+// written out, and only the tiles it names ship with the app (terrain.test.ts checks they match).
+export const TERRAIN_SOURCE: TerrainSource = 'NE1_50M_SR_W';
+const TILE_URLS = import.meta.glob<string>('../assets/terrain/NE1_50M_SR_W/*.jpg', { query: '?url', import: 'default', eager: true });
+const tileUrl = (i: number) => Object.entries(TILE_URLS).find(([path]) => path.endsWith(`/${i}.jpg`))?.[1];
 const TILES = 360 / TERRAIN_TILE_DEGREES;
 
 interface Tile {
-  /** RGBA, as the canvas decodes it. */
-  data: Uint8ClampedArray;
+  /** RGB, three bytes a pixel: a quarter less than the canvas's RGBA. */
+  data: Uint8Array;
   width: number;
   height: number;
 }
-const tiles = new Map<string, Promise<Tile>>();
+/**
+ * Decoded tiles, the most recently used last. A tile is about 9 MB decoded and a
+ * frame needs one or two, so only a few are kept (a phone's memory is short).
+ */
+const tiles = new Map<number, Promise<Tile>>();
+const KEEP_TILES = 3;
 
-/** A tile's pixels, decoded once and kept: a frame usually needs only one or two. */
-function loadTile(source: TerrainSource, i: number): Promise<Tile> {
-  const key = `${source}/${i}`;
+function loadTile(i: number): Promise<Tile> {
+  const key = i;
   let tile = tiles.get(key);
-  if (!tile) {
+  if (tile) {
+    tiles.delete(key);
+    tiles.set(key, tile);
+  } else {
     tile = new Promise<Tile>((resolve, reject) => {
-      const url = tileUrl(source, i);
+      const url = tileUrl(i);
       if (!url) return reject(new Error(`no terrain tile ${key}`));
       const img = new Image();
       img.onload = () => {
@@ -33,13 +42,21 @@ function loadTile(source: TerrainSource, i: number): Promise<Tile> {
         canvas.height = img.height;
         const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
         ctx.drawImage(img, 0, 0);
-        resolve({ data: ctx.getImageData(0, 0, img.width, img.height).data, width: img.width, height: img.height });
+        const rgba = ctx.getImageData(0, 0, img.width, img.height).data;
+        const data = new Uint8Array(img.width * img.height * 3);
+        for (let p = 0, q = 0; p < rgba.length; p += 4, q += 3) {
+          data[q] = rgba[p]!;
+          data[q + 1] = rgba[p + 1]!;
+          data[q + 2] = rgba[p + 2]!;
+        }
+        resolve({ data, width: img.width, height: img.height });
       };
       img.onerror = () => reject(new Error(`terrain tile ${key} failed to load`));
       img.src = url;
     });
     tile.catch(() => tiles.delete(key));
     tiles.set(key, tile);
+    for (const old of tiles.keys()) if (tiles.size > KEEP_TILES) tiles.delete(old);
   }
   return tile;
 }
@@ -79,6 +96,15 @@ export interface TerrainImage {
   height: number;
 }
 
+let coords: [Float32Array, Float32Array] | null = null;
+/** Longitude and latitude per pixel, kept between frames of the same size (every level is). */
+function buffers(size: number): [Float32Array, Float32Array] {
+  if (coords?.[0].length !== size) coords = [new Float32Array(size), new Float32Array(size)];
+  coords[0].fill(NaN);
+  coords[1].fill(NaN);
+  return coords;
+}
+
 const tileOf = (lngDeg: number) => Math.min(Math.floor((lngDeg + 180) / TERRAIN_TILE_DEGREES), TILES - 1);
 
 /**
@@ -90,7 +116,6 @@ export async function renderTerrain(
   projection: GeoProjection,
   [[x0, y0], [x1, y1]]: [[number, number], [number, number]],
   density: number,
-  source: TerrainSource = TERRAIN_SOURCE,
 ): Promise<TerrainImage | null> {
   const k = projection.scale();
   const [tx, ty] = projection.translate();
@@ -100,8 +125,7 @@ export async function renderTerrain(
   const { north, south } = TERRAIN_BOUNDS;
 
   // Longitude and latitude (degrees) of each pixel, or NaN off the globe or off the picture.
-  const lng = new Float32Array(width * height).fill(NaN);
-  const lat = new Float32Array(width * height).fill(NaN);
+  const [lng, lat] = buffers(width * height);
   const needed = new Set<number>();
   for (let row = 0; row < height; row++) {
     const y = (ty - (y0 + (row + 0.5) / density)) / k;
@@ -121,7 +145,7 @@ export async function renderTerrain(
     }
   }
   if (needed.size === 0) return null;
-  const loaded = new Map(await Promise.all([...needed].map(async (i) => [i, await loadTile(source, i)] as const)));
+  const loaded = new Map(await Promise.all([...needed].map(async (i) => [i, await loadTile(i)] as const)));
 
   const out = new ImageData(width, height);
   for (let p = 0; p < lng.length; p++) {
@@ -136,10 +160,10 @@ export async function renderTerrain(
     const cy = Math.floor(fy);
     const ax = fx - cx;
     const ay = fy - cy;
-    const a = (cy * tile.width + cx) * 4;
-    const b = a + 4;
-    const c = a + tile.width * 4;
-    const d = c + 4;
+    const a = (cy * tile.width + cx) * 3;
+    const b = a + 3;
+    const c = a + tile.width * 3;
+    const d = c + 3;
     const src = tile.data;
     const o = p * 4;
     for (let ch = 0; ch < 3; ch++) {
