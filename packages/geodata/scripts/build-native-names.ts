@@ -41,6 +41,14 @@ const LOCALES: Record<string, string> = {
   ZW: 'en', MV: 'en',
 };
 
+/**
+ * Where CLDR's name isn't the one the country uses for itself. Palestine: CLDR's Arabic has
+ * "Palestinian Territories" (الأراضي الفلسطينية), the State of Palestine's own name is فلسطين.
+ */
+const OVERRIDES: Record<string, { name: string; why: string }> = {
+  PS: { name: 'فلسطين', why: 'CLDR has "Palestinian Territories"; the State of Palestine calls itself فلسطين' },
+};
+
 /** Script of a name, by the first letter that isn't Latin or punctuation; Han splits by language. */
 const SCRIPTS: [string, RegExp][] = [
   ['Greek', /\p{Script=Greek}/u],
@@ -94,8 +102,8 @@ for (const c of countries) {
     continue;
   }
   if (!cache.has(locale)) cache.set(locale, await names(locale, 'territories'));
-  const native = cache.get(locale)![c.iso2];
-  if (!native) throw new Error(`CLDR ${locale} has no name for ${c.iso2}`);
+  const native = (OVERRIDES[c.iso2]?.name ?? cache.get(locale)![c.iso2])!;
+  if (!cache.get(locale)![c.iso2] && !OVERRIDES[c.iso2]) throw new Error(`CLDR ${locale} has no name for ${c.iso2}`);
   const script = scriptOf(native);
   const lang = locale.split('-')[0]!;
   out.push({
@@ -115,6 +123,7 @@ const data: NativeNameData = {
   source: 'Unicode CLDR, cldr-localenames-full',
   version: CLDR_VERSION,
   licence: 'Unicode License v3 (free to use, including commercially)',
+  overrides: Object.fromEntries(Object.entries(OVERRIDES).map(([iso2, o]) => [iso2, o.why])),
   names: out.sort((a, b) => a.id.localeCompare(b.id)),
 };
 await writeFile(join(ROOT, 'data', 'native-names.json'), JSON.stringify(data) + '\n');

@@ -1803,8 +1803,17 @@ for (const [label, viewport] of [
     await openGame(page, 'native-tongue');
     await page.getByRole('button', { name: 'Start game' }).click();
     await expect(page.locator('.tongue-name')).toHaveText(nativeOf.get(state.level.country)!.name, { timeout: 20_000 });
-    for (const selector of ['.route-status', '.tongue-name', '.world-map', '[role=combobox]', '.tongue-skip']) await inView(selector);
+    for (const selector of ['.route-status', '.tongue-name', '[role=combobox]', '.tongue-skip']) await inView(selector);
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    // No bare map during the question; and no hint before a miss.
+    await expect(page.locator('.world-map')).toHaveCount(0);
+    await expect(page.locator('.tongue-hint')).toHaveText('');
+    const inputBox = (await page.getByRole('combobox').boundingBox())!;
+    // "Congo" offers both Congos rather than picking one.
+    await page.getByRole('combobox').fill('Congo');
+    await expect(page.getByRole('option').filter({ hasText: 'DR Congo' })).toHaveCount(1);
+    await expect(page.getByRole('option').filter({ hasText: 'Republic of the Congo' })).toHaveCount(1);
+    await page.getByRole('combobox').fill('');
     // The page never says which country it is before the end of the level.
     expect(await page.locator('.tongue-game').innerHTML()).not.toContain(getCountry(state.level.country)!.name);
 
@@ -1814,6 +1823,9 @@ for (const [label, viewport] of [
     await expect(page.locator('.tongue-wrong')).toContainText(getCountry(wrong)!.name);
     await expect(page.locator('.tongue-wrong')).toContainText(nativeOf.get(wrong)!.name);
     await expect(page.locator('.tongue-misses')).toHaveText('1');
+    await expect(page.locator('.tongue-hint')).toHaveText(`Hint: it’s in ${nativeOf.get(state.level.country)!.language}.`);
+    // The input stays where it was under the player's thumb.
+    expect(await page.getByRole('combobox').boundingBox()).toEqual(inputBox);
     await inView('.tongue-wrong');
     await inView('[role=combobox]');
 
@@ -1821,6 +1833,10 @@ for (const [label, viewport] of [
     await guess(state.level.country);
     await expect(page.locator('.route-summary.solved')).toContainText(getCountry(state.level.country)!.name);
     await inView('.route-summary');
+    // The map arrives with the answer, lit up, and everything still fits.
+    await inView('.world-map');
+    await inView('.tongue-name');
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
     await expect(page.getByRole('button', { name: 'Next level' })).toBeFocused();
     await page.keyboard.press('Enter');
     state = engine.nextLevel(engine.guess(engine.guess(state, wrong).state, state.level.country).state);

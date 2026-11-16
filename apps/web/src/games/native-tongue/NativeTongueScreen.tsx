@@ -91,7 +91,8 @@ function TonguePlay({
 }) {
   const countries = useMemo(() => queryCountries(), []);
   const game: NativeTongue = useMemo(() => createNativeTongue({ names, countries }), [names, countries]);
-  const items = useMemo(() => countryItems(countries.map((c) => c.id)), [countries]);
+  // "Congo" alone is both countries': take it off the Republic so the list offers the two to pick from.
+  const items = useMemo(() => countryItems(countries.map((c) => c.id)).map((i) => (i.id === 'COG' ? { ...i, aliases: i.aliases?.filter((a) => a !== 'Congo') } : i)), [countries]);
   const nativeOf = useMemo(() => new Map(names.map((n) => [n.id, n])), [names]);
 
   const [state, setState] = useState<TongueState>(() => replayNativeTongue(game, seed, initialMoves ?? []));
@@ -139,6 +140,30 @@ function TonguePlay({
   const skipped = level.status === 'lost' && state.moves.at(-1) === TONGUE_SKIP;
   const next = () => setState(game.nextLevel(state));
 
+  const wrongList =
+    wrong.length > 0 ? (
+      <ul className="tongue-wrong" aria-label="Your wrong guesses, and what each calls itself">
+        {wrong.map((id) => {
+          const c = getCountry(id)!;
+          const own = nativeOf.get(id);
+          return (
+            <li key={id}>
+              <Flag iso2={c.iso2} className="suggestion-flag" /> {c.name}{' '}
+              {own?.looksEnglish ? (
+                <span className="muted">also calls itself {own.name}</span>
+              ) : (
+                own && (
+                  <>
+                    <span className="muted">calls itself</span> <Native name={own} className="tongue-chip" />
+                  </>
+                )
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    ) : null;
+
   return (
     <div className={playing ? 'route tongue-game' : 'route tongue-game done'}>
       <div className="route-status">
@@ -163,29 +188,13 @@ function TonguePlay({
       <div className="tongue-card">
         <p className="tongue-ask">This country calls itself</p>
         <Native name={name} className={`tongue-name ${sizeClass(name.name)}`} />
+        {/* The line is always there, so the hint arriving moves nothing. */}
+        <p className="tongue-hint" role="status">
+          {wrong.length > 0 || !playing ? `Hint: it’s in ${name.language}.` : ''}
+        </p>
       </div>
 
-      <WorldMap shapes={shapes} countries={mapCountries} frame={frame} borders={false} label={playing ? 'World map' : `Map: ${answer.name}`} />
-
-      {wrong.length > 0 && (
-        <ul className="tongue-wrong" aria-label="Your wrong guesses, and what each calls itself">
-          {wrong.map((id) => {
-            const c = getCountry(id)!;
-            const own = nativeOf.get(id);
-            return (
-              <li key={id}>
-                <Flag iso2={c.iso2} className="suggestion-flag" /> {c.name}
-                {own && (
-                  <>
-                    {' '}
-                    <span className="muted">is</span> <Native name={own} className="tongue-chip" />
-                  </>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      {!playing && <WorldMap shapes={shapes} countries={mapCountries} frame={frame} borders={false} label={`Map: ${answer.name}`} />}
 
       {playing ? (
         <>
@@ -207,6 +216,7 @@ function TonguePlay({
           <p className="route-message" role="status">
             {message ?? 'Type the English name of the country. Each wrong one shows how that country writes its own name.'}
           </p>
+          {wrongList}
         </>
       ) : level.status === 'cleared' ? (
         <div className="route-summary solved" role="status">
@@ -233,6 +243,7 @@ function TonguePlay({
           </button>
         </div>
       )}
+      {!playing && wrongList}
     </div>
   );
 }

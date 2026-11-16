@@ -20,6 +20,8 @@ export interface NativeNameData {
   source: string;
   version: string;
   licence: string;
+  /** Names changed by hand from CLDR's, by ISO 3166-1 alpha-2 code, with the reason. */
+  overrides: Record<string, string>;
   names: NativeName[];
 }
 

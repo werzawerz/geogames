@@ -118,6 +118,23 @@ describe('the level plan', () => {
     }
   });
 
+  it('asks Arabic script at most once in any four levels', () => {
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const { levels } = playPerfect(seed, 70);
+      for (let i = 20; i + 4 <= levels.length; i++) {
+        const window = levels.slice(i, i + 4).filter((l) => nameOf.get(l.country)!.script === 'Arabic');
+        expect(window.length, `seed ${seed} from level ${i + 1}`).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  it('never asks a name that reads like the English one, in any band, even past the whole pool', () => {
+    for (const id of ['CUB', 'CHL', 'MLI', 'SWZ', 'MEX', 'GHA', 'USA']) expect(nameOf.get(id)?.looksEnglish ?? true, id).toBe(true);
+    for (let seed = 1; seed <= 20; seed++) {
+      for (const level of playPerfect(seed, game.pool.length + 40).levels) expect(nameOf.get(level.country)!.looksEnglish, `${seed}/${level.number}`).toBe(false);
+    }
+  });
+
   it('keeps going past the pool, repeating the country asked longest ago', () => {
     const { levels } = playPerfect(5, game.pool.length + 10);
     expect(levels.length).toBe(game.pool.length + 10);

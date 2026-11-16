@@ -59,6 +59,8 @@ const MISS_SHARE = [1, 0.6, 0.3];
 export const TONGUE_FLAWLESS_SHARE = 0.5;
 /** Countries smaller than this (km²) are hard to see on the answer map: never asked. */
 export const TONGUE_MIN_AREA_KM2 = 400;
+/** Arabic script comes up at most once in this many levels. */
+export const ARABIC_WINDOW = 4;
 export const TONGUE_SKIP = 'skip';
 
 export type TongueGuessResult = 'right' | 'wrong' | 'repeat' | 'unknown';
@@ -124,16 +126,21 @@ export function createNativeTongue({ names, countries }: { names: readonly Nativ
 
   function nextCountry(rng: Rng, plan: TongueLevelPlan, past: readonly CountryId[]): CountryId {
     const asked = new Set(past);
-    const lastScript = past.length ? scriptOf.get(past[past.length - 1]!) : undefined;
+    const recent = past.slice(-(ARABIC_WINDOW - 1)).map((id) => scriptOf.get(id));
+    // Never two of one script in a row, and Arabic script (a quarter of the pool, so a brute
+    // force for anyone who can't read it) at most once in any four levels.
+    const arabicOk = (n: NativeName) => !(n.script === 'Arabic' && recent.includes('Arabic'));
+    const rules: ((n: NativeName) => boolean)[] = [(n) => arabicOk(n) && n.script !== recent.at(-1), arabicOk];
     // Never a repeat while the band has others; then the rest of the scope, then anything unasked.
-    const fallbacks = [firstChoice(plan), pool.filter((n) => inScope(plan.scope, n.id)), pool];
-    for (const group of fallbacks) {
-      const fresh = group.filter((n) => !asked.has(n.id));
-      if (fresh.length === 0) continue;
-      // Two of one script in a row would make the second easier to place.
-      const varied = fresh.filter((n) => n.script !== lastScript);
-      return pick(rng, (varied.length ? varied : fresh).map((n) => n.id));
+    const groups = [firstChoice(plan), pool.filter((n) => inScope(plan.scope, n.id)), pool].map((g) => g.filter((n) => !asked.has(n.id)));
+    for (const fresh of groups) {
+      for (const ok of rules) {
+        const options = fresh.filter(ok);
+        if (options.length) return pick(rng, options.map((n) => n.id));
+      }
     }
+    // Only Arabic-script names are left in reach: better one too many than a repeat.
+    for (const fresh of groups) if (fresh.length) return pick(rng, fresh.map((n) => n.id));
     // Every country has been asked: the one asked longest ago.
     return [...pool].sort((a, b) => past.lastIndexOf(a.id) - past.lastIndexOf(b.id) || a.id.localeCompare(b.id))[0]!.id;
   }
