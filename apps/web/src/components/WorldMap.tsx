@@ -5,7 +5,7 @@ import { geoCentroid, geoNaturalEarth1, geoPath, type GeoPermissibleObjects, typ
 import type { CountryId } from '@geogames/geodata';
 import type { WorldShapes } from '@geogames/geodata/shapes';
 import { mainland } from './mainland.ts';
-import { renderTerrain, type TerrainImage } from './terrain.ts';
+import { renderTerrain, renderTerrainNow, warmTerrain, type TerrainImage } from './terrain.ts';
 
 export type MapTone = 'start' | 'end' | 'optimal' | 'near' | 'far' | 'route';
 
@@ -69,33 +69,57 @@ const TERRAIN_DENSITY = 1.25;
 const TERRAIN_DENSITY_NARROW = 0.8;
 const narrow = () => typeof matchMedia !== 'undefined' && matchMedia('(max-width: 640px)').matches;
 
-/** Shaded relief for the frame, drawn when the projection changes; null until it's ready. */
-function useTerrain(projection: GeoProjection, on: boolean): TerrainImage | null {
-  const [image, setImage] = useState<TerrainImage | null>(null);
+/** A rough first pass, a few times fewer pixels a unit, so the terrain shows at once and sharpens a moment later. */
+const TERRAIN_DENSITY_QUICK = 0.6;
+const TERRAIN_EXTENT: [[number, number], [number, number]] = [
+  [-WIDTH * TERRAIN_MARGIN, -HEIGHT * TERRAIN_MARGIN],
+  [WIDTH * (1 + TERRAIN_MARGIN), HEIGHT * (1 + TERRAIN_MARGIN)],
+];
+
+/**
+ * Shaded relief for the frame. Once the picture's tiles are decoded (after the
+ * first frame), a rough pass is drawn in the same render as the new frame, so the
+ * plain map never shows; the sharp pass replaces it a moment later. Before that,
+ * `pending` is true, so the map can hide its plain land instead of flashing it.
+ */
+function useTerrain(projection: GeoProjection, on: boolean): { image: TerrainImage | null; pending: boolean } {
+  const quickNow = useMemo(() => (on ? renderTerrainNow(projection, TERRAIN_EXTENT, TERRAIN_DENSITY_QUICK) : null), [projection, on]);
+  // The async passes, for the projection they were drawn for; image null = no terrain here (or it failed).
+  const [drawn, setDrawn] = useState<{ projection: GeoProjection; image: TerrainImage | null } | null>(null);
   useEffect(() => {
     if (!on) return;
     let cancelled = false;
-    let made: TerrainImage | null = null;
-    const extent: [[number, number], [number, number]] = [
-      [-WIDTH * TERRAIN_MARGIN, -HEIGHT * TERRAIN_MARGIN],
-      [WIDTH * (1 + TERRAIN_MARGIN), HEIGHT * (1 + TERRAIN_MARGIN)],
-    ];
-    renderTerrain(projection, extent, narrow() ? TERRAIN_DENSITY_NARROW : TERRAIN_DENSITY).then(
-      (result) => {
-        made = result;
-        if (!cancelled) setImage(result);
-        else if (result) URL.revokeObjectURL(result.href);
-      },
-      // The map works without terrain: the plain land and sea are drawn under it.
-      () => {},
-    );
+    const made: TerrainImage[] = [];
+    const show = (image: TerrainImage | null) => {
+      if (image) made.push(image);
+      if (!cancelled) setDrawn({ projection, image });
+    };
+    (async () => {
+      try {
+        if (quickNow === undefined) {
+          const quick = await renderTerrain(projection, TERRAIN_EXTENT, TERRAIN_DENSITY_QUICK);
+          show(quick);
+          if (!quick) return;
+        }
+        if (cancelled) return;
+        show(await renderTerrain(projection, TERRAIN_EXTENT, narrow() ? TERRAIN_DENSITY_NARROW : TERRAIN_DENSITY));
+        warmTerrain();
+      } catch {
+        // The map works without terrain: the plain land and sea are drawn under it.
+        show(null);
+      }
+    })();
     return () => {
       cancelled = true;
-      setImage(null);
-      if (made) URL.revokeObjectURL(made.href);
+      // Revoke once the next frame's picture has replaced these.
+      setTimeout(() => made.forEach((m) => URL.revokeObjectURL(m.href)), 1000);
     };
-  }, [projection, on]);
-  return image;
+  }, [projection, on, quickNow]);
+  if (!on) return { image: null, pending: false };
+  const current = drawn?.projection === projection ? drawn : null;
+  if (current?.image) return { image: current.image, pending: false };
+  if (quickNow) return { image: quickNow, pending: false };
+  return { image: null, pending: !current && quickNow !== null };
 }
 
 /**
@@ -175,7 +199,7 @@ export function WorldMap({
   }, [shapes, focusKey, frame]);
 
   const path = useMemo(() => geoPath(projection), [projection]);
-  const relief = useTerrain(projection, terrain);
+  const { image: relief, pending: terrainPending } = useTerrain(projection, terrain);
   const landPath = useMemo(() => path(shapes.land) ?? '', [path, shapes.land]);
   // Base layer of every country; only recomputed when the frame changes, never while zooming.
   const base = useMemo(
@@ -247,7 +271,7 @@ export function WorldMap({
     <div className="map-frame">
       <svg
         ref={svgRef}
-        className={`world-map${onPick ? ' pickable' : ''}`}
+        className={`world-map${onPick ? ' pickable' : ''}${terrainPending ? ' terrain-pending' : ''}`}
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         preserveAspectRatio={`xMidYMid ${fit}`}
         role="img"

@@ -2056,6 +2056,25 @@ a {
 /* colour terrain (WorldMap `terrain`) */
 .map-terrain {
   pointer-events: none;
+  animation: terrain-in 160ms ease-out;
+}
+
+@keyframes terrain-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Until the frame's terrain is ready, show only the sea: the plain land would flash first. */
+.terrain-pending .map-land,
+.terrain-pending .map-country:not(.map-highlight) {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-terrain {
+    animation: none;
+  }
 }
 
 /* River Run */
