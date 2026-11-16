@@ -107,13 +107,13 @@ describe('the level plan', () => {
     expect(scripts.has('Arabic')).toBe(true);
   });
 
-  it('never repeats a country in a run, or one script twice in a row', () => {
+  it('never repeats a country in a run, or one script twice in a row in band 2', () => {
     for (let seed = 1; seed <= SEEDS; seed++) {
       const { levels } = playPerfect(seed, 60);
       expect(new Set(levels.map((l) => l.country)).size, `seed ${seed}`).toBe(levels.length);
       levels.slice(1).forEach((l, i) => {
-        // Only where the band has others; band 1 and 2 are wide enough for it.
-        if (l.number <= 20) expect(nameOf.get(l.country)!.script, `${seed}/${l.number}`).not.toBe(nameOf.get(levels[i]!.country)!.script);
+        // Band 1 is all Latin, so only from band 2 on.
+        if (l.number >= 10 && l.number <= 20) expect(nameOf.get(l.country)!.script, `${seed}/${l.number}`).not.toBe(nameOf.get(levels[i]!.country)!.script);
       });
     }
   });

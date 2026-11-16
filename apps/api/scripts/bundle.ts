@@ -50,6 +50,10 @@ function slim(file: string, data: any): unknown {
     const keep = ({ id, name, tier, continent, anchor }: Record<string, unknown>) => ({ id, name, tier, continent, anchor });
     return { ...data, rivers: data.rivers.map(keep) };
   }
+  // Native Tongue scores by which country was asked, so only which names make a puzzle and their script matter, not the names.
+  if (/native-names.json$/.test(file)) {
+    return { ...data, names: data.names.map(({ id, script, looksEnglish }: Record<string, unknown>) => ({ id, script, looksEnglish })) };
+  }
   // Blank Atlas replays need only what each feature is, where, and what it's part of; never names or outlines.
   if (/blank-atlas\.json$/.test(file)) {
     return {

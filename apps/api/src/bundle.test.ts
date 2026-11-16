@@ -15,6 +15,7 @@ import {
   createCircleArcade,
   createHalfway,
   createRiverRun,
+  createNativeTongue,
   riverChoices,
   halfwayPools,
   distanceKm,
@@ -33,6 +34,7 @@ import {
 } from '@geogames/games';
 import { queryCountries } from '@geogames/geodata';
 import { loadRivers } from '@geogames/geodata/rivers';
+import { loadNativeNames } from '@geogames/geodata/native-names';
 import { bundle } from '../scripts/bundle.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -190,6 +192,27 @@ describe('the server bundle', () => {
       expect(full).toEqual({ score: end.score, finished: true });
       expect(await server.replayGame(definition, settings, 41, end.moves)).toEqual(full);
     }
+  });
+
+  it('scores Native Tongue the same without the names themselves', async () => {
+    const definition = GAMES.find((g) => g.kind === 'native-tongue')!;
+    const settings = normalizeSettings({}, definition);
+    const countries = queryCountries();
+    const engine = createNativeTongue({ names: (await loadNativeNames()).names, countries });
+    let state = engine.start(17);
+    // Rights, a miss then a right, a skip, and misses to the end.
+    for (let i = 0; state.status !== 'over' && i < 60; i++) {
+      const wrong = countries.find((c) => c.id !== state.level.country && !state.level.guesses.includes(c.id))!.id;
+      if (i % 5 === 3) state = engine.skip(state);
+      else if (i % 4 === 1) state = engine.guess(engine.guess(state, wrong).state, state.level.country).state;
+      else if (i < 30) state = engine.guess(state, state.level.country).state;
+      else state = engine.guess(state, wrong).state;
+      if (state.status === 'level-over') state = engine.nextLevel(state);
+    }
+    expect(state.score).toBeGreaterThan(0);
+    const full = await replayGame(definition, settings, 17, state.moves);
+    expect(full.score).toBe(state.score);
+    expect(await server.replayGame(definition, settings, 17, state.moves)).toEqual(full);
   });
 
   it('scores River Run the same without the river lines, typed names on offer included', async () => {
