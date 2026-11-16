@@ -18,8 +18,18 @@ describe('router', () => {
       { page: 'privacy' },
       { page: 'terms' },
       { page: 'contact' },
+      { page: 'profile' },
     ];
     for (const r of routes) expect(parseRoute(href(r))).toEqual(r);
+  });
+
+  it('parses #/profile', () => {
+    expect(parseRoute('#/profile')).toEqual({ page: 'profile' });
+    expect(href({ page: 'profile' })).toBe('#/profile');
+  });
+
+  it('sends the old #/premium links home', () => {
+    expect(parseRoute('#/premium')).toEqual({ page: 'home' });
   });
 
   it('falls back to home for unknown pages', () => {

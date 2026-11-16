@@ -6,6 +6,10 @@ import { PlatformProvider } from './platform/PlatformProvider.tsx';
 import { HigherLowerRound } from './games/higher-lower/HigherLowerScreen.tsx';
 import { GamePage } from './pages/GamePage.tsx';
 import { Home } from './pages/Home.tsx';
+import { ProfilePage } from './pages/ProfilePage.tsx';
+import { ContactPage, PrivacyPage } from './pages/InfoPages.tsx';
+import { SiteHeader } from './components/SiteHeader.tsx';
+import { routeTitle } from './App.tsx';
 
 const game = getGame('higher-lower-population')!;
 
@@ -30,6 +34,54 @@ describe('web smoke', () => {
     expect(html).toContain('South America');
     expect(html).not.toMatch(/premium|plays left|unlimited/i);
     expect(html).not.toContain('City size');
+  });
+
+  it('shows the Profile page without account actions in a build with no server', () => {
+    const html = renderToString(
+      <PlatformProvider>
+        <ProfilePage />
+      </PlatformProvider>,
+    );
+    expect(html).toContain('Player name');
+    expect(html).toContain('Your best scores');
+    expect(html).not.toContain('Delete my account');
+    expect(html).not.toContain('Sign in with Google');
+  });
+
+  it('disables the contact form in a build with no server, and keeps the rest of the page', () => {
+    const html = renderToString(
+      <PlatformProvider>
+        <ContactPage />
+      </PlatformProvider>,
+    );
+    expect(html).toContain('Your message');
+    expect(html.replace(/<!-- -->/g, "")).toContain("0 / 2000");
+    expect(html).toContain('Only if you want a reply');
+    expect(html).toMatch(/<textarea[^>]*disabled/);
+    expect(html).not.toContain('contact-form-slot');
+  });
+
+  it('keeps the operator placeholders and the draft note in the privacy policy, and describes sign-in and deletion', () => {
+    const html = renderToString(<PrivacyPage />);
+    expect(html).toContain('[Operator name]');
+    expect(html).toContain('[Country]');
+    expect(html).toContain('Draft');
+    expect(html).toContain('Delete my account');
+    expect(html).toContain('salted hash');
+  });
+
+  it('shows only the player name in the header of a build with no server', () => {
+    const html = renderToString(
+      <PlatformProvider>
+        <SiteHeader route={{ page: 'home' }} />
+      </PlatformProvider>,
+    );
+    expect(html).not.toContain('google-btn');
+    expect(html).toContain('player-name');
+  });
+
+  it('titles the profile page', () => {
+    expect(routeTitle({ page: 'profile' })).toBe('Profile · GeoGames');
   });
 
   it('offers a city-size slider for city games, defaulting to 1M+', () => {

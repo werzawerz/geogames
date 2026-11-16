@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { gamesByGroup } from '@geogames/games';
-import { usePlatform } from '../platform/PlatformProvider.tsx';
+import { AccountMenu } from './AccountMenu.tsx';
 import { href, type Route } from '../router.ts';
 
 /**
@@ -8,7 +8,6 @@ import { href, type Route } from '../router.ts';
  * Up to 640px the links fold into a hamburger menu.
  */
 export function SiteHeader({ route }: { route: Route }) {
-  const { player } = usePlatform();
   const [menuOpen, setMenuOpen] = useState(false); // hamburger (phones)
   const [gamesOpen, setGamesOpen] = useState(false); // Games dropdown (desktop)
   const headerRef = useRef<HTMLElement>(null);
@@ -120,7 +119,7 @@ export function SiteHeader({ route }: { route: Route }) {
       </nav>
       <div className="topbar-right">
         <div className="account-slot">
-          <span className="muted player-name">{player.name}</span>
+          <AccountMenu />
         </div>
       </div>
     </header>

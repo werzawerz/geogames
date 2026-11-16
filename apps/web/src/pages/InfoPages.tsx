@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { usePlatform } from '../platform/PlatformProvider.tsx';
 import { href } from '../router.ts';
 
 const UPDATED = '16 November 2026';
@@ -77,22 +79,27 @@ export function PrivacyPage() {
       <h2>What we store, and why</h2>
       <ul>
         <li>
-          <strong>An anonymous account id</strong>, created the first time you play, so your scores and progress stay yours.
+          <strong>An anonymous account</strong>, created the first time you play and tied to this browser. Your games, scores and personal bests
+          are kept in it. Anonymous players do not appear on the public leaderboards; you only see your own scores.
         </li>
         <li>
-          <strong>Your player name</strong>, which you choose. It is shown on leaderboards, so do not use your real name if you prefer not to be
-          identified.
+          <strong>Your player name</strong>, which you choose. Only players who signed in with Google appear on the public leaderboards, and
+          they appear under this player name. Do not use your real name if you prefer not to be identified.
         </li>
         <li>
           <strong>Game moves and scores</strong>, for the leaderboards, for checking that scores are fair, and for saving your progress and
           personal bests.
         </li>
         <li>
-          <strong>If you sign in with Google:</strong> your email address, name and profile picture as Google provides them, so you can get back to
-          the same account on another device.
+          <strong>If you sign in with Google:</strong> your email address, name and profile picture as Google provides them. They are used only
+          to sign you in and to show you who you are signed in as; your Google name and email are never shown publicly. Signing in links the
+          Google account to the anonymous account you already have, so your games are kept. If that Google account already had a GeoGames account
+          (for example from another device), the games of the anonymous account are merged into it.
         </li>
         <li>
-          <strong>Feedback messages</strong> you send through the Contact page, with the contact address you give, so we can read and answer them.
+          <strong>Feedback messages</strong> you send through the Contact page: the message, the contact address if you give one, the page you
+          sent it from, and a salted hash of your IP address, which is used only to limit how many messages one person can send per hour (the IP
+          address itself is not stored).
         </li>
       </ul>
       <p>
@@ -125,8 +132,8 @@ export function PrivacyPage() {
 
       <h2>How long we keep it</h2>
       <p>
-        Account data and scores are kept while your account exists. When you delete your account, your personal data is removed, and your
-        leaderboard entries are removed or made anonymous. Feedback messages are kept for as long as needed to deal with them, and no longer than
+        Account data and scores are kept while your account exists. When you choose <strong>Delete my account</strong> on your Profile
+        page, your player, your games and scores, your feedback and your sign-in account (including the link to Google) are removed. Feedback messages are kept for as long as needed to deal with them, and no longer than
         12 months. Accounts that were never used again may be deleted after 24 months of inactivity.
       </p>
 
@@ -188,7 +195,81 @@ export function ContactPage() {
     <div className="page prose">
       <h1 className="page-title">Contact</h1>
       <p>Feedback, a mistake in the data, a bug, or a request about your personal data: write to us here.</p>
-      <div className="contact-form-slot" />
+      <FeedbackForm />
     </div>
+  );
+}
+
+const MAX_MESSAGE = 2000;
+
+function FeedbackForm() {
+  const { account, sendFeedback } = usePlatform();
+  const [message, setMessage] = useState('');
+  const [email, setEmail] = useState('');
+  const [state, setState] = useState<{ kind: 'idle' | 'sending' | 'sent' } | { kind: 'error'; text: string }>({ kind: 'idle' });
+  const local = account.status === 'local';
+  const left = MAX_MESSAGE - message.length;
+  const valid = message.trim().length > 0 && left >= 0;
+
+  if (state.kind === 'sent') {
+    return (
+      <div className="panel" role="status">
+        <p className="lead">Thank you, your message was sent.</p>
+        <button type="button" className="btn" onClick={() => setState({ kind: 'idle' })}>
+          Send another
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      className="feedback-form"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!valid || local) return;
+        setState({ kind: 'sending' });
+        try {
+          await sendFeedback({ message: message.trim(), email: email.trim() || undefined, page: location.hash || href({ page: 'contact' }) });
+          setMessage('');
+          setEmail('');
+          setState({ kind: 'sent' });
+        } catch (error) {
+          setState({ kind: 'error', text: error instanceof Error ? error.message : 'Something went wrong. Please try again.' });
+        }
+      }}
+    >
+      {local && <p className="muted">Sending messages isn’t available in this version of the site.</p>}
+      <label className="field">
+        Your message
+        <textarea
+          value={message}
+          rows={6}
+          maxLength={MAX_MESSAGE}
+          required
+          disabled={local}
+          aria-describedby="feedback-count"
+          onChange={(e) => setMessage(e.target.value)}
+        />
+      </label>
+      <p id="feedback-count" className={`small ${left < 100 ? 'form-error' : 'muted'}`}>
+        {message.length} / {MAX_MESSAGE}
+      </p>
+      <label className="field">
+        Email (optional)
+        <input type="email" value={email} disabled={local} autoComplete="email" onChange={(e) => setEmail(e.target.value)} aria-describedby="feedback-email-note" />
+      </label>
+      <p id="feedback-email-note" className="muted small">
+        Only if you want a reply.
+      </p>
+      {state.kind === 'error' && (
+        <p className="form-error" role="alert">
+          {state.text}
+        </p>
+      )}
+      <button type="submit" className="btn btn-primary" disabled={!valid || local || state.kind === 'sending'}>
+        {state.kind === 'sending' ? 'Sending…' : 'Send message'}
+      </button>
+    </form>
   );
 }
