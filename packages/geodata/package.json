@@ -12,7 +12,8 @@
     "./blank-atlas": "./src/blank-atlas.ts",
     "./blank-atlas-shapes": "./src/blank-atlas-shapes.ts",
     "./rivers": "./src/rivers.ts",
-    "./land-grid": "./src/land-grid.ts"
+    "./land-grid": "./src/land-grid.ts",
+    "./native-names": "./src/native-names.ts"
   },
   "scripts": {
     "build:data": "node scripts/build-countries.ts && node scripts/build-cities.ts",

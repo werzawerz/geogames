@@ -85,8 +85,12 @@ test('plays are unlimited, and nothing mentions plans', async ({ page }) => {
 
 // Without the error-checking fixture: browsers log every error status to the console.
 plainTest('an offensive display name is refused, and the old one kept', async ({ page }) => {
+  // The name settles once the server's player arrives (GET /me); read it after that.
+  const me = page.waitForResponse((r) => r.request().method() === 'GET' && new URL(r.url()).pathname.endsWith('/me'));
   await page.goto('/#/scores/capitals');
+  await me;
   const input = page.getByLabel('Display name');
+  await expect(input).not.toHaveValue('');
   const before = await input.inputValue();
   await input.fill('Sh1thead');
   await input.blur();

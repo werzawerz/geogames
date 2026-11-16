@@ -110,6 +110,11 @@ export interface OnTheGridDefinition extends BaseDefinition {
   subject: 'country';
 }
 
+export interface NativeTongueDefinition extends BaseDefinition {
+  kind: 'native-tongue';
+  subject: 'country';
+}
+
 export interface MysteryCountryDefinition extends BaseDefinition {
   kind: 'mystery-country';
   subject: 'country';
@@ -132,7 +137,8 @@ export type GameDefinition =
   | ClockworkDefinition
   | BlankAtlasDefinition
   | RiverRunDefinition
-  | OnTheGridDefinition;
+  | OnTheGridDefinition
+  | NativeTongueDefinition;
 
 export const GAMES: readonly GameDefinition[] = [
   {
@@ -311,6 +317,15 @@ export const GAMES: readonly GameDefinition[] = [
     subject: 'country',
     title: 'Clockwork',
     tagline: 'It’s 12:00 UTC. A country lights up. What time is it there?',
+    status: 'live',
+  },
+  {
+    id: 'native-tongue',
+    group: 'quizzes',
+    kind: 'native-tongue',
+    subject: 'country',
+    title: 'Native Tongue',
+    tagline: 'A country’s own name for itself is on screen: Ελλάδα, Suomi, България. Which country is it?',
     status: 'live',
   },
 ];

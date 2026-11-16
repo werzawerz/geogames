@@ -166,6 +166,8 @@ const RULES: Record<GameDefinition['kind'], string> = {
     'Two cities are shown: name a real city near the point halfway between them, along the shortest route around the globe. A guess within the level’s radius clears it, and the closer, the more points. A guess further away shows how far off it was. Two misses in a level are free (one from level 26, none from level 40); the next, or a skip, costs one of your 3 lives and ends the level, showing the answer. A first guess within a third of the radius is flawless: half as many points again, and a lost life back (never more than 3). The run goes on until your lives are gone: famous cities first, then smaller radii, no line, and from level 16 no names, only the two dots.',
   clockwork:
     'A time in UTC (London’s winter time) and a date are given, and a country lights up: pick the local time there with the hour and minute buttons and press Check (on a keyboard you can type it, like 1730, and press Enter). If a country has several time zones, a city is named. A wrong time tells you whether the answer is earlier or later. Two misses in a level are free (one from level 15, when dates start to matter, and none from level 45); the next, or a skip, costs one of your 3 lives and ends the level, showing the answer. Right first time is flawless: half as many points again, and a lost life back (never more than 3). The run goes on until your lives are gone: first clocks that follow longitude, then the ones that don’t (China, Spain, India’s half hour), then summer dates with daylight saving, north and south, and from level 25 the dates between one country’s clock change and another’s, and the oddities.',
+  'native-tongue':
+    'A country’s own name for itself is shown in its own script. Type the English name of the country.¶A wrong guess shows what that country calls itself, and after the first miss you are told the language.¶Two misses are free (one from level 21, none from level 41); the next, or a skip, costs one of your 3 lives and ends the level.¶Right first time is flawless: half as many points again, and a lost life back (never more than 3).¶The run goes on until your lives are gone: Latin-letter names first, then scripts that belong to one country (Greek, Georgian, Thai), then shared ones (Cyrillic, Arabic, Devanagari) from level 21.¶Names come from Unicode CLDR.',
   'river-run':
     'A river draws itself on the map from its source. Name it before the line reaches its end: the less of it drawn, the more points. A wrong guess draws that river in grey where it really runs. Two misses in a level are free; the third, a skip, or the line reaching its end costs one of your 3 lives and ends the level. Naming it on your first try before it’s half drawn is flawless: half as many points again, and a lost life back (never more than 3). From half drawn, four names are offered: the right one, picked or typed, scores half, and a wrong one of the four costs a life at once. The run goes on until your lives are gone: the great rivers first, then regional rivers from level 9, tributaries from level 21, and from level 36 rivers deep in the Amazon, Siberia and China with little around them to place them by. Each stage starts slowly, and the rivers draw faster as you go.',
   'blank-atlas':
@@ -175,6 +177,19 @@ const RULES: Record<GameDefinition['kind'], string> = {
   'circle-arcade':
     'Name the top cities in each circle, anywhere in the world. Early circles are big and mostly about famous, much-visited cities; later ones get smaller and ask for more. Wrong guesses are free but spoil a perfect level; a skip costs a life. Hints (the country and every third letter) are limited and halve a city’s points. A perfect level, without misses, skips or hints, earns a life and a hint back.',
 };
+
+/** Rules text; lines (separated by a pilcrow) become bullets. */
+function Rules({ text }: { text: string }) {
+  const lines = text.split('¶');
+  if (lines.length === 1) return <p>{text}</p>;
+  return (
+    <ul className="rules-list">
+      {lines.map((line) => (
+        <li key={line}>{line}</li>
+      ))}
+    </ul>
+  );
+}
 
 function GameSetup({
   game,
@@ -193,12 +208,12 @@ function GameSetup({
   const inPlay = sizes[settings.region];
   const unit = game.subject === 'city' ? 'cities' : 'countries';
   // City Circle counts possible circle centres, which isn't a useful number to show.
-  const showCount = !['circle', 'circle-arcade', 'pin-drop', 'halfway', 'great-circle', 'mystery-country', 'border-blitz', 'clockwork', 'blank-atlas', 'river-run', 'on-the-grid'].includes(game.kind);
+  const showCount = !['circle', 'circle-arcade', 'pin-drop', 'halfway', 'great-circle', 'mystery-country', 'border-blitz', 'clockwork', 'blank-atlas', 'river-run', 'native-tongue', 'on-the-grid'].includes(game.kind);
 
   return (
     <div className="panel center">
       <p className="lead">{game.tagline}</p>
-      <p>{RULES[game.kind]}</p>
+      <Rules text={RULES[game.kind]} />
       <div className="setup">
         {usesRegion(game) && (
           <>

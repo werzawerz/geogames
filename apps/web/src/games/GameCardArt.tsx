@@ -233,6 +233,18 @@ const ART: Record<string, () => ReactNode> = {
       <Dot at={[400, 150]} r={7} />
     </>
   ),
+  'native-tongue': () => (
+    <g className="art-tongue">
+      <rect x={50} y={50} width={200} height={80} rx={14} />
+      <rect x={370} y={70} width={200} height={80} rx={14} />
+      <rect x={100} y={150} width={200} height={80} rx={14} />
+      <rect x={350} y={170} width={200} height={80} rx={14} />
+      <text x={150} y={92} className="art-tongue-a">Suomi</text>
+      <text x={470} y={112}>Ελλάδα</text>
+      <text x={200} y={192} className="art-tongue-a">مصر</text>
+      <text x={450} y={212}>Україна</text>
+    </g>
+  ),
   'river-run': () => (
     <>
       <Land d={art.river.land} />

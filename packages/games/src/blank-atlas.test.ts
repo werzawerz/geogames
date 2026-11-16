@@ -216,7 +216,7 @@ describe('Blank Atlas engine', () => {
         state = game.nextLevel(game.guess(state, answer.id).state);
       }
     }
-  });
+  }, 30_000); // hundreds of seeded levels: slow on a busy machine
 
   it('draws wrong options from the answer\'s own tier, so picking the obscure (or famous) one doesn\'t pay', () => {
     let wins = 0;

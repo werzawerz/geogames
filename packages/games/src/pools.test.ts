@@ -45,7 +45,7 @@ describe('game pools', () => {
 describe('settings', () => {
   it('knows which games have settings to change', () => {
     const without = GAMES.filter((g) => !hasSettings(g)).map((g) => g.id).sort();
-    expect(without).toEqual(['blank-atlas', 'border-blitz', 'clockwork', 'great-circle', 'halfway', 'mystery-country', 'on-the-grid', 'pin-drop', 'river-run']);
+    expect(without).toEqual(['blank-atlas', 'border-blitz', 'clockwork', 'great-circle', 'halfway', 'mystery-country', 'native-tongue', 'on-the-grid', 'pin-drop', 'river-run']);
     for (const id of ['capitals', 'city-circle', 'city-circle-arcade', 'border-route', 'higher-lower-population']) expect(hasSettings(getGame(id)!), id).toBe(true);
   });
 
