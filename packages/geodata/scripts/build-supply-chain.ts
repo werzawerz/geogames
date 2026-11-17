@@ -325,7 +325,7 @@ const MINE: Mineral[] = [
   {
     id: 'aluminium',
     slug: 'aluminum',
-    name: 'aluminium metal',
+    name: 'aluminium',
     tier: 2,
     unit: 'thousand tonnes (smelter)',
   },

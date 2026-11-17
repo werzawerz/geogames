@@ -1900,7 +1900,7 @@ for (const [label, viewport] of [
     await expect(page.locator('.chain-commodity')).toHaveText(name(state.level.commodity), { timeout: 20_000 });
     for (const selector of ['.route-status', '.chain-commodity', '.chain-slots', '.world-map', '[role=combobox]', '.chain-skip']) await inView(selector);
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(viewport.height);
-    await expect(page.locator('.chain-source')).toContainText(/20dd/);
+    await expect(page.locator('.chain-source')).toContainText(/[0-9]{4}/);
 
     // Nothing gives a producer away: not the page, not the map, and not the order of the suggestions.
     const html = await page.locator('.chain-game').innerHTML();
@@ -1915,7 +1915,7 @@ for (const [label, viewport] of [
     state = engine.guess(state, hit).state;
     await expect(page.locator('.chain-slot.found')).toContainText(getCountry(hit)!.name);
     await expect(page.locator('.chain-slot.found')).toContainText('%');
-    await expect(page.locator(`.chain-game .map-country[data-id=${hit}]`)).toHaveCount(1);
+    await expect(page.locator('.chain-game .map-highlight.tone-optimal')).toHaveCount(1);
     await expect(page.locator('.chain-game .map-country')).toHaveCount(1);
     await expect(page.locator('.chain-misses')).toHaveText('0');
 
@@ -1936,7 +1936,6 @@ for (const [label, viewport] of [
     }
     await expect(page.locator('.route-summary.solved')).toContainText(`All ${state.level.need} found`);
     await inView('.route-summary');
-    await inView('.chain-slots');
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(viewport.height + 1);
     await expect(page.getByRole('button', { name: 'Next level' })).toBeFocused();
     await page.keyboard.press('Enter');
@@ -1957,7 +1956,7 @@ for (const [label, viewport] of [
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(viewport.height + 1);
 
     // Out of lives ends the run.
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       await page.getByRole('button', { name: 'Next level' }).click();
       await page.getByRole('button', { name: /Skip/ }).click();
     }

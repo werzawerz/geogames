@@ -62,23 +62,8 @@ export function SupplyChainScreen({ seed, initialMoves, onMovesChange, onGameOve
   return <ChainPlay {...loaded} seed={seed} initialMoves={initialMoves} onMovesChange={onMovesChange} onGameOver={onGameOver} />;
 }
 
-const WORDS: [number, string][] = [
-  [1e12, 'trillion'],
-  [1e9, 'billion'],
-  [1e6, 'million'],
-  [1e3, 'thousand'],
-];
-
-/** "2.9 million tonnes": the unit's own "thousand" or "million" folded into the number. */
-export function formatAmount(value: number, unit: string): string {
-  const fold = /^(thousand|million) /.exec(unit);
-  const scaled = fold ? value * (fold[1] === 'thousand' ? 1e3 : 1e6) : value;
-  const rest = fold ? unit.slice(fold[0].length) : unit;
-  const [size, word] = WORDS.find(([s]) => scaled >= s * 0.995) ?? [1, ''];
-  const n = scaled / size;
-  const text = n >= 100 || Number.isInteger(n) ? Math.round(n).toLocaleString('en-GB') : n.toFixed(n >= 10 ? 1 : 2).replace(/\.?0+$/, '');
-  return `${text}${word ? ` ${word}` : ''} ${rest}`;
-}
+/** The figure as the source gives it, in the unit named once under the list. */
+const amount = (value: number) => value.toLocaleString('en-GB', { maximumFractionDigits: value < 100 ? 1 : 0 });
 
 const percent = (share: number) => `${(share * 100).toFixed(1)}%`;
 const ordinal = (n: number) => `${n}${['th', 'st', 'nd', 'rd'][n % 100 > 10 && n % 100 < 14 ? 0 : n % 10 < 4 ? n % 10 : 0]}`;
@@ -221,7 +206,7 @@ function ChainPlay({
   const extras = answers.accepted.filter((id) => !shown.includes(id));
 
   return (
-    <div className={playing ? 'route chain-game' : 'route chain-game done'}>
+    <div className={`route chain-game${playing ? '' : ' done'}${level.need > 3 ? ' many' : ''}`}>
       <div className="route-status">
         <span>
           Level <strong>{level.number}</strong>
@@ -246,21 +231,24 @@ function ChainPlay({
           <p className="chain-ask">
             The {level.need} countries that {VERB[commodity.kind]} the most
           </p>
-          <p className="chain-commodity">{commodity.name}</p>
-          <ul className="chain-slots" aria-label={`${level.found.length} of ${level.need} found`}>
-            {slots.map((id, i) => {
-              const c = id ? getCountry(id) : undefined;
-              return c ? (
-                <li key={i} className="chain-slot found">
-                  <Flag iso2={c.iso2} className="suggestion-flag" /> {c.name} <strong>{percent(shareOf(c.id))}</strong>
-                </li>
-              ) : (
-                <li key={i} className="chain-slot" aria-label="Not found yet">
-                  ?
-                </li>
-              );
-            })}
-          </ul>
+          <p className={`chain-commodity ${commodity.name.length <= 13 ? 'size-l' : commodity.name.length <= 20 ? 'size-m' : 'size-s'}`}>{commodity.name}</p>
+          {/* Once the level is over, the list under the map says it all. */}
+          {playing && (
+            <ul className="chain-slots" aria-label={`${level.found.length} of ${level.need} found`}>
+              {slots.map((id, i) => {
+                const c = id ? getCountry(id) : undefined;
+                return c ? (
+                  <li key={i} className="chain-slot found">
+                    <Flag iso2={c.iso2} className="suggestion-flag" /> {c.name} <strong>{percent(shareOf(c.id))}</strong>
+                  </li>
+                ) : (
+                  <li key={i} className="chain-slot" aria-label="Not found yet">
+                    ?
+                  </li>
+                );
+              })}
+            </ul>
+          )}
           {sourceLine}
         </div>
 
@@ -303,7 +291,7 @@ function ChainPlay({
                       : `${plan.misses} misses: −1 ♥`}
               </p>
               {state.status === 'over' && <p className="route-summary-title">Out of lives</p>}
-              {level.flawless && <p className="bonus-life">{state.bonusLife ? 'Flawless! +1 ♥' : `Flawless! Lives are full (${CHAIN_MAX_LIVES} at most).`}</p>}
+              {level.flawless && <p className="bonus-life">{state.bonusLife ? 'Flawless! +1 ♥' : `Flawless! Lives are full (${CHAIN_MAX_LIVES}).`}</p>}
               <ol className="chain-top">
                 {shown.map((id) => {
                   const c = getCountry(id)!;
@@ -312,18 +300,16 @@ function ChainPlay({
                     <li key={id} className={level.found.includes(id) ? 'got' : 'missed'}>
                       <Flag iso2={c.iso2} className="suggestion-flag" /> <span className="chain-top-name">{c.name}</span>
                       <span className="muted chain-top-amount">
-                        {percent(p.share)} · {formatAmount(p.value, commodity.unit)}
+                        {percent(p.share)} · {amount(p.value)}
                       </span>
                     </li>
                   );
                 })}
               </ol>
-              {extras.length > 0 && (
-                <p className="muted chain-tie">
-                  {extras.map((id) => getCountry(id)?.name).join(' and ')} also {extras.length === 1 ? 'counts' : 'count'}: within{' '}
-                  {Math.round(CHAIN_TIE_BAND * 100)}% of the last place.
-                </p>
-              )}
+              <p className="muted chain-unit">
+                Output in {commodity.unit}.
+                {extras.length > 0 && ` Also counts: ${extras.map((id) => getCountry(id)?.name).join(', ')} (within ${Math.round(CHAIN_TIE_BAND * 100)}%).`}
+              </p>
               <button ref={nextButton} className="btn btn-primary btn-lg" onClick={state.status === 'over' ? finish : next}>
                 {state.status === 'over' ? 'See final score' : 'Next level'}
               </button>

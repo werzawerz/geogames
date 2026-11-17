@@ -2832,7 +2832,7 @@ summary:focus-visible {
 .art-chain .art-chain-bar { stroke: var(--map-ink); stroke-width: 2; }
 .art-chain .art-chain-bar.a { fill: var(--correct); }
 .art-chain .art-chain-bar.b { fill: var(--brass); }
-.art-chain .art-chain-bar.c { fill: var(--land-2); }
+.art-chain .art-chain-bar.c { fill: var(--accent); }
 .art-chain .art-chain-bar + text, .art-chain text:not(.art-chain-title):not(.art-chain-pct) { fill: var(--surface); }
 .art-chain .art-chain-pct { fill: var(--map-ink); }
 .chain-card {
@@ -2847,20 +2847,23 @@ summary:focus-visible {
   margin: 0;
   font-family: var(--font-head);
   font-weight: 700;
-  font-size: clamp(1.8rem, 6vw, 2.6rem);
   line-height: 1.15;
   color: var(--text);
   text-wrap: balance;
 }
+.chain-commodity.size-l { font-size: clamp(1.9rem, 6vw, 2.6rem); }
+.chain-commodity.size-m { font-size: clamp(1.6rem, 5vw, 2.1rem); }
+.chain-commodity.size-s { font-size: clamp(1.3rem, 4.2vw, 1.7rem); }
 .chain-slots { list-style: none; margin: 0.35rem 0 0.2rem; padding: 0; display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: center; }
 .chain-slot {
   min-height: 36px;
-  min-width: 3.2rem;
+  min-width: 2.8rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  padding: 0.15rem 0.6rem;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.9rem;
   border-radius: 999px;
   border: 2px dashed var(--land-line);
   color: var(--muted);
@@ -2879,7 +2882,7 @@ summary:focus-visible {
 }
 /* Wide screens put the question beside the map, which then has the whole height. */
 @media (min-width: 900px) {
-  .chain-body { grid-template-columns: minmax(320px, 5fr) minmax(0, 7fr); grid-template-areas: "card map" "rest map"; align-items: start; }
+  .chain-body { grid-template-columns: minmax(380px, 6fr) minmax(0, 6fr); grid-template-areas: "card map" "rest map"; align-items: start; }
   .chain-card { grid-area: card; }
   .chain-map { grid-area: map; }
   .chain-rest { grid-area: rest; }
@@ -2894,8 +2897,22 @@ summary:focus-visible {
 .chain-top .chain-top-name { font-weight: 700; }
 .chain-top .chain-top-amount { margin-left: auto; font-size: 0.9rem; text-align: right; }
 .chain-top li.got .chain-top-name::after { content: ' ✓'; color: var(--correct-ink); }
-.chain-tie { font-size: 0.85rem; }
+.chain-unit { font-size: 0.85rem; }
+.chain-game .chain-unit { margin: 0; }
+.chain-game .route-summary .route-summary-title { font-size: 1.25rem; }
+.chain-game .route-summary .bonus-life { margin: 0; font-size: 0.9rem; }
+.chain-game .chain-top { line-height: 1.2; font-size: 0.95rem; }
+.chain-top .chain-top-amount { white-space: nowrap; }
+.chain-game .route-summary { padding: 0.6rem 0.75rem; gap: 0.3rem; }
+.chain-game .chain-top { gap: 0.1rem; }
 .chain-game.done { --chain-chrome: 640px; }
+/* Four or five slots take a second row on a phone: the card keeps room for it, so nothing jumps when they fill. */
+@media (max-width: 640px) {
+  .chain-slot .suggestion-flag { display: none; }
+  .chain-game.many .chain-slots { min-height: 78px; align-content: flex-start; }
+  .chain-game.many { --chain-chrome: 665px; }
+  .chain-game.many.done { --chain-chrome: 760px; }
+}
 @media (max-width: 640px) {
   .chain-game { --chain-chrome: 560px; }
   .chain-game.done { --chain-chrome: 740px; }
