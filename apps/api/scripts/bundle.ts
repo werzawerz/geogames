@@ -54,6 +54,13 @@ function slim(file: string, data: any): unknown {
   if (/native-names.json$/.test(file)) {
     return { ...data, names: data.names.map(({ id, script, looksEnglish }: Record<string, unknown>) => ({ id, script, looksEnglish })) };
   }
+  // Supply Chain scores by which producers lead which commodity: ids, kind, tier and output, never the names, units or sources.
+  if (/supply-chain.json$/.test(file)) {
+    return {
+      version: data.version,
+      commodities: data.commodities.map(({ id, kind, tier, producers }: Record<string, any>) => ({ id, kind, tier, producers: producers.map(({ id, value, share }: Record<string, unknown>) => ({ id, value, share })) })),
+    };
+  }
   // Blank Atlas replays need only what each feature is, where, and what it's part of; never names or outlines.
   if (/blank-atlas\.json$/.test(file)) {
     return {

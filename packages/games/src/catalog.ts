@@ -110,6 +110,11 @@ export interface NativeTongueDefinition extends BaseDefinition {
   subject: 'country';
 }
 
+export interface SupplyChainDefinition extends BaseDefinition {
+  kind: 'supply-chain';
+  subject: 'country';
+}
+
 export interface MysteryCountryDefinition extends BaseDefinition {
   kind: 'mystery-country';
   subject: 'country';
@@ -132,7 +137,8 @@ export type GameDefinition =
   | ClockworkDefinition
   | BlankAtlasDefinition
   | RiverRunDefinition
-  | NativeTongueDefinition;
+  | NativeTongueDefinition
+  | SupplyChainDefinition;
 
 export const GAMES: readonly GameDefinition[] = [
   {
@@ -311,6 +317,15 @@ export const GAMES: readonly GameDefinition[] = [
     subject: 'country',
     title: 'Native Tongue',
     tagline: 'A country’s own name for itself is on screen: Ελλάδα, Suomi, България. Which country is it?',
+    status: 'live',
+  },
+  {
+    id: 'supply-chain',
+    group: 'quizzes',
+    kind: 'supply-chain',
+    subject: 'country',
+    title: 'Supply Chain',
+    tagline: 'Coffee, cobalt, crude oil. Name the countries that make the most of it.',
     status: 'live',
   },
 ];

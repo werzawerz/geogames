@@ -16,6 +16,7 @@ import {
   createHalfway,
   createRiverRun,
   createNativeTongue,
+  createSupplyChain,
   riverChoices,
   halfwayPools,
   distanceKm,
@@ -35,6 +36,7 @@ import {
 import { queryCountries } from '@geogames/geodata';
 import { loadRivers } from '@geogames/geodata/rivers';
 import { loadNativeNames } from '@geogames/geodata/native-names';
+import { loadSupplyChain } from '@geogames/geodata/supply-chain';
 import { bundle } from '../scripts/bundle.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -207,6 +209,28 @@ describe('the server bundle', () => {
       else if (i % 4 === 1) state = engine.guess(engine.guess(state, wrong).state, state.level.country).state;
       else if (i < 30) state = engine.guess(state, state.level.country).state;
       else state = engine.guess(state, wrong).state;
+      if (state.status === 'level-over') state = engine.nextLevel(state);
+    }
+    expect(state.score).toBeGreaterThan(0);
+    const full = await replayGame(definition, settings, 17, state.moves);
+    expect(full.score).toBe(state.score);
+    expect(await server.replayGame(definition, settings, 17, state.moves)).toEqual(full);
+  });
+
+  it('scores Supply Chain the same without the names, units and sources', async () => {
+    const definition = GAMES.find((g) => g.kind === 'supply-chain')!;
+    const settings = normalizeSettings({}, definition);
+    const countries = queryCountries();
+    const engine = createSupplyChain({ commodities: (await loadSupplyChain()).commodities, countries });
+    let state = engine.start(17);
+    // Rights, a miss then rights, a skip, and misses to the end.
+    for (let i = 0; i < 80 && state.status !== 'over'; i++) {
+      const accepted = engine.answers(state.level.commodity, state.level.number)!.accepted;
+      const wrong = countries.find((c) => !accepted.includes(c.id) && !state.level.guesses.includes(c.id))!.id;
+      const right = accepted.find((id) => !state.level.found.includes(id))!;
+      if (i % 7 === 3) state = engine.skip(state);
+      else if (i % 4 === 1 || i > 40) state = engine.guess(state, wrong).state;
+      else state = engine.guess(state, right).state;
       if (state.status === 'level-over') state = engine.nextLevel(state);
     }
     expect(state.score).toBeGreaterThan(0);
