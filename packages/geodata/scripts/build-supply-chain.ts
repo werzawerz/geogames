@@ -69,8 +69,8 @@ const FARM: [string, number, string, Tier][] = [
   ['tea', 667, 'tea', 1],
   ['sugar-cane', 156, 'sugar cane', 1],
   ['potatoes', 116, 'potatoes', 1],
-  ['grapes', 560, 'grapes (and so wine)', 1],
-  ['olives', 260, 'olives (and so olive oil)', 1],
+  ['grapes', 560, 'grapes', 1],
+  ['olives', 260, 'olives', 1],
   ['apples', 515, 'apples', 1],
   ['oranges', 490, 'oranges', 1],
   ['beef', 867, 'beef', 1],
@@ -107,21 +107,14 @@ const FARM: [string, number, string, Tier][] = [
 
   ['vanilla', 692, 'vanilla', 3],
   ['cloves', 698, 'cloves', 3],
-  ['cinnamon', 693, 'cinnamon', 3],
+  ['cinnamon', 693, 'cinnamon and cassia', 3],
   ['ginger', 720, 'ginger', 3],
-  ['nutmeg', 702, 'nutmeg, mace and cardamom', 3],
-  ['jute', 780, 'jute', 3],
-  ['sisal', 789, 'sisal', 3],
+  ['nutmeg', 702, 'cardamom and nutmeg', 3],
   ['quinoa', 92, 'quinoa', 3],
   ['brazil-nuts', 216, 'Brazil nuts', 3],
   ['wool', 987, 'wool', 3],
-  ['camel-milk', 1130, 'camel milk', 3],
-  ['goat-milk', 1020, 'goat’s milk', 3],
-  ['sheep-milk', 982, 'sheep’s milk', 3],
-  ['buckwheat', 89, 'buckwheat', 3],
   ['figs', 569, 'figs', 3],
   ['kiwi', 592, 'kiwi fruit', 3],
-  ['cranberries', 554, 'cranberries', 3],
   ['blueberries', 552, 'blueberries', 3],
   ['lentils', 201, 'lentils', 3],
   ['chickpeas', 191, 'chickpeas', 3],
@@ -131,11 +124,20 @@ const FARM: [string, number, string, Tier][] = [
   ['millet', 79, 'millet', 3],
   ['papayas', 600, 'papayas', 3],
   ['mushrooms', 449, 'mushrooms and truffles', 3],
-  ['silk', 1185, 'silkworm cocoons (silk)', 3],
-  ['linseed', 333, 'linseed (flax seed)', 3],
-  ['cherries', 531, 'sour cherries', 3],
+  ['cherries', 531, 'cherries', 3],
   ['peaches', 534, 'peaches and nectarines', 3],
 ];
+
+/**
+ * FAOSTAT figures left out by hand, as `item code:country`. FAOSTAT flags many figures as imputed (I), including
+ * China's for most goods, so the flag can't be the test; these are the ones that are plainly wrong.
+ * - Central African Republic coffee (656): FAOSTAT has about 310 thousand tonnes (10th in the world, 2.8%); national and
+ *   ICO figures are about 10 thousand tonnes. The 2024 figure is imputed from an earlier year that looks like a unit error.
+ */
+const BOGUS = new Set(['656:CAF']);
+
+/** Farm goods that are animal products, or tapped: "produce" rather than "grow". */
+const ANIMAL = new Set(['beef', 'chicken', 'pork', 'cow-milk', 'eggs', 'honey', 'sheep-meat', 'wool', 'rubber']);
 
 // ---- Minerals: USGS MCS 2026 slugs ----------------------------------------------------------------
 interface Mineral {
@@ -350,15 +352,18 @@ const MINE: Mineral[] = [
 
 // ---- Energy: EIA international series --------------------------------------------------------------
 // [id, product-activity, unit code, name, tier, unit]
-const ENERGY: [string, string, string, string, Tier, string][] = [
-  ['oil', '57-1', 'TBPD', 'crude oil', 1, 'thousand barrels a day'],
-  ['gas', '26-1', 'BCF', 'natural gas', 1, 'billion cubic feet'],
-  ['coal', '7-1', 'TST', 'coal', 1, 'thousand short tons'],
-  ['hydro', '33-12', 'BKWH', 'hydroelectric power', 2, 'billion kilowatt-hours'],
-  ['wind', '37-12', 'BKWH', 'wind power', 2, 'billion kilowatt-hours'],
-  ['solar', '36-12', 'BKWH', 'solar power', 2, 'billion kilowatt-hours'],
-  ['nuclear', '27-12', 'BKWH', 'nuclear power', 2, 'billion kilowatt-hours'],
-  ['geothermal', '35-12', 'BKWH', 'geothermal power', 3, 'billion kilowatt-hours'],
+// [id, product-activity, EIA unit code, name, tier, verb, unit shown, divisor from the EIA unit]
+// Conversions: thousand barrels a day / 1000 = million barrels a day; EIA's own billion cubic metres series is
+// used for gas; thousand short tons / 1000 = million short tons; billion kilowatt-hours are terawatt-hours.
+const ENERGY: [string, string, string, string, Tier, string, string, number][] = [
+  ['oil', '57-1', 'TBPD', 'crude oil', 1, 'produce', 'million barrels a day', 1000],
+  ['gas', '26-1', 'BCM', 'natural gas', 1, 'produce', 'billion cubic metres', 1],
+  ['coal', '7-1', 'TST', 'coal', 1, 'mine', 'million short tons', 1000],
+  ['hydro', '33-12', 'BKWH', 'hydroelectric power', 2, 'generate', 'terawatt-hours', 1],
+  ['wind', '37-12', 'BKWH', 'wind power', 2, 'generate', 'terawatt-hours', 1],
+  ['solar', '36-12', 'BKWH', 'solar power', 2, 'generate', 'terawatt-hours', 1],
+  ['nuclear', '27-12', 'BKWH', 'nuclear power', 2, 'generate', 'terawatt-hours', 1],
+  ['geothermal', '35-12', 'BKWH', 'geothermal power', 3, 'generate', 'terawatt-hours', 1],
 ];
 
 const SOURCES = {
@@ -366,7 +371,7 @@ const SOURCES = {
     name: 'FAOSTAT (UN FAO)',
     url: 'https://www.fao.org/faostat/en/#data/QCL',
     licence: 'CC BY 4.0',
-    year: 'average of 2022 to 2024',
+    year: '2022–24 average',
   },
   usgs: {
     name: 'USGS Mineral Commodity Summaries 2026',
@@ -382,14 +387,19 @@ const SOURCES = {
   },
 };
 
-function toProducers(values: Map<string, number>, world: number): Producer[] {
+/** Rows under this share of the world are left out: they are noise (Madagascar's pistachios), not producers. */
+const MIN_LISTED_SHARE = 0.005;
+
+/** The ten biggest, with shares of `world` (same unit as `values`); `divisor` converts the figures to the unit shown. */
+function toProducers(values: Map<string, number>, world: number, divisor = 1, decimals = 2): Producer[] {
+  const k = 10 ** decimals;
   return [...values]
-    .filter(([id, v]) => ids.has(id) && v > 0)
+    .filter(([id, v]) => ids.has(id) && v / world >= MIN_LISTED_SHARE)
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, TOP)
     .map(([id, value]) => ({
       id,
-      value: Math.round(value * 100) / 100,
+      value: Math.round((value / divisor) * k) / k,
       share: Math.round((value / world) * 10000) / 10000,
     }));
 }
@@ -427,6 +437,7 @@ async function farm(): Promise<Commodity[]> {
         continue;
       }
     }
+    if (BOGUS.has(`${item}:${key}`)) continue;
     const perArea = data.get(item) ?? new Map();
     data.set(item, perArea);
     const perYear = perArea.get(key) ?? new Map();
@@ -453,15 +464,18 @@ async function farm(): Promise<Commodity[]> {
       const v = key === 'WORLD' ? null : mean(perYear);
       if (v) values.set(key, v);
     }
+    const big = Math.max(...values.values()) >= 1e6;
     out.push({
       id,
       kind: 'farm',
+      verb: ANIMAL.has(id) ? 'produce' : 'grow',
       name,
       tier,
-      unit: 'tonnes',
+      // Tonnes → million (or thousand) tonnes, so the figures read at a glance.
+      unit: big ? 'million tonnes' : 'thousand tonnes',
       source: 'faostat',
       year: SOURCES.faostat.year,
-      producers: toProducers(values, world),
+      producers: toProducers(values, world, big ? 1e6 : 1e3, 4),
     });
   }
   return out;
@@ -473,7 +487,7 @@ async function energy(): Promise<Commodity[]> {
   const text = await readFile(EIA_FILE, 'utf8');
   const lines = text.split('\n');
   const out: Commodity[] = [];
-  for (const [id, series, unitCode, name, tier, unit] of ENERGY) {
+  for (const [id, series, unitCode, name, tier, verb, unit, divisor] of ENERGY) {
     const prefix = `{"series_id":"INTL.${series}-`;
     const values = new Map<string, number>();
     let world = 0;
@@ -496,12 +510,13 @@ async function energy(): Promise<Commodity[]> {
     out.push({
       id,
       kind: 'energy',
+      verb,
       name,
       tier,
       unit,
       source: 'eia',
       year: SOURCES.eia.year,
-      producers: toProducers(values, world),
+      producers: toProducers(values, world, divisor, 2),
     });
   }
   return out;
@@ -578,6 +593,24 @@ function cells(lines: string[], i: number, rest: string): string[] {
   return own;
 }
 
+/** Materials that are made, and minerals that are produced rather than mined. */
+const MADE = new Set(['steel', 'aluminium', 'cement']);
+const PRODUCED = new Set(['salt', 'potash', 'phosphate', 'sulfur']);
+
+/**
+ * The USGS tables give "thousand tonnes", "tonnes" and so on. This picks the unit that reads best for the biggest
+ * producer (million tonnes from a million, thousand tonnes from ten thousand) and the divisor that converts the
+ * table's figures to it. Carats are left as they are.
+ */
+function friendly(unit: string, biggest: number): { unit: string; divisor: number } {
+  const m = unit.match(/^(thousand |million )?tonnes(.*)$/);
+  if (!m) return { unit, divisor: 1 };
+  const tonnes = biggest * (m[1] === 'thousand ' ? 1e3 : m[1] === 'million ' ? 1e6 : 1);
+  const [name, divisor] = tonnes >= 1e6 ? ['million tonnes', 1e6] : tonnes >= 1e4 ? ['thousand tonnes', 1e3] : ['tonnes', 1];
+  const own = m[1] === 'thousand ' ? 1e3 : m[1] === 'million ' ? 1e6 : 1;
+  return { unit: name + m[2], divisor: divisor / own };
+}
+
 async function minerals(): Promise<Commodity[]> {
   const out: Commodity[] = [];
   for (const m of MINE) {
@@ -625,15 +658,17 @@ async function minerals(): Promise<Commodity[]> {
         `CHECK ${m.id}: rows sum to ${sum} but the world total is ${total} (${(off * 100).toFixed(1)}% off). withheld: ${withheld.join(',') || 'none'}`,
       );
     else console.log(`ok ${m.id}: sum ${sum} vs total ${total}${withheld.length ? ` withheld ${withheld.join(',')}` : ''}`);
+    const shown = friendly(m.unit, Math.max(...values.values()));
     out.push({
       id: m.id,
       kind: 'mine',
+      verb: MADE.has(m.id) ? 'make' : PRODUCED.has(m.id) ? 'produce' : 'mine',
       name: m.name,
       tier: m.tier,
-      unit: m.unit,
+      unit: shown.unit,
       source: 'usgs',
       year: SOURCES.usgs.year,
-      producers: toProducers(values, total),
+      producers: toProducers(values, total, shown.divisor, 2),
       ...(withheld.length ? { withheld } : {}),
     });
   }

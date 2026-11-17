@@ -10,6 +10,8 @@ export interface Producer {
 export interface Commodity {
   id: string;
   kind: 'farm' | 'mine' | 'energy';
+  /** What producers do with it: "grow", "mine", "make", "generate"... ("The 3 countries that ___ the most"). */
+  verb: string;
   /** Reads after "the most": "coffee", "cow’s milk". */
   name: string;
   /** 1: famous leaders, 2: players have to know who really makes it, 3: niche. */

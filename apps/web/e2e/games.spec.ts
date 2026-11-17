@@ -1908,6 +1908,10 @@ for (const [label, viewport] of [
     await expect(page.locator('.chain-game .map-country')).toHaveCount(0);
     const first = await suggestions('ch');
     expect(first.length).toBeGreaterThan(1);
+    // Suggestion rows are a full tap target on a phone.
+    await input.fill('ch');
+    expect((await page.getByRole('option').first().boundingBox())!.height).toBeGreaterThanOrEqual(viewport.width < 640 ? 44 : 30);
+    await input.fill('');
 
     // A producer fills in, with its share, on the map and in its slot.
     const hit = accepted()[0]!;
@@ -1961,5 +1965,8 @@ for (const [label, viewport] of [
       await page.getByRole('button', { name: /Skip/ }).click();
     }
     await expect(page.getByRole('button', { name: 'See final score' })).toBeVisible();
+    // The end screen gives a short breakdown: the level reached, flawless levels and the hardest find.
+    await page.getByRole('button', { name: 'See final score' }).click();
+    await expect(page.getByText(/You reached level [0-9]+, with [0-9]+ flawless levels?[.] Your hardest find: /)).toBeVisible();
   });
 }

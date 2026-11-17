@@ -31,8 +31,8 @@ export interface ChainLevelPlan {
   band: 1 | 2 | 3;
   /** How many producers to find. */
   size: number;
-  /** Commodity tiers asked first (see Commodity.tier). */
-  tiers: readonly (1 | 2 | 3)[];
+  /** The tiers a level draws from (see Commodity.tier) and how often: [tier, weight]. */
+  mix: readonly (readonly [1 | 2 | 3, number])[];
   /** Where the producers may be (see routeScopes). */
   scope: RouteScope;
   /** Wrong guesses that end the level: the last of them costs a life. */
@@ -40,11 +40,53 @@ export interface ChainLevelPlan {
 }
 
 export const CHAIN_PLANS: readonly ChainLevelPlan[] = [
-  { from: 1, band: 1, size: 3, tiers: [1], scope: 'no-africa', misses: 3 },
-  { from: 9, band: 2, size: 4, tiers: [2, 1], scope: 'any', misses: 3 },
-  { from: 15, band: 2, size: 5, tiers: [2, 1], scope: 'any', misses: 3 },
-  { from: 21, band: 3, size: 5, tiers: [3, 2], scope: 'any', misses: 2 },
-  { from: 36, band: 3, size: 5, tiers: [3, 2], scope: 'any', misses: 1 },
+  { from: 1, band: 1, size: 3, mix: [[1, 1]], scope: 'no-africa', misses: 3 },
+  {
+    from: 9,
+    band: 2,
+    size: 4,
+    mix: [
+      [2, 0.6],
+      [1, 0.4],
+    ],
+    scope: 'any',
+    misses: 3,
+  },
+  {
+    from: 15,
+    band: 2,
+    size: 5,
+    mix: [
+      [2, 0.6],
+      [1, 0.4],
+    ],
+    scope: 'any',
+    misses: 3,
+  },
+  {
+    from: 21,
+    band: 3,
+    size: 5,
+    mix: [
+      [2, 0.5],
+      [3, 0.3],
+      [1, 0.2],
+    ],
+    scope: 'any',
+    misses: 2,
+  },
+  {
+    from: 36,
+    band: 3,
+    size: 5,
+    mix: [
+      [2, 0.5],
+      [3, 0.3],
+      [1, 0.2],
+    ],
+    scope: 'any',
+    misses: 1,
+  },
 ];
 
 export const chainPlan = (level: number): ChainLevelPlan => [...CHAIN_PLANS].reverse().find((p) => level >= p.from)!;
@@ -99,6 +141,8 @@ export interface ChainState {
   /** True when the level just ended earned a life back. */
   readonly bonusLife: boolean;
   readonly marks: readonly ChainMark[];
+  /** The smallest producer named so far (the hardest find), for the end screen. */
+  readonly best: { commodity: string; country: CountryId; share: number } | null;
   /** Commodities asked so far, oldest first. */
   readonly past: readonly string[];
   /** Country ids and skips, in order; with the seed this replays the game. */
@@ -156,15 +200,22 @@ export function createSupplyChain({
     const asked = new Set(past);
     const lastKind = byCommodity.get(past.at(-1) ?? '')?.kind;
     const fresh = commodities.filter((c) => !asked.has(c.id));
-    // The plan's tiers first, in its own order, then the rest of the pool; never a repeat while any is left.
-    const groups = [...plan.tiers.map((t) => fresh.filter((c) => c.tier === t)), fresh].filter((g) => g.length);
-    // Each group in turn: first with both variety rules (not the same sort of thing twice in a row, and not
-    // the same producers as lately), then with the kind rule alone, then with neither.
-    for (const group of groups) {
-      for (const rules of [2, 1, 0]) {
+    // The level's tier is drawn from the plan's mix; the other tiers of the mix follow, and then the whole pool.
+    let roll = rng.next() * plan.mix.reduce((sum, [, w]) => sum + w, 0);
+    const drawn = plan.mix.find(([, w]) => (roll -= w) < 0) ?? plan.mix[0]!;
+    const tiers = [drawn, ...plan.mix.filter((m) => m !== drawn)].map(([t]) => fresh.filter((c) => c.tier === t)).filter((g) => g.length);
+    // Strictest first: a full-size list (never fewer than the plan's size, unless the commodity has fewer real
+    // producers), the variety rules (not the same sort of thing twice in a row, not the same producers as lately).
+    for (const [full, rules] of [
+      [true, 2],
+      [true, 1],
+      [false, 1],
+      [false, 0],
+    ] as const) {
+      for (const group of tiers) {
         const options = group.filter((c) => {
           const a = planAnswers(c.id, plan);
-          if (!a) return false;
+          if (!a || (full && a.need < plan.size)) return false;
           if (rules >= 1 && lastKind === c.kind) return false;
           return rules < 2 || overlapOk(a, past, plan);
         });
@@ -241,6 +292,7 @@ export function createSupplyChain({
         status: 'playing',
         bonusLife: false,
         marks: [],
+        best: null,
         past: [level.commodity],
         moves: [],
       };
@@ -254,6 +306,8 @@ export function createSupplyChain({
       const a = answers(byCommodity.get(level.commodity)!, chainPlan(level.number).size)!;
       if (a.accepted.includes(id)) {
         const found = [...level.found, id];
+        const share = byCommodity.get(level.commodity)!.producers.find((p) => p.id === id)!.share;
+        if (!state.best || share < state.best.share) state = { ...state, best: { commodity: level.commodity, country: id, share } };
         if (found.length < level.need)
           return {
             result: 'found',

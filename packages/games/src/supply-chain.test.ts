@@ -89,6 +89,31 @@ describe('the data', () => {
     expect(top('copper', 3)).toEqual(['CHL', 'COD', 'PER']);
   });
 
+  it('leaves out what is not credible', () => {
+    const ids = data.commodities.map((c) => c.id);
+    for (const gone of ['silk', 'camel-milk', 'goat-milk', 'sheep-milk', 'sisal', 'linseed', 'buckwheat', 'jute']) expect(ids).not.toContain(gone);
+    // The Central African Republic does not grow a tenth of the world's coffee, and no row is under half a percent.
+    expect(kindOf('coffee').producers.map((p) => p.id)).not.toContain('CAF');
+    for (const c of data.commodities) for (const p of c.producers) expect(p.share, `${c.id} ${p.id}`).toBeGreaterThanOrEqual(0.005);
+    expect(kindOf('cinnamon').name).toBe('cinnamon and cassia');
+    expect(kindOf('nutmeg').name).toBe('cardamom and nutmeg');
+    expect([kindOf('grapes').name, kindOf('olives').name]).toEqual(['grapes', 'olives']);
+  });
+
+  it('says what producers do, and shows friendly units', () => {
+    for (const id of ['steel', 'aluminium', 'cement']) expect(kindOf(id).verb, id).toBe('make');
+    for (const id of ['wind', 'solar', 'hydro', 'nuclear']) expect(kindOf(id).verb, id).toBe('generate');
+    expect(kindOf('gold').verb).toBe('mine');
+    expect(kindOf('coffee').verb).toBe('grow');
+    expect(kindOf('oil').unit).toBe('million barrels a day');
+    expect(kindOf('gas').unit).toBe('billion cubic metres');
+    expect(kindOf('coffee').unit).toBe('million tonnes');
+    // Converted from the source's figures: the United States pumped about 13 million barrels a day in 2024.
+    expect(kindOf('oil').producers[0]!.value).toBeGreaterThan(12);
+    expect(kindOf('oil').producers[0]!.value).toBeLessThan(15);
+    for (const c of data.commodities) expect(c.verb, c.id).toBeTruthy();
+  });
+
   it('is small enough to bundle', () => {
     expect(statSync(new URL('../../geodata/data/supply-chain.json', import.meta.url)).size).toBeLessThan(100_000);
   });
@@ -163,12 +188,25 @@ describe('the level plan', () => {
     expect(chainPlan(9).size).toBe(4);
     expect(chainPlan(15).size).toBe(5);
     expect(chainPlan(21).band).toBe(3);
+    // From level 21 the levels are harder lists, not obscure goods: about half tier 2, a third tier 3, a fifth tier 1.
     const tiers = [0, 0, 0, 0];
+    let late = 0;
+    let five = 0;
     for (let seed = 1; seed <= SEEDS; seed++) {
-      for (const level of playPerfect(seed, 30).levels.slice(21)) tiers[kindOf(level.commodity).tier]!++;
+      for (const level of playPerfect(seed, 32).levels.slice(20)) {
+        tiers[kindOf(level.commodity).tier]!++;
+        late++;
+        if (level.need === 5) five++;
+      }
     }
-    expect(tiers[3]! + tiers[2]!).toBeGreaterThan(tiers[1]! * 3);
-    expect(tiers[3]).toBeGreaterThan(0);
+    expect(tiers[2]! / late).toBeGreaterThan(0.38);
+    expect(tiers[2]! / late).toBeLessThan(0.62);
+    expect(tiers[3]! / late).toBeGreaterThan(0.18);
+    expect(tiers[3]! / late).toBeLessThan(0.42);
+    expect(tiers[1]! / late).toBeGreaterThan(0.08);
+    expect(tiers[1]! / late).toBeLessThan(0.32);
+    // ...and nearly always for five producers, never back to three.
+    expect(five / late).toBeGreaterThan(0.9);
   });
 
   it('keeps a level from sharing more than half its answers with the last three, nearly always', () => {
@@ -288,6 +326,18 @@ describe('playing', () => {
     state = game.skip(state);
     expect(state.level.points).toBe(Math.round(6 * 0.5));
     expect(state.score).toBe(state.level.points);
+  });
+
+  it('remembers the hardest find, the smallest producer named, for the end screen', () => {
+    let state = game.start(4);
+    expect(state.best).toBeNull();
+    const accepted = game.answers(state.level.commodity, 1)!.accepted;
+    state = game.guess(state, accepted[0]!).state;
+    expect(state.best?.country).toBe(accepted[0]);
+    state = game.guess(state, accepted[1]!).state;
+    const share = (id: string) => kindOf(state.level.commodity).producers.find((p) => p.id === id)!.share;
+    expect(state.best?.country).toBe(share(accepted[1]!) < share(accepted[0]!) ? accepted[1] : accepted[0]);
+    expect(state.best?.commodity).toBe(state.level.commodity);
   });
 
   it('counts a wrong country in the top ten as a miss and says its place', () => {

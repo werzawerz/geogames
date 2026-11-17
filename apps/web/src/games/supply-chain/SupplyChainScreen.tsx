@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GeoPermissibleObjects } from 'd3-geo';
 import { getCountry, queryCountries, type CountryId } from '@geogames/geodata';
-import { loadSupplyChain, type Commodity, type SupplyChainData } from '@geogames/geodata/supply-chain';
+import { loadSupplyChain, type SupplyChainData } from '@geogames/geodata/supply-chain';
 import { loadWorldShapes, type WorldShapes } from '@geogames/geodata/shapes';
 import {
   CHAIN_MAX_LIVES,
@@ -28,16 +28,8 @@ const MARKS: Record<ChainMark, string> = {
   missed: '🟧',
   lost: '🟥',
 };
-/** The inhabited world, without the Antarctic strip that would shrink everything else. */
-const WORLD_FRAME: GeoPermissibleObjects = {
-  type: 'MultiPoint',
-  coordinates: [
-    [-168, -56],
-    [-168, 80],
-    [180, -56],
-    [180, 80],
-  ],
-};
+/** The whole globe, centred on Greenwich like the other games' maps; the box crops it (the south and the sides) to the height the page has left. */
+const WORLD_FRAME: GeoPermissibleObjects = { type: 'Sphere' };
 
 /** Loads the data and the map shapes (lazily), then plays. */
 export function SupplyChainScreen({ seed, initialMoves, onMovesChange, onGameOver }: GameScreenProps<SupplyChainDefinition>) {
@@ -63,16 +55,10 @@ export function SupplyChainScreen({ seed, initialMoves, onMovesChange, onGameOve
 }
 
 /** The figure as the source gives it, in the unit named once under the list. */
-const amount = (value: number) => value.toLocaleString('en-GB', { maximumFractionDigits: value < 100 ? 1 : 0 });
+const amount = (value: number) => value.toLocaleString('en-GB', { maximumFractionDigits: value < 10 ? 2 : value < 100 ? 1 : 0 });
 
 const percent = (share: number) => `${(share * 100).toFixed(1)}%`;
 const ordinal = (n: number) => `${n}${['th', 'st', 'nd', 'rd'][n % 100 > 10 && n % 100 < 14 ? 0 : n % 10 < 4 ? n % 10 : 0]}`;
-
-const VERB: Record<Commodity['kind'], string> = {
-  farm: 'grow or raise',
-  mine: 'mine',
-  energy: 'produce',
-};
 
 function ChainPlay({
   shapes,
@@ -166,13 +152,16 @@ function ChainPlay({
     setMessage(null);
     setState(game.skip(state));
   };
-  const finish = () =>
+  const finish = () => {
+    const flawless = state.marks.filter((m) => m === 'flawless').length;
+    const best = state.best && { ...state.best, name: getCountry(state.best.country)!.name, what: commodityById.get(state.best.commodity)!.name };
     onGameOver({
       score: state.score,
       moves: state.moves,
-      message: `You reached level ${level.number}.`,
+      message: `You reached level ${level.number}, with ${flawless} flawless ${flawless === 1 ? 'level' : 'levels'}.${best ? ` Your hardest find: ${best.name}, with ${percent(best.share)} of the world’s ${best.what}.` : ''}`,
       shareLine: state.marks.map((m) => MARKS[m]).join(''),
     });
+  };
   const next = () => setState(game.nextLevel(state));
 
   const misses = level.guesses.length - level.found.length;
@@ -186,7 +175,7 @@ function ChainPlay({
           const rank = game.rank(level.commodity, id);
           return (
             <li key={id}>
-              <Flag iso2={c.iso2} className="suggestion-flag" /> {c.name} <span className="muted">{rank ? ordinal(rank) : 'not in the top 10'}</span>
+              <Flag iso2={c.iso2} className="suggestion-flag" /> {c.name} <span className="muted">{rank ? ordinal(rank) : 'unranked'}</span>
             </li>
           );
         })}
@@ -204,6 +193,9 @@ function ChainPlay({
   // The top places, and any near-tie that was named too; the other near-ties get a line of their own.
   const shown = answers.accepted.filter((id, i) => i < answers.need || level.found.includes(id));
   const extras = answers.accepted.filter((id) => !shown.includes(id));
+  // One line that teaches: how much of the world the list makes, and who came next.
+  const together = shown.reduce((sum, id) => sum + shareOf(id), 0);
+  const nextUp = commodity.producers.find((p) => !answers.accepted.includes(p.id) && countries.some((c) => c.id === p.id));
 
   return (
     <div className={`route chain-game${playing ? '' : ' done'}${level.need > 3 ? ' many' : ''}`}>
@@ -229,7 +221,7 @@ function ChainPlay({
       <div className="chain-body">
         <div className="chain-card">
           <p className="chain-ask">
-            The {level.need} countries that {VERB[commodity.kind]} the most
+            The {level.need} countries that {commodity.verb} the most
           </p>
           <p className={`chain-commodity ${commodity.name.length <= 13 ? 'size-l' : commodity.name.length <= 20 ? 'size-m' : 'size-s'}`}>{commodity.name}</p>
           {/* Once the level is over, the list under the map says it all. */}
@@ -253,7 +245,15 @@ function ChainPlay({
         </div>
 
         <div className="chain-map">
-          <WorldMap shapes={shapes} countries={mapCountries} frame={WORLD_FRAME} borders={false} label="World map: the producers you have found" />
+          <WorldMap
+            shapes={shapes}
+            countries={mapCountries}
+            frame={playing ? WORLD_FRAME : undefined}
+            focus={playing ? [] : shown}
+            fit={playing ? 'slice' : 'meet'}
+            borders={false}
+            label="World map: the producers you have found"
+          />
         </div>
 
         <div className="chain-rest">
@@ -307,7 +307,8 @@ function ChainPlay({
                 })}
               </ol>
               <p className="muted chain-unit">
-                Output in {commodity.unit}.
+                Output in {commodity.unit}. Together {Math.round(together * 100)}% of the world’s {commodity.name}
+                {nextUp ? `; next is ${getCountry(nextUp.id)!.name}, ${ordinal(game.rank(level.commodity, nextUp.id)!)} with ${percent(nextUp.share)}.` : '.'}
                 {extras.length > 0 && ` Also counts: ${extras.map((id) => getCountry(id)?.name).join(', ')} (within ${Math.round(CHAIN_TIE_BAND * 100)}%).`}
               </p>
               <button ref={nextButton} className="btn btn-primary btn-lg" onClick={state.status === 'over' ? finish : next}>
