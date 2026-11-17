@@ -1843,6 +1843,17 @@ test('on the grid: click the coordinates; a miss shows the way, three misses or 
   await expect(page.locator('.grid-result')).toContainText('Flawless! +1 ♥');
   await expect(lives).toHaveCount(3);
   await page.keyboard.press('Enter');
+  // A second Enter must not reach Skip: the new level starts untouched, with all the lives.
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.route-status')).toContainText('Level 3');
+  await expect(page.locator('.grid-result')).toHaveCount(0);
+  await expect(lives).toHaveCount(3);
+
+  // Zoomed in, the lines keep their degrees at the edges of the view.
+  for (let i = 0; i < 5; i++) await page.getByRole('button', { name: 'Zoom in' }).click();
+  await expect(page.locator('.grid-label').first()).toContainText('°');
+  expect(await page.locator('.grid-label').count()).toBeGreaterThan(2);
+  await page.getByRole('button', { name: 'Reset zoom' }).click();
 
   // A skip costs a life, and the phone fits too.
   await page.getByRole('button', { name: /Skip/ }).click();
@@ -1853,6 +1864,11 @@ test('on the grid: click the coordinates; a miss shows the way, three misses or 
   await inView();
   const skip = (await page.getByRole('button', { name: /Skip/ }).boundingBox())!;
   expect(skip.height).toBeGreaterThanOrEqual(44);
+  // The phone's map fills the screen, and its zoom buttons are tap-sized.
+  expect((await map.boundingBox())!.height).toBeGreaterThan(330);
+  const zoomButton = (await page.getByRole('button', { name: 'Zoom in' }).boundingBox())!;
+  expect(zoomButton.width).toBeGreaterThanOrEqual(44);
+  expect(zoomButton.height).toBeGreaterThanOrEqual(44);
 });
 for (const [label, viewport] of [
   ['desktop', { width: 1280, height: 720 }],

@@ -2808,6 +2808,10 @@ summary:focus-visible {
   font-weight: 700;
 }
 
+.grid-game .city-marker text {
+  font-size: 13px;
+}
+
 .grid-ring {
   fill: var(--correct-soft);
   stroke: var(--correct);
@@ -2889,9 +2893,24 @@ summary:focus-visible {
   white-space: nowrap;
 }
 
+.grid-map {
+  display: contents;
+}
+
+.grid-game:focus {
+  outline: none;
+}
+
 @media (max-width: 640px) {
   .grid-game {
-    --grid-chrome: 400px;
+    --grid-chrome: 345px;
+  }
+
+  /* The phone's map fills the height left over, cropped at the sides; drag to pan. */
+  .grid-game .world-map {
+    height: calc(100dvh - var(--grid-chrome));
+    max-height: none;
+    min-height: 240px;
   }
 
   .grid-hint,
@@ -2900,8 +2919,30 @@ summary:focus-visible {
   }
 
   .grid-label {
-    font-size: 17px;
-    stroke-width: 5px;
+    font-size: 12px;
+    stroke-width: 4px;
+  }
+
+  /* Tap-sized zoom buttons in a row, in the corner that holds only the Southern Ocean. */
+  .grid-game .map-zoom {
+    top: auto;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    flex-direction: row;
+  }
+
+  .grid-game .map-zoom button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .grid-game .city-marker text {
+    font-size: 15px;
+    stroke-width: 4px;
+  }
+
+  .grid-game .city-marker circle {
+    r: 7px;
   }
 }
 /* Native Tongue */
