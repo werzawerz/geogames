@@ -8,16 +8,27 @@ export const ACROSS_THE_BORDER_KM = 150;
 const rounded = (km: number) => (km < 100 ? Math.max(10, Math.round(km / 10) * 10) : Math.round(km / 50) * 50);
 const km = new Intl.NumberFormat('en');
 
-function vertices(shape: CountryShape): Position[] {
+/** Outline points, with long straight edges (a straight border) filled in every half degree or so. */
+function outline(shape: CountryShape): Position[] {
   const { geometry } = shape;
   const polygons = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates;
-  return polygons.flatMap((rings) => rings.flat());
+  const points: Position[] = [];
+  for (const ring of polygons.flat()) {
+    for (let i = 0; i < ring.length; i++) {
+      const [x0, y0] = ring[i]!;
+      points.push(ring[i]!);
+      const [x1, y1] = ring[i + 1] ?? ring[i]!;
+      const steps = Math.min(200, Math.floor(Math.hypot(x1! - x0!, y1! - y0!) / 0.5));
+      for (let k = 1; k < steps; k++) points.push([x0! + ((x1! - x0!) * k) / steps, y0! + ((y1! - y0!) * k) / steps]);
+    }
+  }
+  return points;
 }
 
 /** The point of the country's outline nearest the spot, as [lat, lng], and how far it is. */
 export function nearestOutlinePoint(shape: CountryShape, spot: readonly [number, number]): { at: [number, number]; km: number } {
   let best: { at: [number, number]; km: number } = { at: [spot[0], spot[1]], km: Infinity };
-  for (const [lng, lat] of vertices(shape)) {
+  for (const [lng, lat] of outline(shape)) {
     const d = distanceKm(spot, [lat!, lng!]);
     if (d < best.km) best = { at: [lat!, lng!], km: d };
   }

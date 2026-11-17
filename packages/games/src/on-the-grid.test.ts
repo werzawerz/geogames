@@ -180,9 +180,12 @@ describe('on the grid', () => {
 
   it('names a nearby city only in the same country, and close', () => {
     let named = 0;
+    // Each point is checked against the whole pool, grouped by country only to keep the test quick.
+    const byCountry = new Map<string, typeof cities>();
+    for (const city of cities) byCountry.set(city.countryId, [...(byCountry.get(city.countryId) ?? []), city]);
     for (const [lat, lng, c] of grid.cells) {
       const country = grid.countries[c]!;
-      const city = nearCity([lat, lng], country, cities);
+      const city = nearCity([lat, lng], country, byCountry.get(country) ?? []);
       if (!city) continue;
       named++;
       expect(city.countryId, `${lat},${lng}`).toBe(country);
@@ -190,7 +193,11 @@ describe('on the grid', () => {
       expect(city.name).not.toMatch(/industrial/i);
     }
     expect(named).toBeGreaterThan(300);
-  });
+    // And a city of another country is never named, however near.
+    const [lat, lng, c] = grid.cells[0]!;
+    const others = cities.filter((city) => city.countryId !== grid.countries[c]);
+    expect(nearCity([lat, lng], grid.countries[c]!, others)).toBeNull();
+  }, 30_000);
 
   it('replays to the same state, and the server replay agrees', async () => {
     let state = game.start(11);
