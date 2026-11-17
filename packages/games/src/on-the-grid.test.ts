@@ -174,6 +174,11 @@ describe('on the grid', () => {
     for (const [lat, lng] of grid.cells) {
       expect(inBox(lat, lng, [32.5, 37.2, 72.5, 80.8]), `${lat},${lng} Kashmir`).toBe(false);
       expect(inBox(lat, lng, [44, 46.6, 32.4, 36.8]), `${lat},${lng} Crimea`).toBe(false);
+      expect(inBox(lat, lng, [21.8, 25.4, 119.9, 122.1]), `${lat},${lng} Taiwan`).toBe(false);
+      expect(inBox(lat, lng, [42.4, 43.6, 39.9, 42.2]), `${lat},${lng} Abkhazia`).toBe(false);
+      expect(inBox(lat, lng, [39.2, 40.4, 45.9, 47.3]), `${lat},${lng} Nagorno-Karabakh`).toBe(false);
+      expect(inBox(lat, lng, [46.5, 48.2, 28.9, 30.2]), `${lat},${lng} Transnistria`).toBe(false);
+      expect(inBox(lat, lng, [35, 35.7, 32.7, 34.6]), `${lat},${lng} Northern Cyprus`).toBe(false);
     }
     expect(grid.cells.some(([lat, lng]) => lat === 43 && lng === 20)).toBe(false);
   });

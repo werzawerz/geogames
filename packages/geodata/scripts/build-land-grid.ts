@@ -31,6 +31,12 @@ const DISPUTED: readonly [number, number, number, number][] = [
   [44, 46.6, 32.4, 36.8], // Crimea
   [20.5, 27.8, -17.2, -8.6], // Western Sahara
   [42, 43.3, 20.5, 21.8], // Kosovo
+  [21.8, 25.4, 119.9, 122.1], // Taiwan
+  [42.4, 43.6, 39.9, 42.2], // Abkhazia
+  [42, 42.8, 43.4, 44.6], // South Ossetia
+  [39.2, 40.4, 45.9, 47.3], // Nagorno-Karabakh
+  [46.5, 48.2, 28.9, 30.2], // Transnistria
+  [35, 35.7, 32.7, 34.6], // Northern Cyprus
 ];
 const disputed = (lat: number, lng: number) => DISPUTED.some(([s, n, w, e]) => lat >= s && lat <= n && lng >= w && lng <= e);
 /** A point this close (degrees) to another country's land, or a disputed place, is too near a border to say whose it is. */
@@ -80,7 +86,7 @@ for (let lat = LAT_MIN; lat <= LAT_MAX; lat++) {
 }
 
 // The rule for which points stay is part of the version: a changed rule changes the targets.
-const generatedAt = `${new Date().toISOString().slice(0, 10)}+clear`;
+const generatedAt = `${new Date().toISOString().slice(0, 10)}+clear+disputed`;
 await writeFile(join(ROOT, 'data', 'land-grid.json'), JSON.stringify({ generatedAt, countries: ids, cells }));
 await writeFile(join(ROOT, 'data', 'land-grid-version.json'), JSON.stringify({ generatedAt }));
 console.log(`${cells.length} land points in ${new Set(cells.map((c) => c[2])).size} countries`);
