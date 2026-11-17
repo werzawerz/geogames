@@ -1898,7 +1898,7 @@ for (const [label, viewport] of [
     await page.getByRole('button', { name: 'Start game' }).click();
     const name = (id: string) => data.commodities.find((c) => c.id === id)!.name;
     await expect(page.locator('.chain-commodity')).toHaveText(name(state.level.commodity), { timeout: 20_000 });
-    for (const selector of ['.route-status', '.chain-commodity', '.chain-slots', '.world-map', '[role=combobox]', '.chain-skip']) await inView(selector);
+    for (const selector of ['.chain-status', '.chain-commodity', '.chain-rows', '.world-map', '[role=combobox]', '.chain-skip']) await inView(selector);
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(viewport.height);
     await expect(page.locator('.chain-source')).toContainText(/[0-9]{4}/);
 
@@ -1917,8 +1917,8 @@ for (const [label, viewport] of [
     const hit = accepted()[0]!;
     await guess(hit);
     state = engine.guess(state, hit).state;
-    await expect(page.locator('.chain-slot.found')).toContainText(getCountry(hit)!.name);
-    await expect(page.locator('.chain-slot.found')).toContainText('%');
+    await expect(page.locator('.chain-row.found')).toContainText(getCountry(hit)!.name);
+    await expect(page.locator('.chain-row.found')).toContainText('%');
     await expect(page.locator('.chain-game .map-highlight.tone-optimal')).toHaveCount(1);
     await expect(page.locator('.chain-game .map-country')).toHaveCount(1);
     await expect(page.locator('.chain-misses')).toHaveText('0');
@@ -1928,8 +1928,8 @@ for (const [label, viewport] of [
     await guess(wrong);
     state = engine.guess(state, wrong).state;
     await expect(page.locator('.chain-misses')).toHaveText('1');
-    await expect(page.locator('.chain-wrong')).toContainText(getCountry(wrong)!.name);
-    await inView('.chain-wrong');
+    await expect(page.locator('.chain-chips')).toContainText(getCountry(wrong)!.name);
+    await inView('.chain-chips');
     await inView('[role=combobox]');
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(viewport.height);
 
@@ -1938,23 +1938,23 @@ for (const [label, viewport] of [
       await guess(id);
       state = engine.guess(state, id).state;
     }
-    await expect(page.locator('.route-summary.solved')).toContainText(`All ${state.level.need} found`);
-    await inView('.route-summary');
+    await expect(page.locator('.chain-result.solved')).toContainText(`All ${state.level.need} found`);
+    await inView('.chain-result');
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(viewport.height + 1);
     await expect(page.getByRole('button', { name: 'Next level' })).toBeFocused();
     await page.keyboard.press('Enter');
     state = engine.nextLevel(state);
-    await expect(page.locator('.route-status')).toContainText('Level 2');
+    await expect(page.locator('.chain-status')).toContainText('Level 2');
     await expect(page.locator('.chain-commodity')).toHaveText(name(state.level.commodity));
     // The same query gets the same suggestions on another level: the list never leans towards the answer.
     expect(await suggestions('ch')).toEqual(first.filter((t) => !state.level.guesses.some((g) => t.includes(getCountry(g)!.name))));
 
     // A skip costs a life and shows the answers; Enter doesn't skip on arrival (focus is in the box).
     await page.keyboard.press('Enter');
-    await expect(page.locator('.route-summary')).toHaveCount(0);
+    await expect(page.locator('.chain-result')).toHaveCount(0);
     await page.getByRole('button', { name: /Skip/ }).click();
-    await expect(page.locator('.route-summary.failed')).toContainText('Skipped: −1 ♥');
-    for (const id of accepted().slice(0, state.level.need)) await expect(page.locator('.chain-top')).toContainText(getCountry(id)!.name);
+    await expect(page.locator('.chain-result.failed')).toContainText('Skipped');
+    for (const id of accepted().slice(0, state.level.need)) await expect(page.locator('.chain-rows')).toContainText(getCountry(id)!.name);
     await expect(lives).toHaveCount(2);
     await expect(page.getByRole('button', { name: 'Change settings' })).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(viewport.height + 1);

@@ -57,6 +57,25 @@ export function SupplyChainScreen({ seed, initialMoves, onMovesChange, onGameOve
 /** The figure as the source gives it, in the unit named once under the list. */
 const amount = (value: number) => value.toLocaleString('en-GB', { maximumFractionDigits: value < 10 ? 2 : value < 100 ? 1 : 0 });
 
+/** The one line of feedback for the latest guess. */
+interface Feedback {
+  tone: 'good' | 'bad' | 'info';
+  text: string;
+}
+
+/** Desktop layout: question and list beside a landscape map. */
+function useWide(): boolean {
+  const query = '(min-width: 900px)';
+  const [wide, setWide] = useState(() => typeof matchMedia !== 'undefined' && matchMedia(query).matches);
+  useEffect(() => {
+    const m = matchMedia(query);
+    const on = () => setWide(m.matches);
+    m.addEventListener('change', on);
+    return () => m.removeEventListener('change', on);
+  }, []);
+  return wide;
+}
+
 const percent = (share: number) => `${(share * 100).toFixed(1)}%`;
 const ordinal = (n: number) => `${n}${['th', 'st', 'nd', 'rd'][n % 100 > 10 && n % 100 < 14 ? 0 : n % 10 < 4 ? n % 10 : 0]}`;
 
@@ -83,7 +102,8 @@ function ChainPlay({
 
   const [state, setState] = useState<ChainState>(() => replaySupplyChain(game, seed, initialMoves ?? []));
   useEffect(() => onMovesChange?.(state.moves), [state.moves, onMovesChange]);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<Feedback | null>(null);
+  const wide = useWide();
   const nextButton = useRef<HTMLButtonElement>(null);
   const { level } = state;
   const plan = chainPlan(level.number);
@@ -101,10 +121,12 @@ function ChainPlay({
 
   // Only what has been found is on the map: no outline, no fill, nothing for a producer to give itself away by.
   const mapCountries = useMemo<MapCountry[]>(() => {
+    // While the whole world is in view a label only fits on a big country; the list has the rest.
+    const big = (id: CountryId) => !playing || (countries.find((c) => c.id === id)?.metrics.area?.value ?? 0) >= 1_000_000;
     const found = level.found.map((id) => ({
       id,
       tone: 'optimal' as const,
-      label: percent(shareOf(id)),
+      ...(big(id) ? { label: percent(shareOf(id)) } : {}),
     }));
     if (playing) return found;
     const missed = answers.accepted.filter((id, i) => i < answers.need && !level.found.includes(id));
@@ -120,25 +142,25 @@ function ChainPlay({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level.found, playing, answers, commodity]);
 
-  const messageFor = (result: ChainGuessResult, id: CountryId, next: ChainState): string | null => {
+  const messageFor = (result: ChainGuessResult, id: CountryId, next: ChainState): Feedback | null => {
     const name = getCountry(id)?.name ?? id;
     switch (result) {
       case 'repeat':
-        return `You’ve tried ${name} already.`;
+        return { tone: 'info', text: `You’ve tried ${name} already.` };
       case 'unknown':
-        return 'That isn’t a country in this game.';
+        return { tone: 'info', text: 'That isn’t a country in this game.' };
       case 'found': {
         if (next.level.status === 'cleared') return null;
         const rank = game.rank(level.commodity, id);
-        const near = rank !== null && rank > level.need ? ` It is ${ordinal(rank)}, but counts: within a tenth of the last place.` : '';
-        return `${name}: ${percent(shareOf(id))} of the world’s output.${near}`;
+        const near = rank !== null && rank > level.need ? ` · ${ordinal(rank)}, but within a tenth of the last place, so it counts` : '';
+        return { tone: 'good', text: `${name}: ${percent(shareOf(id))} of the world’s output${near}` };
       }
       case 'wrong': {
         if (next.level.status === 'lost') return null;
         const rank = game.rank(level.commodity, id);
-        const why = rank ? `${name} is a big producer, but only ${ordinal(rank)}.` : `${name} is not among the biggest.`;
         const left = plan.misses - (next.level.guesses.length - next.level.found.length);
-        return `${why} ${left > 1 ? `${left - 1} more free ${left === 2 ? 'miss' : 'misses'}.` : 'One more miss costs a life.'}`;
+        const cost = left > 1 ? `${left - 1} more free ${left === 2 ? 'miss' : 'misses'}` : 'next miss costs a life';
+        return { tone: 'bad', text: `${name}: ${rank ? `only ${ordinal(rank)}` : 'not in the top 10'} · ${cost}` };
       }
     }
   };
@@ -167,29 +189,6 @@ function ChainPlay({
   const misses = level.guesses.length - level.found.length;
   const skipped = level.status === 'lost' && state.moves.at(-1) === CHAIN_SKIP;
   const wrong = level.guesses.filter((g) => !level.found.includes(g));
-  const wrongList =
-    wrong.length > 0 ? (
-      <ul className="chain-wrong" aria-label="Your wrong guesses">
-        {wrong.map((id) => {
-          const c = getCountry(id)!;
-          const rank = game.rank(level.commodity, id);
-          return (
-            <li key={id}>
-              <Flag iso2={c.iso2} className="suggestion-flag" /> {c.name} <span className="muted">{rank ? ordinal(rank) : 'unranked'}</span>
-            </li>
-          );
-        })}
-      </ul>
-    ) : null;
-
-  const sourceLine = (
-    <p className="chain-source muted">
-      {source.name}, {source.year}. {source.licence}.
-    </p>
-  );
-
-  // The slots show what has been found, and how many are left, and nothing else.
-  const slots = Array.from({ length: level.need }, (_, i) => level.found[i]);
   // The top places, and any near-tie that was named too; the other near-ties get a line of their own.
   const shown = answers.accepted.filter((id, i) => i < answers.need || level.found.includes(id));
   const extras = answers.accepted.filter((id) => !shown.includes(id));
@@ -197,11 +196,23 @@ function ChainPlay({
   const together = shown.reduce((sum, id) => sum + shareOf(id), 0);
   const nextUp = commodity.producers.find((p) => !answers.accepted.includes(p.id) && countries.some((c) => c.id === p.id));
 
+  /** A bar as wide as the share, scaled so a 40% producer fills it. */
+  const bar = (share: number) => ({ width: `${Math.min(100, (share / 0.4) * 100)}%` });
+  // While playing: one row for each producer to find, filled as they are found, and nothing else. At the end: the answers, ranked.
+  const rows = playing ? Array.from({ length: level.need }, (_, i) => ({ id: level.found[i], i })) : shown.map((id, i) => ({ id, i }));
+
+  const heading =
+    level.status === 'cleared'
+      ? `All ${level.need} found! +${level.points}`
+      : skipped
+        ? `Skipped · ${level.found.length} of ${level.need} found`
+        : `${level.found.length} of ${level.need} found · ${plan.misses === 1 ? 'a miss' : `${plan.misses} misses`}`;
+
   return (
     <div className={`route chain-game${playing ? '' : ' done'}${level.need > 3 ? ' many' : ''}`}>
-      <div className="route-status">
-        <span>
-          Level <strong>{level.number}</strong>
+      <div className="chain-status">
+        <span className="chain-stat">
+          <span className="chain-stat-label">Level</span> <strong>{level.number}</strong>
         </span>
         <span className="lives" aria-label={`${state.lives} lives`}>
           {Array.from({ length: Math.max(state.lives, 1) }, (_, i) => (
@@ -210,113 +221,130 @@ function ChainPlay({
             </span>
           ))}
         </span>
-        <span aria-label={`${misses} of ${plan.misses} misses`}>
-          Misses <strong className="chain-misses">{misses}</strong>/{plan.misses}
+        <span className="chain-stat" aria-label={`${misses} of ${plan.misses} misses`}>
+          <span className="chain-stat-label">Misses</span>{' '}
+          <span className="chain-pips" aria-hidden="true">
+            {Array.from({ length: plan.misses }, (_, i) => (
+              <span key={i} className={i < misses ? 'pip used' : 'pip'} />
+            ))}
+          </span>
+          <span className="chain-misses chain-hidden">{misses}</span>
         </span>
-        <span aria-live="polite">
-          Score <strong>{state.score}</strong>
+        <span className="chain-stat chain-score" aria-live="polite">
+          <span className="chain-stat-label">Score</span> <strong>{state.score}</strong>
         </span>
       </div>
 
       <div className="chain-body">
-        <div className="chain-card">
-          <p className="chain-ask">
-            The {level.need} countries that {commodity.verb} the most
-          </p>
-          <p className={`chain-commodity ${commodity.name.length <= 13 ? 'size-l' : commodity.name.length <= 20 ? 'size-m' : 'size-s'}`}>{commodity.name}</p>
-          {/* Once the level is over, the list under the map says it all. */}
-          {playing && (
-            <ul className="chain-slots" aria-label={`${level.found.length} of ${level.need} found`}>
-              {slots.map((id, i) => {
-                const c = id ? getCountry(id) : undefined;
-                return c ? (
-                  <li key={i} className="chain-slot found">
-                    <Flag iso2={c.iso2} className="suggestion-flag" /> {c.name} <strong>{percent(shareOf(c.id))}</strong>
-                  </li>
-                ) : (
-                  <li key={i} className="chain-slot" aria-label="Not found yet">
-                    ?
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          {sourceLine}
+        <div className="chain-panel">
+          <div className="chain-panel-inner">
+            <div className="chain-card">
+              <p className="chain-ask">
+                The {level.need} countries that {commodity.verb} the most
+              </p>
+              <h2 className={`chain-commodity ${commodity.name.length <= 13 ? 'size-l' : commodity.name.length <= 20 ? 'size-m' : 'size-s'}`}>
+                {commodity.name}
+              </h2>
+              <ol className="chain-rows" aria-label={playing ? `${level.found.length} of ${level.need} found` : 'The biggest producers'}>
+                {rows.map(({ id, i }) => {
+                  const c = id ? getCountry(id) : undefined;
+                  if (!c) {
+                    return (
+                      <li key={i} className="chain-row empty" aria-label="Not found yet">
+                        Producer {i + 1} of {level.need}
+                      </li>
+                    );
+                  }
+                  const p = commodity.producers.find((x) => x.id === c.id)!;
+                  const got = level.found.includes(c.id);
+                  return (
+                    <li key={c.id} className={`chain-row ${got ? 'found' : 'missed'}`}>
+                      {!playing && <span className="chain-row-rank">{ordinal(game.rank(level.commodity, c.id)!)}</span>}
+                      <Flag iso2={c.iso2} className="suggestion-flag" />
+                      <span className="chain-row-name">{c.name}</span>
+                      <span className="chain-row-fig">
+                        <strong>{percent(p.share)}</strong>
+                        {!playing && <span className="chain-row-amount"> · {amount(p.value)}</span>}
+                      </span>
+                      <span className="chain-bar" style={bar(p.share)} aria-hidden="true" />
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+
+            <div className="chain-rest">
+              {playing ? (
+                <>
+                  <div className="chain-input">
+                    <SearchInput
+                      key={level.number}
+                      items={items}
+                      exclude={exclude}
+                      onPick={guess}
+                      onNoMatch={() => setMessage({ tone: 'info', text: 'Not one of the countries. Pick one from the list.' })}
+                      placeholder="Name a producer"
+                      label="Name a producer"
+                      focusWithoutScroll
+                    />
+                    <button type="button" className="btn chain-skip" onClick={skip}>
+                      Skip <span className="muted">−1 ♥</span>
+                    </button>
+                  </div>
+                  <p className={`chain-feedback ${message?.tone ?? 'hint'}`} role="status">
+                    {message
+                      ? `${message.tone === 'good' ? '✓ ' : message.tone === 'bad' ? '✗ ' : ''}${message.text}`
+                      : 'Any order. Each one you find fills in on the map.'}
+                  </p>
+                </>
+              ) : (
+                <div className={level.status === 'cleared' ? 'chain-result solved' : 'chain-result failed'} role="status">
+                  <h3 className="chain-result-title">{heading}</h3>
+                  {state.status === 'over' && <p className="chain-result-over">Out of lives</p>}
+                  {level.status === 'lost' && state.status !== 'over' && <p className="chain-result-cost">−1 ♥</p>}
+                  {level.flawless && <p className="bonus-life">{state.bonusLife ? 'Flawless! +1 ♥' : `Flawless! Lives are full (${CHAIN_MAX_LIVES}).`}</p>}
+                  <p className="chain-teach">
+                    These make {Math.round(together * 100)}% of the world’s output
+                    {nextUp ? `; next: ${getCountry(nextUp.id)!.name}, ${ordinal(game.rank(level.commodity, nextUp.id)!)} (${percent(nextUp.share)}).` : '.'}
+                    {extras.length > 0 && ` Also counts: ${extras.map((id) => getCountry(id)?.name).join(', ')} (within ${Math.round(CHAIN_TIE_BAND * 100)}%).`}
+                  </p>
+                  <button ref={nextButton} className="btn btn-primary btn-lg chain-next" onClick={state.status === 'over' ? finish : next}>
+                    {state.status === 'over' ? 'See final score' : 'Next level'}
+                  </button>
+                </div>
+              )}
+              {wrong.length > 0 && (
+                <ul className="chain-chips" aria-label="Your wrong guesses">
+                  {wrong.map((id) => {
+                    const c = getCountry(id)!;
+                    const rank = game.rank(level.commodity, id);
+                    return (
+                      <li key={id} className="chain-chip">
+                        <Flag iso2={c.iso2} className="suggestion-flag" /> {c.name} · {rank ? ordinal(rank) : 'unranked'}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+
+            <p className="chain-source">
+              {playing ? 'Source: ' : `Output in ${commodity.unit}. Source: `}
+              {source.name}, {source.year}. {source.licence}.
+            </p>
+          </div>
         </div>
 
         <div className="chain-map">
           <WorldMap
             shapes={shapes}
             countries={mapCountries}
-            frame={playing ? WORLD_FRAME : undefined}
-            focus={playing ? [] : shown}
-            fit={playing ? 'slice' : 'meet'}
+            frame={playing || wide ? WORLD_FRAME : undefined}
+            focus={playing || wide ? [] : shown}
+            fit={playing && !wide ? 'slice' : 'meet'}
             borders={false}
             label="World map: the producers you have found"
           />
-        </div>
-
-        <div className="chain-rest">
-          {playing ? (
-            <>
-              <div className="chain-input">
-                <SearchInput
-                  key={level.number}
-                  items={items}
-                  exclude={exclude}
-                  onPick={guess}
-                  onNoMatch={() => setMessage('Not one of the countries. Pick one from the list.')}
-                  placeholder="Name a producer"
-                  label="Name a producer"
-                  focusWithoutScroll
-                />
-                <button type="button" className="btn chain-skip" onClick={skip}>
-                  ⏭ Skip <span className="muted">−1 ♥</span>
-                </button>
-              </div>
-              <p className="route-message" role="status">
-                {message ?? `Any order. Each one you find fills in on the map with its share of the world’s output.`}
-              </p>
-              {wrongList}
-            </>
-          ) : (
-            <div className={level.status === 'cleared' ? 'route-summary solved' : 'route-summary failed'} role="status">
-              <p className="route-summary-title">
-                {level.status === 'cleared'
-                  ? `All ${level.need} found! +${level.points}`
-                  : skipped
-                    ? 'Skipped: −1 ♥'
-                    : plan.misses === 1
-                      ? 'A miss: −1 ♥'
-                      : `${plan.misses} misses: −1 ♥`}
-              </p>
-              {state.status === 'over' && <p className="route-summary-title">Out of lives</p>}
-              {level.flawless && <p className="bonus-life">{state.bonusLife ? 'Flawless! +1 ♥' : `Flawless! Lives are full (${CHAIN_MAX_LIVES}).`}</p>}
-              <ol className="chain-top">
-                {shown.map((id) => {
-                  const c = getCountry(id)!;
-                  const p = commodity.producers.find((x) => x.id === id)!;
-                  return (
-                    <li key={id} className={level.found.includes(id) ? 'got' : 'missed'}>
-                      <Flag iso2={c.iso2} className="suggestion-flag" /> <span className="chain-top-name">{c.name}</span>
-                      <span className="muted chain-top-amount">
-                        {percent(p.share)} · {amount(p.value)}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ol>
-              <p className="muted chain-unit">
-                Output in {commodity.unit}. Together {Math.round(together * 100)}% of the world’s {commodity.name}
-                {nextUp ? `; next is ${getCountry(nextUp.id)!.name}, ${ordinal(game.rank(level.commodity, nextUp.id)!)} with ${percent(nextUp.share)}.` : '.'}
-                {extras.length > 0 && ` Also counts: ${extras.map((id) => getCountry(id)?.name).join(', ')} (within ${Math.round(CHAIN_TIE_BAND * 100)}%).`}
-              </p>
-              <button ref={nextButton} className="btn btn-primary btn-lg" onClick={state.status === 'over' ? finish : next}>
-                {state.status === 'over' ? 'See final score' : 'Next level'}
-              </button>
-            </div>
-          )}
-          {!playing && wrongList}
         </div>
       </div>
     </div>
