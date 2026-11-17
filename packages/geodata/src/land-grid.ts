@@ -6,8 +6,11 @@ export interface LandGrid {
   generatedAt: string;
   /** Country ids; a cell's last number indexes this. */
   countries: CountryId[];
-  /** [lat, lng, country index] for each whole-degree point on land. */
-  cells: [number, number, number][];
+  /**
+   * [lat, lng, country index, clear km] for each whole-degree point on land. "Clear" is how far
+   * (to 400 km, in 50s) the point is from any other country; measured at multiples of 5° only, else 0.
+   */
+  cells: [number, number, number, number][];
 }
 
 /** When the grid was built: part of the dataset version, so a server only replays runs made on the same targets. */

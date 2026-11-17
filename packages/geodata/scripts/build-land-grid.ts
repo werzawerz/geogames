@@ -42,7 +42,31 @@ const countryAt = (lat: number, lng: number) =>
     const inLng = w! <= e! ? lng >= w! && lng <= e! : lng >= w! || lng <= e!;
     return inLng && geoContains(shape, [lng, lat]);
   });
-const cells: [number, number, number][] = [];
+/** Bearings and distances tried when measuring how far a point is from any other country. */
+const CLEAR_BEARINGS = 16;
+const CLEAR_STEP_KM = 50;
+const CLEAR_MAX_KM = 400;
+const EARTH_KM = 6371;
+/**
+ * How far (km, in steps of CLEAR_STEP_KM, up to CLEAR_MAX_KM) the point lies from any
+ * other country's land. Only measured at multiples of 5° (the early levels' points).
+ */
+function clearKm(lat: number, lng: number, index: number): number {
+  const rad = Math.PI / 180;
+  for (let r = CLEAR_STEP_KM; r <= CLEAR_MAX_KM; r += CLEAR_STEP_KM) {
+    for (let b = 0; b < CLEAR_BEARINGS; b++) {
+      const bearing = (b / CLEAR_BEARINGS) * 2 * Math.PI;
+      const d = r / EARTH_KM;
+      const φ = Math.asin(Math.sin(lat * rad) * Math.cos(d) + Math.cos(lat * rad) * Math.sin(d) * Math.cos(bearing));
+      const λ = lng * rad + Math.atan2(Math.sin(bearing) * Math.sin(d) * Math.cos(lat * rad), Math.cos(d) - Math.sin(lat * rad) * Math.sin(φ));
+      const other = countryAt(φ / rad, ((λ / rad + 540) % 360) - 180);
+      if (other >= 0 && other !== index) return r - CLEAR_STEP_KM;
+    }
+  }
+  return CLEAR_MAX_KM;
+}
+
+const cells: [number, number, number, number][] = [];
 for (let lat = LAT_MIN; lat <= LAT_MAX; lat++) {
   for (let lng = -180; lng < 180; lng++) {
     const index = countryAt(lat, lng);
@@ -51,12 +75,12 @@ for (let lat = LAT_MIN; lat <= LAT_MAX; lat++) {
       const other = countryAt(lat + dy! * BORDER_DEG, lng + dx! * BORDER_DEG);
       return (other >= 0 && other !== index) || disputed(lat + dy! * BORDER_DEG, lng + dx! * BORDER_DEG);
     });
-    if (!nearOther) cells.push([lat, lng, index]);
+    if (!nearOther) cells.push([lat, lng, index, lat % 5 === 0 && lng % 5 === 0 ? clearKm(lat, lng, index) : 0]);
   }
 }
 
 // The rule for which points stay is part of the version: a changed rule changes the targets.
-const generatedAt = `${new Date().toISOString().slice(0, 10)}+borders`;
+const generatedAt = `${new Date().toISOString().slice(0, 10)}+clear`;
 await writeFile(join(ROOT, 'data', 'land-grid.json'), JSON.stringify({ generatedAt, countries: ids, cells }));
 await writeFile(join(ROOT, 'data', 'land-grid-version.json'), JSON.stringify({ generatedAt }));
 console.log(`${cells.length} land points in ${new Set(cells.map((c) => c[2])).size} countries`);

@@ -244,19 +244,20 @@ describe('the server bundle', () => {
     expect(await server.replayGame(definition, settings, 43, state.moves)).toEqual(full);
   });
 
-  it('scores On the Grid the same from the slimmed land grid: finds, misses, skips', async () => {
+  it('scores On the Grid the same from the slimmed land grid: guesses, misses, skips', async () => {
     const definition = GAMES.find((g) => g.kind === 'on-the-grid')!;
     const settings = normalizeSettings({}, definition);
     const engine = createOnTheGrid({ grid: await loadLandGrid(), countries: queryCountries() });
+    const wrongFor = (st: ReturnType<typeof engine.start>) => [...engine.countries.keys()].find((id) => id !== st.level.country && !st.level.guesses.includes(id))!;
     let state = engine.start(41);
-    for (let i = 1; i <= 30; i++) {
-      const [lat, lng] = state.level.target;
+    // 45 levels, into the band with one miss and the map hidden: a miss first on every third, a skip on every seventh.
+    for (let i = 1; i <= 45; i++) {
       if (i % 7 === 0) state = engine.skip(state);
       else {
-        if (i % 3 === 0) state = engine.click(state, lat > 0 ? -40 : 40, lng > 0 ? lng - 90 : lng + 90).state;
-        state = engine.click(state, lat, lng).state;
+        if (i % 3 === 0) state = engine.guess(state, wrongFor(state)).state;
+        state = engine.guess(state, state.level.country).state;
       }
-      state = engine.nextLevel(state);
+      if (state.status === 'level-over') state = engine.nextLevel(state);
     }
     while (state.status !== 'over') state = engine.skip(state.status === 'level-over' ? engine.nextLevel(state) : state);
     const full = await replayGame(definition, settings, 41, state.moves);
