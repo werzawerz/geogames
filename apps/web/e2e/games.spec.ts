@@ -1244,7 +1244,7 @@ test('halfway: misses are free until the third, a skip costs a life, and the run
   const missKm = new Intl.NumberFormat('en').format(Math.round(state.level.guesses[0]!.km));
   await expect(page.locator('.route-message')).toContainText(`${miss.name} is ${missKm} km from the midpoint`);
   await expect(page.locator('.route-message')).toContainText('1 more free miss');
-  await expect(lives).toHaveCount(2);
+  await expect(lives).toHaveCount(3);
   await expect(page.locator('.halfway-misses')).toHaveText('1');
   await expect(page.locator('.marker-outside text')).toContainText(miss.name);
   await expect(page.locator('.halfway-guesses')).toContainText(miss.name);
@@ -1404,7 +1404,7 @@ test('clockwork: pick the local time; earlier or later after a miss, a skip cost
   await expect(page.locator('.clock-misses')).toHaveText('1');
   await expect(page.locator('.clock-hour').nth(Math.floor(late / 60))).toHaveClass(/tried/);
   await expect(page.locator('.clock-hour').nth(Math.floor(late / 60))).toContainText('↓');
-  await expect(lives).toHaveCount(2);
+  await expect(lives).toHaveCount(3);
   await expect(check).toBeDisabled();
 
   // The right time clears it, not flawless after a miss.
@@ -1673,7 +1673,7 @@ test('river-run: the river draws itself, a wrong name shows that river, and a sk
   await expect(page.locator('.route-message')).toContainText('1 more free miss');
   await expect(page.locator('.river-wrong')).toHaveCount(1);
   await expect(page.locator('.river-misses')).toHaveText('1');
-  await expect(lives).toHaveCount(2);
+  await expect(lives).toHaveCount(3);
 
   // The right name clears it, typed with a "River" after it, and the whole river is shown with its name and length.
   const answer = data.rivers.find((r) => r.id === state.level.river)!;
