@@ -66,12 +66,18 @@ describe('the data', () => {
         expect(p.value, c.id).toBeGreaterThan(0);
         if (i) expect(p.value, c.id).toBeLessThanOrEqual(c.producers[i - 1]!.value);
       });
-      expect(c.producers.reduce((s, p) => s + p.share, 0), c.id).toBeLessThan(1.05);
+      expect(
+        c.producers.reduce((s, p) => s + p.share, 0),
+        c.id,
+      ).toBeLessThan(1.05);
     }
   });
 
   it('gets the famous leaders right', () => {
-    const top = (id: string, n = 3) => kindOf(id).producers.slice(0, n).map((p) => p.id);
+    const top = (id: string, n = 3) =>
+      kindOf(id)
+        .producers.slice(0, n)
+        .map((p) => p.id);
     expect(top('coffee', 2)).toEqual(['BRA', 'VNM']);
     expect(top('cocoa', 1)).toEqual(['CIV']);
     expect(top('oil', 3)).toEqual(['USA', 'RUS', 'SAU']);

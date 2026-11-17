@@ -40,6 +40,8 @@ export const SUPPLY_CHAIN_VERSION: string = versionFile.version;
 
 /** The commodities of Supply Chain, loaded only when it's played. */
 export async function loadSupplyChain(): Promise<SupplyChainData> {
-  const m = await import('../data/supply-chain.json', { with: { type: 'json' } });
+  const m = await import('../data/supply-chain.json', {
+    with: { type: 'json' },
+  });
   return m.default as unknown as SupplyChainData;
 }

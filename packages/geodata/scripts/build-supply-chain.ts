@@ -35,9 +35,15 @@ const FAO_FILE = arg('--faostat');
 const EIA_FILE = arg('--eia');
 const USGS_DIR = arg('--usgs');
 
-const countries: { id: string; iso2: string; isoNumeric: string | null; name: string; officialName: string; aliases: string[]; sovereignty: string }[] = JSON.parse(
-  await readFile(join(ROOT, 'data', 'countries.json'), 'utf8'),
-).countries;
+const countries: {
+  id: string;
+  iso2: string;
+  isoNumeric: string | null;
+  name: string;
+  officialName: string;
+  aliases: string[];
+  sovereignty: string;
+}[] = JSON.parse(await readFile(join(ROOT, 'data', 'countries.json'), 'utf8')).countries;
 // Dependencies (New Caledonia, Hong Kong) are ranked too, so a dependency that out-produces a country is never
 // skipped over; the game only asks for ranks that stop above the first of them (see supplyAnswers).
 const byNumeric = new Map(countries.filter((c) => c.isoNumeric).map((c) => [String(Number(c.isoNumeric)), c.id]));
@@ -45,10 +51,8 @@ const ids = new Set(countries.map((c) => c.id));
 
 const TOP = 10;
 const FAO_YEARS = [2022, 2023, 2024];
-const MINERAL_YEAR = 2024;
 const ENERGY_YEAR = 2024;
 
-type Kind = 'farm' | 'mine' | 'energy';
 /** Tier 1: a famous good with famous leaders. 2: players have to know who really makes it. 3: niche or regional. */
 type Tier = 1 | 2 | 3;
 
@@ -149,37 +153,199 @@ interface Mineral {
 }
 const MINE: Mineral[] = [
   // Argentina and Chile carry footnote 5 (read as 513,800 and 548,900), and the total footnote 8; the rows then sum to the total.
-  { id: 'lithium', slug: 'lithium', name: 'lithium', tier: 2, unit: 'tonnes of lithium content', fix: { ARG: 13800, CHL: 48900 }, total: 222000 },
-  { id: 'cobalt', slug: 'cobalt', name: 'cobalt', tier: 2, unit: 'tonnes of cobalt content' },
-  { id: 'copper', slug: 'copper', name: 'copper', tier: 1, unit: 'thousand tonnes of copper content' },
-  { id: 'nickel', slug: 'nickel', name: 'nickel', tier: 2, unit: 'tonnes of nickel content' },
-  { id: 'iron-ore', slug: 'iron-ore', name: 'iron ore', tier: 1, unit: 'thousand tonnes of usable ore' },
-  { id: 'bauxite', slug: 'bauxite-alumina', name: 'bauxite (aluminium ore)', tier: 2, unit: 'thousand tonnes' },
+  {
+    id: 'lithium',
+    slug: 'lithium',
+    name: 'lithium',
+    tier: 2,
+    unit: 'tonnes of lithium content',
+    fix: { ARG: 13800, CHL: 48900 },
+    total: 222000,
+  },
+  {
+    id: 'cobalt',
+    slug: 'cobalt',
+    name: 'cobalt',
+    tier: 2,
+    unit: 'tonnes of cobalt content',
+  },
+  {
+    id: 'copper',
+    slug: 'copper',
+    name: 'copper',
+    tier: 1,
+    unit: 'thousand tonnes of copper content',
+  },
+  {
+    id: 'nickel',
+    slug: 'nickel',
+    name: 'nickel',
+    tier: 2,
+    unit: 'tonnes of nickel content',
+  },
+  {
+    id: 'iron-ore',
+    slug: 'iron-ore',
+    name: 'iron ore',
+    tier: 1,
+    unit: 'thousand tonnes of usable ore',
+  },
+  {
+    id: 'bauxite',
+    slug: 'bauxite-alumina',
+    name: 'bauxite (aluminium ore)',
+    tier: 2,
+    unit: 'thousand tonnes',
+  },
   { id: 'gold', slug: 'gold', name: 'gold', tier: 1, unit: 'tonnes' },
   { id: 'silver', slug: 'silver', name: 'silver', tier: 2, unit: 'tonnes' },
   // Footnotes 11 and 12 are glued to the United States, Madagascar, Malaysia, Thailand and Vietnam; with them off the rows sum to the 380,000 total.
-  { id: 'rare-earths', slug: 'rare-earths', name: 'rare earths', tier: 2, unit: 'tonnes of rare-earth oxide', fix: { USA: 45500, MMR: 27000, MDG: 1400, MYS: 140, THA: 2100, VNM: 300 } },
-  { id: 'graphite', slug: 'graphite', name: 'natural graphite', tier: 3, unit: 'tonnes' },
-  { id: 'tin', slug: 'tin', name: 'tin', tier: 3, unit: 'tonnes of tin content' },
-  { id: 'zinc', slug: 'zinc', name: 'zinc', tier: 2, unit: 'thousand tonnes of zinc content' },
-  { id: 'lead', slug: 'lead', name: 'lead', tier: 3, unit: 'thousand tonnes of lead content' },
-  { id: 'manganese', slug: 'manganese', name: 'manganese', tier: 3, unit: 'thousand tonnes of manganese content' },
-  { id: 'tungsten', slug: 'tungsten', name: 'tungsten', tier: 3, unit: 'tonnes of tungsten content' },
+  {
+    id: 'rare-earths',
+    slug: 'rare-earths',
+    name: 'rare earths',
+    tier: 2,
+    unit: 'tonnes of rare-earth oxide',
+    fix: { USA: 45500, MMR: 27000, MDG: 1400, MYS: 140, THA: 2100, VNM: 300 },
+  },
+  {
+    id: 'graphite',
+    slug: 'graphite',
+    name: 'natural graphite',
+    tier: 3,
+    unit: 'tonnes',
+  },
+  {
+    id: 'tin',
+    slug: 'tin',
+    name: 'tin',
+    tier: 3,
+    unit: 'tonnes of tin content',
+  },
+  {
+    id: 'zinc',
+    slug: 'zinc',
+    name: 'zinc',
+    tier: 2,
+    unit: 'thousand tonnes of zinc content',
+  },
+  {
+    id: 'lead',
+    slug: 'lead',
+    name: 'lead',
+    tier: 3,
+    unit: 'thousand tonnes of lead content',
+  },
+  {
+    id: 'manganese',
+    slug: 'manganese',
+    name: 'manganese',
+    tier: 3,
+    unit: 'thousand tonnes of manganese content',
+  },
+  {
+    id: 'tungsten',
+    slug: 'tungsten',
+    name: 'tungsten',
+    tier: 3,
+    unit: 'tonnes of tungsten content',
+  },
   // Footnote 5 is glued to the United States and Canada (540,400 and 510,600); the rows then sum to the 275,000 total.
-  { id: 'salt', slug: 'salt', name: 'salt', tier: 2, unit: 'thousand tonnes', fix: { USA: 40400, CAN: 10600 } },
-  { id: 'potash', slug: 'potash', name: 'potash (fertiliser)', tier: 3, unit: 'thousand tonnes of K2O' },
-  { id: 'phosphate', slug: 'phosphate', name: 'phosphate rock', tier: 3, unit: 'thousand tonnes' },
-  { id: 'sulfur', slug: 'sulfur', name: 'sulphur', tier: 3, unit: 'thousand tonnes' },
-  { id: 'molybdenum', slug: 'molybdenum', name: 'molybdenum', tier: 3, unit: 'tonnes of molybdenum content' },
-  { id: 'chromium', slug: 'chromium', name: 'chromium (chromite)', tier: 3, unit: 'thousand tonnes' },
-  { id: 'vanadium', slug: 'vanadium', name: 'vanadium', tier: 3, unit: 'tonnes of vanadium content' },
-  { id: 'niobium', slug: 'niobium', name: 'niobium', tier: 3, unit: 'tonnes of niobium content' },
-  { id: 'antimony', slug: 'antimony', name: 'antimony', tier: 3, unit: 'tonnes of antimony content' },
-    { id: 'diamonds', slug: 'diamond', name: 'industrial diamonds', tier: 3, unit: 'million carats' },
-  { id: 'aluminium', slug: 'aluminum', name: 'aluminium metal', tier: 2, unit: 'thousand tonnes (smelter)' },
-  { id: 'steel', slug: 'iron-steel', name: 'crude steel', tier: 1, unit: 'million tonnes', col: 2 },
+  {
+    id: 'salt',
+    slug: 'salt',
+    name: 'salt',
+    tier: 2,
+    unit: 'thousand tonnes',
+    fix: { USA: 40400, CAN: 10600 },
+  },
+  {
+    id: 'potash',
+    slug: 'potash',
+    name: 'potash (fertiliser)',
+    tier: 3,
+    unit: 'thousand tonnes of K2O',
+  },
+  {
+    id: 'phosphate',
+    slug: 'phosphate',
+    name: 'phosphate rock',
+    tier: 3,
+    unit: 'thousand tonnes',
+  },
+  {
+    id: 'sulfur',
+    slug: 'sulfur',
+    name: 'sulphur',
+    tier: 3,
+    unit: 'thousand tonnes',
+  },
+  {
+    id: 'molybdenum',
+    slug: 'molybdenum',
+    name: 'molybdenum',
+    tier: 3,
+    unit: 'tonnes of molybdenum content',
+  },
+  {
+    id: 'chromium',
+    slug: 'chromium',
+    name: 'chromium (chromite)',
+    tier: 3,
+    unit: 'thousand tonnes',
+  },
+  {
+    id: 'vanadium',
+    slug: 'vanadium',
+    name: 'vanadium',
+    tier: 3,
+    unit: 'tonnes of vanadium content',
+  },
+  {
+    id: 'niobium',
+    slug: 'niobium',
+    name: 'niobium',
+    tier: 3,
+    unit: 'tonnes of niobium content',
+  },
+  {
+    id: 'antimony',
+    slug: 'antimony',
+    name: 'antimony',
+    tier: 3,
+    unit: 'tonnes of antimony content',
+  },
+  {
+    id: 'diamonds',
+    slug: 'diamond',
+    name: 'industrial diamonds',
+    tier: 3,
+    unit: 'million carats',
+  },
+  {
+    id: 'aluminium',
+    slug: 'aluminum',
+    name: 'aluminium metal',
+    tier: 2,
+    unit: 'thousand tonnes (smelter)',
+  },
+  {
+    id: 'steel',
+    slug: 'iron-steel',
+    name: 'crude steel',
+    tier: 1,
+    unit: 'million tonnes',
+    col: 2,
+  },
   // The table's row reads "United States (includes Puerto Rico)", which the label reader splits; 85,000 is its 2024 figure.
-  { id: 'cement', slug: 'cement', name: 'cement', tier: 2, unit: 'thousand tonnes', fix: { USA: 85000 } },
+  {
+    id: 'cement',
+    slug: 'cement',
+    name: 'cement',
+    tier: 2,
+    unit: 'thousand tonnes',
+    fix: { USA: 85000 },
+  },
 ];
 
 // ---- Energy: EIA international series --------------------------------------------------------------
@@ -197,7 +363,7 @@ const ENERGY: [string, string, string, string, Tier, string][] = [
 
 const SOURCES = {
   faostat: {
-    name: 'FAOSTAT crops and livestock products, UN Food and Agriculture Organization',
+    name: 'FAOSTAT (UN FAO)',
     url: 'https://www.fao.org/faostat/en/#data/QCL',
     licence: 'CC BY 4.0',
     year: 'average of 2022 to 2024',
@@ -209,7 +375,7 @@ const SOURCES = {
     year: '2024',
   },
   eia: {
-    name: 'EIA international data, US Energy Information Administration',
+    name: 'EIA (US Energy Information Administration)',
     url: 'https://www.eia.gov/international/data/world',
     licence: 'US public domain',
     year: '2024',
@@ -221,7 +387,11 @@ function toProducers(values: Map<string, number>, world: number): Producer[] {
     .filter(([id, v]) => ids.has(id) && v > 0)
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, TOP)
-    .map(([id, value]) => ({ id, value: Math.round(value * 100) / 100, share: Math.round((value / world) * 10000) / 10000 }));
+    .map(([id, value]) => ({
+      id,
+      value: Math.round(value * 100) / 100,
+      share: Math.round((value / world) * 10000) / 10000,
+    }));
 }
 
 // ---- FAOSTAT ---------------------------------------------------------------------------------------
@@ -231,7 +401,10 @@ async function farm(): Promise<Commodity[]> {
   // item code → area key → year → tonnes. Element 5510 is production in tonnes; milk, eggs and meat all report it.
   const data = new Map<number, Map<string, Map<number, number>>>();
   const unmapped = new Map<string, number>();
-  const rl = createInterface({ input: createReadStream(FAO_FILE, 'utf8'), crlfDelay: Infinity });
+  const rl = createInterface({
+    input: createReadStream(FAO_FILE, 'utf8'),
+    crlfDelay: Infinity,
+  });
   for await (const line of rl) {
     // Cheap pre-filter: production in tonnes, one of the three years.
     if (!line.includes('"5510"') || !/"202[234]"/.test(line)) continue;
@@ -243,8 +416,10 @@ async function farm(): Promise<Commodity[]> {
     const code = Number(areaCode);
     let key: string | undefined;
     if (code === 5000) key = 'WORLD';
-    else if (code >= 5000) continue; // regions
-    else if (code === 351) continue; // "China" as a whole, which already contains mainland China, Hong Kong, Macao and Taiwan
+    else if (code >= 5000)
+      continue; // regions
+    else if (code === 351)
+      continue; // "China" as a whole, which already contains mainland China, Hong Kong, Macao and Taiwan
     else {
       key = byNumeric.get(String(Number((m49 ?? '').replace("'", ''))));
       if (!key) {
@@ -278,7 +453,16 @@ async function farm(): Promise<Commodity[]> {
       const v = key === 'WORLD' ? null : mean(perYear);
       if (v) values.set(key, v);
     }
-    out.push({ id, kind: 'farm', name, tier, unit: 'tonnes', source: 'faostat', year: SOURCES.faostat.year, producers: toProducers(values, world) });
+    out.push({
+      id,
+      kind: 'farm',
+      name,
+      tier,
+      unit: 'tonnes',
+      source: 'faostat',
+      year: SOURCES.faostat.year,
+      producers: toProducers(values, world),
+    });
   }
   return out;
 }
@@ -297,7 +481,9 @@ async function energy(): Promise<Commodity[]> {
       if (!line.startsWith(prefix)) continue;
       const m = line.match(/^\{"series_id":"INTL\.[\d-]+-([A-Z]+)-([A-Z]+)\.A"/);
       if (!m || m[2] !== unitCode) continue;
-      const row = JSON.parse(line) as { data: [string, number | string | null][] };
+      const row = JSON.parse(line) as {
+        data: [string, number | string | null][];
+      };
       const v = Number(row.data.find(([y]) => y === String(ENERGY_YEAR))?.[1]);
       if (!Number.isFinite(v)) continue;
       if (m[1] === 'WORL') world = v;
@@ -307,7 +493,16 @@ async function energy(): Promise<Commodity[]> {
       console.warn(`EIA: no data for ${id} (${series} ${unitCode})`);
       continue;
     }
-    out.push({ id, kind: 'energy', name, tier, unit, source: 'eia', year: SOURCES.eia.year, producers: toProducers(values, world) });
+    out.push({
+      id,
+      kind: 'energy',
+      name,
+      tier,
+      unit,
+      source: 'eia',
+      year: SOURCES.eia.year,
+      producers: toProducers(values, world),
+    });
   }
   return out;
 }
@@ -327,15 +522,20 @@ const USGS_NAMES: Record<string, string> = {
   Vietnam: 'VNM',
   Iran: 'IRN',
   Laos: 'LAO',
-  'Eswatini': 'SWZ',
-  'Czechia': 'CZE',
+  Eswatini: 'SWZ',
+  Czechia: 'CZE',
   'North Macedonia': 'MKD',
   'Cote d’Ivoire': 'CIV',
   "Cote d'Ivoire": 'CIV',
   'United States': 'USA',
   'United Kingdom': 'GBR',
 };
-const norm = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z]/g, '');
+const norm = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z]/g, '');
 const byName = new Map<string, string>();
 for (const c of countries) for (const n of [c.name, c.officialName, ...c.aliases]) byName.set(norm(n), c.id);
 const usgsCountry = (label: string) => USGS_NAMES[label] ?? byName.get(norm(label));
@@ -359,7 +559,12 @@ async function pdf(slug: string): Promise<string> {
     await mkdir(join(CACHE, 'usgs'), { recursive: true });
     await writeFile(file, Buffer.from(await res.arrayBuffer()));
   }
-  return execFileSync('pdftotext', ['-table', file, '-'], { encoding: 'utf8', maxBuffer: 1e8 }).split(String.fromCharCode(13)).join('');
+  return execFileSync('pdftotext', ['-table', file, '-'], {
+    encoding: 'utf8',
+    maxBuffer: 1e8,
+  })
+    .split(String.fromCharCode(13))
+    .join('');
 }
 
 /** The value cells of a table row: what follows the label, or the next line when the label's own line holds only the year header. */
@@ -415,18 +620,41 @@ async function minerals(): Promise<Commodity[]> {
     for (const v of values.values()) sum += v;
     if (!total) throw new Error(`${m.id}: no world total`);
     const off = Math.abs(sum - total) / total;
-    if (off > 0.04) console.warn(`CHECK ${m.id}: rows sum to ${sum} but the world total is ${total} (${(off * 100).toFixed(1)}% off). withheld: ${withheld.join(',') || 'none'}`);
+    if (off > 0.04)
+      console.warn(
+        `CHECK ${m.id}: rows sum to ${sum} but the world total is ${total} (${(off * 100).toFixed(1)}% off). withheld: ${withheld.join(',') || 'none'}`,
+      );
     else console.log(`ok ${m.id}: sum ${sum} vs total ${total}${withheld.length ? ` withheld ${withheld.join(',')}` : ''}`);
-    out.push({ id: m.id, kind: 'mine', name: m.name, tier: m.tier, unit: m.unit, source: 'usgs', year: SOURCES.usgs.year, producers: toProducers(values, total), ...(withheld.length ? { withheld } : {}) });
+    out.push({
+      id: m.id,
+      kind: 'mine',
+      name: m.name,
+      tier: m.tier,
+      unit: m.unit,
+      source: 'usgs',
+      year: SOURCES.usgs.year,
+      producers: toProducers(values, total),
+      ...(withheld.length ? { withheld } : {}),
+    });
   }
   return out;
 }
 
 const commodities = [...(await farm()), ...(await minerals()), ...(await energy())];
 if (process.argv.includes('--check')) {
-  for (const c of commodities) console.log(c.id.padEnd(14), c.producers.slice(0, 6).map((p) => `${p.id} ${(p.share * 100).toFixed(1)}%`).join('  '));
+  for (const c of commodities)
+    console.log(
+      c.id.padEnd(14),
+      c.producers
+        .slice(0, 6)
+        .map((p) => `${p.id} ${(p.share * 100).toFixed(1)}%`)
+        .join('  '),
+    );
 } else {
-  const version = createHash('sha1').update(JSON.stringify(commodities.map((c) => [c.id, c.producers.map((p) => p.id)]))).digest('hex').slice(0, 8);
+  const version = createHash('sha1')
+    .update(JSON.stringify(commodities.map((c) => [c.id, c.producers.map((p) => p.id)])))
+    .digest('hex')
+    .slice(0, 8);
   const data: SupplyChainData = { version, sources: SOURCES, commodities };
   await writeFile(join(ROOT, 'data', 'supply-chain.json'), JSON.stringify(data) + '\n');
   await writeFile(join(ROOT, 'data', 'supply-chain-version.json'), JSON.stringify({ version }) + '\n');

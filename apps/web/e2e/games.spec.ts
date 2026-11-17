@@ -2,6 +2,7 @@ import { countries, getCountry, queryCountries } from '@geogames/geodata';
 import { loadGreatCircles } from '@geogames/geodata/cities';
 import { loadRivers } from '@geogames/geodata/rivers';
 import { loadNativeNames } from '@geogames/geodata/native-names';
+import { loadSupplyChain } from '@geogames/geodata/supply-chain';
 import { BLANK_ATLAS_KIND_LABELS } from '@geogames/geodata/blank-atlas';
 import {
   DEFAULT_SETTINGS,
@@ -23,6 +24,7 @@ import {
   createHalfway,
   createRiverRun,
   createNativeTongue,
+  createSupplyChain,
   riverChoices,
   createClockwork,
   CLOCK_DATES,
@@ -1242,7 +1244,7 @@ test('halfway: misses are free until the third, a skip costs a life, and the run
   const missKm = new Intl.NumberFormat('en').format(Math.round(state.level.guesses[0]!.km));
   await expect(page.locator('.route-message')).toContainText(`${miss.name} is ${missKm} km from the midpoint`);
   await expect(page.locator('.route-message')).toContainText('1 more free miss');
-  await expect(lives).toHaveCount(3);
+  await expect(lives).toHaveCount(2);
   await expect(page.locator('.halfway-misses')).toHaveText('1');
   await expect(page.locator('.marker-outside text')).toContainText(miss.name);
   await expect(page.locator('.halfway-guesses')).toContainText(miss.name);
@@ -1402,7 +1404,7 @@ test('clockwork: pick the local time; earlier or later after a miss, a skip cost
   await expect(page.locator('.clock-misses')).toHaveText('1');
   await expect(page.locator('.clock-hour').nth(Math.floor(late / 60))).toHaveClass(/tried/);
   await expect(page.locator('.clock-hour').nth(Math.floor(late / 60))).toContainText('↓');
-  await expect(lives).toHaveCount(3);
+  await expect(lives).toHaveCount(2);
   await expect(check).toBeDisabled();
 
   // The right time clears it, not flawless after a miss.
@@ -1671,7 +1673,7 @@ test('river-run: the river draws itself, a wrong name shows that river, and a sk
   await expect(page.locator('.route-message')).toContainText('1 more free miss');
   await expect(page.locator('.river-wrong')).toHaveCount(1);
   await expect(page.locator('.river-misses')).toHaveText('1');
-  await expect(lives).toHaveCount(3);
+  await expect(lives).toHaveCount(2);
 
   // The right name clears it, typed with a "River" after it, and the whole river is shown with its name and length.
   const answer = data.rivers.find((r) => r.id === state.level.river)!;
@@ -1852,6 +1854,110 @@ for (const [label, viewport] of [
 
     // Out of lives ends the run.
     for (let i = 0; i < 2; i++) {
+      await page.getByRole('button', { name: 'Next level' }).click();
+      await page.getByRole('button', { name: /Skip/ }).click();
+    }
+    await expect(page.getByRole('button', { name: 'See final score' })).toBeVisible();
+  });
+}
+
+for (const [label, viewport] of [
+  ['desktop', { width: 1280, height: 720 }],
+  ['phone', { width: 390, height: 844 }],
+] as const) {
+  test(`supply-chain (${label}): nothing on screen gives a producer away, finds fill the map, a skip costs a life, and it all fits with no scrolling`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => {
+      Math.random = () => 0.5;
+    });
+    const data = await loadSupplyChain();
+    const engine = createSupplyChain({ commodities: data.commodities, countries: queryCountries() });
+    let state = engine.start(Math.floor(0.5 * 2 ** 32));
+    const lives = page.locator('.lives .life:not(.lost)');
+    const input = page.getByRole('combobox');
+    const inView = async (selector: string) => {
+      const box = (await page.locator(selector).first().boundingBox())!;
+      expect(box.y, selector).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height, selector).toBeLessThanOrEqual(viewport.height);
+    };
+    const guess = async (id: string) => {
+      await input.fill(getCountry(id)!.name);
+      await input.press('Enter');
+    };
+    const accepted = () => engine.answers(state.level.commodity, state.level.number)!.accepted;
+    const wrongId = () => queryCountries().find((c) => !accepted().includes(c.id) && !state.level.guesses.includes(c.id))!.id;
+    /** What the suggestions offer for a query, in order. */
+    const suggestions = async (query: string) => {
+      await input.fill(query);
+      const texts = await page.getByRole('option').allInnerTexts();
+      await input.fill('');
+      return texts;
+    };
+
+    await openGame(page, 'supply-chain');
+    await page.getByRole('button', { name: 'Start game' }).click();
+    const name = (id: string) => data.commodities.find((c) => c.id === id)!.name;
+    await expect(page.locator('.chain-commodity')).toHaveText(name(state.level.commodity), { timeout: 20_000 });
+    for (const selector of ['.route-status', '.chain-commodity', '.chain-slots', '.world-map', '[role=combobox]', '.chain-skip']) await inView(selector);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(viewport.height);
+    await expect(page.locator('.chain-source')).toContainText(/20dd/);
+
+    // Nothing gives a producer away: not the page, not the map, and not the order of the suggestions.
+    const html = await page.locator('.chain-game').innerHTML();
+    for (const id of accepted()) expect(html).not.toContain(getCountry(id)!.name);
+    await expect(page.locator('.chain-game .map-country')).toHaveCount(0);
+    const first = await suggestions('ch');
+    expect(first.length).toBeGreaterThan(1);
+
+    // A producer fills in, with its share, on the map and in its slot.
+    const hit = accepted()[0]!;
+    await guess(hit);
+    state = engine.guess(state, hit).state;
+    await expect(page.locator('.chain-slot.found')).toContainText(getCountry(hit)!.name);
+    await expect(page.locator('.chain-slot.found')).toContainText('%');
+    await expect(page.locator(`.chain-game .map-country[data-id=${hit}]`)).toHaveCount(1);
+    await expect(page.locator('.chain-game .map-country')).toHaveCount(1);
+    await expect(page.locator('.chain-misses')).toHaveText('0');
+
+    // A wrong one is a miss, and a big producer says its place.
+    const wrong = wrongId();
+    await guess(wrong);
+    state = engine.guess(state, wrong).state;
+    await expect(page.locator('.chain-misses')).toHaveText('1');
+    await expect(page.locator('.chain-wrong')).toContainText(getCountry(wrong)!.name);
+    await inView('.chain-wrong');
+    await inView('[role=combobox]');
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(viewport.height);
+
+    // The rest of the level, then Enter goes on from the focused button.
+    for (const id of accepted().filter((a) => !state.level.found.includes(a)).slice(0, state.level.need - state.level.found.length)) {
+      await guess(id);
+      state = engine.guess(state, id).state;
+    }
+    await expect(page.locator('.route-summary.solved')).toContainText(`All ${state.level.need} found`);
+    await inView('.route-summary');
+    await inView('.chain-slots');
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(viewport.height + 1);
+    await expect(page.getByRole('button', { name: 'Next level' })).toBeFocused();
+    await page.keyboard.press('Enter');
+    state = engine.nextLevel(state);
+    await expect(page.locator('.route-status')).toContainText('Level 2');
+    await expect(page.locator('.chain-commodity')).toHaveText(name(state.level.commodity));
+    // The same query gets the same suggestions on another level: the list never leans towards the answer.
+    expect(await suggestions('ch')).toEqual(first.filter((t) => !state.level.guesses.some((g) => t.includes(getCountry(g)!.name))));
+
+    // A skip costs a life and shows the answers; Enter doesn't skip on arrival (focus is in the box).
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.route-summary')).toHaveCount(0);
+    await page.getByRole('button', { name: /Skip/ }).click();
+    await expect(page.locator('.route-summary.failed')).toContainText('Skipped: −1 ♥');
+    for (const id of accepted().slice(0, state.level.need)) await expect(page.locator('.chain-top')).toContainText(getCountry(id)!.name);
+    await expect(lives).toHaveCount(2);
+    await expect(page.getByRole('button', { name: 'Change settings' })).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(viewport.height + 1);
+
+    // Out of lives ends the run.
+    for (let i = 0; i < 3; i++) {
       await page.getByRole('button', { name: 'Next level' }).click();
       await page.getByRole('button', { name: /Skip/ }).click();
     }

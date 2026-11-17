@@ -112,7 +112,13 @@ export interface ChainAnswers {
   accepted: readonly CountryId[];
 }
 
-export function createSupplyChain({ commodities, countries }: { commodities: readonly Pick<Commodity, 'id' | 'kind' | 'tier' | 'producers'>[]; countries: readonly Country[] }) {
+export function createSupplyChain({
+  commodities,
+  countries,
+}: {
+  commodities: readonly Pick<Commodity, 'id' | 'kind' | 'tier' | 'producers'>[];
+  countries: readonly Country[];
+}) {
   const byId = new Map(countries.map((c) => [c.id, c]));
   const byCommodity = new Map(commodities.map((c) => [c.id, c]));
   // Dependencies rank but are never typed, asked or counted.
@@ -125,7 +131,10 @@ export function createSupplyChain({ commodities, countries }: { commodities: rea
     if (real.length < 3) return null;
     const need = Math.min(size, real.length);
     const cut = real[need - 1]!.value * (1 - CHAIN_TIE_BAND);
-    return { need, accepted: real.filter((p) => p.value >= cut).map((p) => p.id) };
+    return {
+      need,
+      accepted: real.filter((p) => p.value >= cut).map((p) => p.id),
+    };
   }
 
   /** A commodity's answers at a plan's size, if it can be asked there at all. */
@@ -159,12 +168,20 @@ export function createSupplyChain({ commodities, countries }: { commodities: rea
           if (rules >= 1 && lastKind === c.kind) return false;
           return rules < 2 || overlapOk(a, past, plan);
         });
-        if (options.length) return pick(rng, options.map((c) => c.id));
+        if (options.length)
+          return pick(
+            rng,
+            options.map((c) => c.id),
+          );
       }
     }
     // The scope or the overlap rule ruled out everything fresh: any fresh commodity with enough producers.
     const any = fresh.filter((c) => answers(c, plan.size));
-    if (any.length) return pick(rng, any.map((c) => c.id));
+    if (any.length)
+      return pick(
+        rng,
+        any.map((c) => c.id),
+      );
     // Every commodity has been asked: the one asked longest ago.
     const all = commodities.filter((c) => answers(c, plan.size));
     return [...all].sort((a, b) => past.lastIndexOf(a.id) - past.lastIndexOf(b.id) || a.id.localeCompare(b.id))[0]!.id;
@@ -174,7 +191,16 @@ export function createSupplyChain({ commodities, countries }: { commodities: rea
     const plan = chainPlan(number);
     const commodity = nextCommodity(rng, plan, past);
     const a = answers(byCommodity.get(commodity)!, plan.size)!;
-    return { number, commodity, need: a.need, guesses: [], found: [], status: 'playing', points: 0, flawless: false };
+    return {
+      number,
+      commodity,
+      need: a.need,
+      guesses: [],
+      found: [],
+      status: 'playing',
+      points: 0,
+      flawless: false,
+    };
   }
 
   const perFind = (level: ChainLevel) => CHAIN_POINTS_BASE + level.number;
@@ -228,21 +254,42 @@ export function createSupplyChain({ commodities, countries }: { commodities: rea
       const a = answers(byCommodity.get(level.commodity)!, chainPlan(level.number).size)!;
       if (a.accepted.includes(id)) {
         const found = [...level.found, id];
-        if (found.length < level.need) return { result: 'found', state: { ...state, level: { ...level, guesses, found }, moves: [...state.moves, id] } };
+        if (found.length < level.need)
+          return {
+            result: 'found',
+            state: {
+              ...state,
+              level: { ...level, guesses, found },
+              moves: [...state.moves, id],
+            },
+          };
         const missed = guesses.length - found.length;
         const flawless = missed === 0;
         const base = perFind(level) * level.need;
         const points = Math.round(base * MISS_SHARE[missed]! + (flawless ? base * CHAIN_FLAWLESS_SHARE : 0));
         const lives = flawless ? Math.min(CHAIN_MAX_LIVES, state.lives + 1) : state.lives;
         const mark = flawless ? 'flawless' : missed === 1 ? 'cleared' : 'missed';
-        return { result: 'found', state: endLevel(state, { ...level, guesses, found, status: 'cleared', points, flawless }, lives, mark, id) };
+        return {
+          result: 'found',
+          state: endLevel(state, { ...level, guesses, found, status: 'cleared', points, flawless }, lives, mark, id),
+        };
       }
       const missed = guesses.length - level.found.length;
       if (missed >= chainPlan(level.number).misses) {
         const points = Math.round(level.found.length * perFind(level) * CHAIN_PARTIAL_SHARE);
-        return { result: 'wrong', state: endLevel(state, { ...level, guesses, status: 'lost', points }, state.lives - 1, 'lost', id) };
+        return {
+          result: 'wrong',
+          state: endLevel(state, { ...level, guesses, status: 'lost', points }, state.lives - 1, 'lost', id),
+        };
       }
-      return { result: 'wrong', state: { ...state, level: { ...level, guesses }, moves: [...state.moves, id] } };
+      return {
+        result: 'wrong',
+        state: {
+          ...state,
+          level: { ...level, guesses },
+          moves: [...state.moves, id],
+        },
+      };
     },
 
     /** Gives up on the level for a life; what was found still pays a little. */
@@ -257,7 +304,14 @@ export function createSupplyChain({ commodities, countries }: { commodities: rea
       if (state.status !== 'level-over') return state;
       const rng = createRng(state.rngState);
       const level = makeLevel(rng, state.level.number + 1, state.past);
-      return { ...state, rngState: rng.state, level, status: 'playing', bonusLife: false, past: [...state.past, level.commodity] };
+      return {
+        ...state,
+        rngState: rng.state,
+        level,
+        status: 'playing',
+        bonusLife: false,
+        past: [...state.past, level.commodity],
+      };
     },
   };
 }

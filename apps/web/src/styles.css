@@ -2825,3 +2825,78 @@ summary:focus-visible {
 /* Tall scripts in running text need room too. */
 .route-summary [lang] { line-height: 2; display: inline-block; padding-top: 0.15em; }
 .tongue-name { user-select: none; -webkit-user-select: none; }
+
+/* Supply Chain */
+.art-chain text { fill: var(--map-ink); font: 700 30px var(--font-body); dominant-baseline: middle; }
+.art-chain .art-chain-title { font: 700 44px var(--font-head); fill: var(--accent); dominant-baseline: auto; }
+.art-chain .art-chain-bar { stroke: var(--map-ink); stroke-width: 2; }
+.art-chain .art-chain-bar.a { fill: var(--correct); }
+.art-chain .art-chain-bar.b { fill: var(--brass); }
+.art-chain .art-chain-bar.c { fill: var(--land-2); }
+.art-chain .art-chain-bar + text, .art-chain text:not(.art-chain-title):not(.art-chain-pct) { fill: var(--surface); }
+.art-chain .art-chain-pct { fill: var(--map-ink); }
+.chain-card {
+  text-align: center;
+  padding: 0.5rem 0.75rem 0.55rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.chain-ask { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.chain-commodity {
+  margin: 0;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  line-height: 1.15;
+  color: var(--text);
+  text-wrap: balance;
+}
+.chain-slots { list-style: none; margin: 0.35rem 0 0.2rem; padding: 0; display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: center; }
+.chain-slot {
+  min-height: 36px;
+  min-width: 3.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  border: 2px dashed var(--land-line);
+  color: var(--muted);
+  font-weight: 700;
+}
+.chain-slot.found { border: 2px solid var(--correct); background: var(--correct-soft); color: var(--correct-ink); font-weight: 500; }
+.chain-source { margin: 0.1rem 0 0; font-size: 0.78rem; }
+.chain-body { display: grid; gap: var(--gap, 0.75rem); grid-template-columns: minmax(0, 1fr); }
+.chain-rest { display: grid; gap: 0.5rem; align-content: start; }
+/* Narrow screens stack, and the map shrinks to leave room for what's under it. */
+.chain-game { --chain-chrome: 470px; }
+.chain-game .map-frame {
+  max-width: max(200px, min(100%, calc((100dvh - var(--chain-chrome)) * 16 / 9)));
+  width: 100%;
+  margin-inline: auto;
+}
+/* Wide screens put the question beside the map, which then has the whole height. */
+@media (min-width: 900px) {
+  .chain-body { grid-template-columns: minmax(320px, 5fr) minmax(0, 7fr); grid-template-areas: "card map" "rest map"; align-items: start; }
+  .chain-card { grid-area: card; }
+  .chain-map { grid-area: map; }
+  .chain-rest { grid-area: rest; }
+  .chain-game .map-frame { max-width: none; }
+}
+.chain-input { max-width: 760px; margin-inline: auto; width: 100%; display: flex; gap: 0.5rem; align-items: flex-start; }
+.chain-input .search-input { flex: 1; min-width: 0; }
+.chain-skip { min-height: 44px; white-space: nowrap; }
+.chain-wrong { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.25rem 0.9rem; justify-content: center; color: var(--wrong-ink); font-size: 0.95rem; }
+.chain-top { list-style: none; margin: 0.2rem 0; padding: 0; display: grid; gap: 0.2rem; width: min(100%, 460px); text-align: left; }
+.chain-top li { display: flex; align-items: center; gap: 0.4rem; }
+.chain-top .chain-top-name { font-weight: 700; }
+.chain-top .chain-top-amount { margin-left: auto; font-size: 0.9rem; text-align: right; }
+.chain-top li.got .chain-top-name::after { content: ' ✓'; color: var(--correct-ink); }
+.chain-tie { font-size: 0.85rem; }
+.chain-game.done { --chain-chrome: 640px; }
+@media (max-width: 640px) {
+  .chain-game { --chain-chrome: 560px; }
+  .chain-game.done { --chain-chrome: 740px; }
+}

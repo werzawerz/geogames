@@ -220,6 +220,20 @@ const ART: Record<string, () => ReactNode> = {
       </text>
     </>
   ),
+  'supply-chain': () => (
+    <g className="art-chain">
+      <text x={40} y={62} className="art-chain-title">Coffee</text>
+      <rect x={40} y={90} width={430} height={44} rx={8} className="art-chain-bar a" />
+      <rect x={40} y={150} width={260} height={44} rx={8} className="art-chain-bar b" />
+      <rect x={40} y={210} width={110} height={44} rx={8} className="art-chain-bar c" />
+      <text x={56} y={120}>1</text>
+      <text x={56} y={180}>2</text>
+      <text x={56} y={240}>3</text>
+      <text x={490} y={120} className="art-chain-pct">30%</text>
+      <text x={320} y={180} className="art-chain-pct">18%</text>
+      <text x={170} y={240} className="art-chain-pct">7%</text>
+    </g>
+  ),
   'native-tongue': () => (
     <g className="art-tongue">
       <rect x={50} y={50} width={200} height={80} rx={14} />

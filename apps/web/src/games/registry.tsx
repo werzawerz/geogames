@@ -13,6 +13,7 @@ const PinDropScreen = lazy(() => import('./pin/PinDropScreen.tsx').then((m) => (
 const HalfwayScreen = lazy(() => import('./halfway/HalfwayScreen.tsx').then((m) => ({ default: m.HalfwayScreen })));
 const ClockworkScreen = lazy(() => import('./clockwork/ClockworkScreen.tsx').then((m) => ({ default: m.ClockworkScreen })));
 const RiverRunScreen = lazy(() => import('./river-run/RiverRunScreen.tsx').then((m) => ({ default: m.RiverRunScreen })));
+const SupplyChainScreen = lazy(() => import('./supply-chain/SupplyChainScreen.tsx').then((m) => ({ default: m.SupplyChainScreen })));
 const NativeTongueScreen = lazy(() => import('./native-tongue/NativeTongueScreen.tsx').then((m) => ({ default: m.NativeTongueScreen })));
 const BlankAtlasScreen = lazy(() => import('./blank-atlas/BlankAtlasScreen.tsx').then((m) => ({ default: m.BlankAtlasScreen })));
 const ArcadeScreen = lazy(() => import('./circle/ArcadeScreen.tsx').then((m) => ({ default: m.ArcadeScreen })));
@@ -71,6 +72,12 @@ export function GameScreen(props: GameScreenProps) {
       return (
         <Suspense fallback={<p className="panel center muted">Loading…</p>}>
           <ClockworkScreen {...props} game={game} />
+        </Suspense>
+      );
+    case 'supply-chain':
+      return (
+        <Suspense fallback={<p className="panel center muted">Loading…</p>}>
+          <SupplyChainScreen {...props} game={game} />
         </Suspense>
       );
     case 'native-tongue':
