@@ -105,6 +105,11 @@ export interface RiverRunDefinition extends BaseDefinition {
   subject: 'country';
 }
 
+export interface OnTheGridDefinition extends BaseDefinition {
+  kind: 'on-the-grid';
+  subject: 'country';
+}
+
 export interface NativeTongueDefinition extends BaseDefinition {
   kind: 'native-tongue';
   subject: 'country';
@@ -132,6 +137,7 @@ export type GameDefinition =
   | ClockworkDefinition
   | BlankAtlasDefinition
   | RiverRunDefinition
+  | OnTheGridDefinition
   | NativeTongueDefinition;
 
 export const GAMES: readonly GameDefinition[] = [
@@ -160,6 +166,15 @@ export const GAMES: readonly GameDefinition[] = [
     subject: 'country',
     title: 'River Run',
     tagline: 'A river draws itself from its source to the sea. Name it before it gets there.',
+    status: 'live',
+  },
+  {
+    id: 'on-the-grid',
+    group: 'map',
+    kind: 'on-the-grid',
+    subject: 'country',
+    title: 'On the Grid',
+    tagline: '23°S, 47°W: which country is there? Only a blind map to go on.',
     status: 'live',
   },
   {

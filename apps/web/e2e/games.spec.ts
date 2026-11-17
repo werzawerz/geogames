@@ -1,6 +1,8 @@
 import { countries, getCountry, queryCountries } from '@geogames/geodata';
 import { loadGreatCircles } from '@geogames/geodata/cities';
 import { loadRivers } from '@geogames/geodata/rivers';
+import { loadLandGrid } from '@geogames/geodata/land-grid';
+import { geoNaturalEarth1 } from 'd3-geo';
 import { loadNativeNames } from '@geogames/geodata/native-names';
 import { BLANK_ATLAS_KIND_LABELS } from '@geogames/geodata/blank-atlas';
 import {
@@ -22,6 +24,8 @@ import {
   createPinDrop,
   createHalfway,
   createRiverRun,
+  createOnTheGrid,
+  formatCoordinates,
   createNativeTongue,
   riverChoices,
   createClockwork,
@@ -1772,6 +1776,86 @@ for (const [label, viewport] of [
     await page.keyboard.press(String(second.findIndex((id) => id !== state.level.river) + 1));
     await expect(page.locator('.route-summary.failed')).toContainText('A wrong pick: −1 ♥');
     await expect(lives).toHaveCount(2);
+  });
+}
+
+for (const [label, viewport] of [
+  ['desktop', { width: 1280, height: 720 }],
+  ['phone', { width: 390, height: 844 }],
+] as const) {
+  test(`on the grid (${label}): name the country at the coordinates on a blind map; a wrong one says which way and how far, a skip costs a life, and it all fits with no scrolling`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => {
+      Math.random = () => 0.5;
+    });
+    const engine = createOnTheGrid({ grid: await loadLandGrid(), countries: queryCountries() });
+    let state = engine.start(Math.floor(0.5 * 2 ** 32));
+    const lives = page.locator('.lives .life:not(.lost)');
+    const input = page.getByRole('combobox');
+    const guess = async (id: string) => {
+      await input.fill(getCountry(id)!.name);
+      await input.press('Enter');
+    };
+    const inView = async (selector: string) => {
+      const box = (await page.locator(selector).first().boundingBox())!;
+      expect(box.y, selector).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height, selector).toBeLessThanOrEqual(viewport.height);
+    };
+
+    await openGame(page, 'on-the-grid');
+    await page.getByRole('button', { name: 'Start game' }).click();
+    await expect(page.locator('.grid-coords')).toHaveText(formatCoordinates(state.level.target), { timeout: 20_000 });
+    await expect(page.locator('.world-map')).toBeVisible();
+    for (const selector of ['.route-status', '.grid-prompt', '.map-frame', '[role=combobox]', '.grid-skip']) await inView(selector);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+    // Nothing on the page gives the answer away: no point, no names, no borders, no lines, no numbers on the map.
+    const answer = getCountry(state.level.country)!;
+    await expect(page.locator('.marker-found')).toHaveCount(0);
+    await expect(page.locator('.world-map text')).toHaveCount(0);
+    await expect(page.locator('.grid-line, .map-label, .map-highlight')).toHaveCount(0);
+    expect(await page.locator('.grid-game').innerHTML()).not.toContain(answer.name);
+    // A new level never starts with Skip focused: the input has the focus.
+    await expect(input).toBeFocused();
+
+    // A wrong country shows which way the spot lies from it, and shades it on the map.
+    const wrong = ['BRA', 'AUS', 'JPN'].find((id) => id !== state.level.country)!;
+    await guess(wrong);
+    await expect(page.locator('.grid-hints li')).toHaveCount(1);
+    await expect(page.locator('.grid-hints li')).toContainText(getCountry(wrong)!.name);
+    await expect(page.locator('.grid-hints li')).toContainText(/km to the (north|east|south|west)|across the border/);
+    await expect(page.locator('.grid-misses')).toHaveText('1');
+    await expect(page.locator('.map-highlight.tone-far')).toHaveCount(1);
+    await inView('.grid-hints');
+    await inView('[role=combobox]');
+
+    // The right country: points for the second guess, the point and its coordinates revealed.
+    await guess(state.level.country);
+    await expect(page.locator('.route-summary.solved')).toContainText(answer.name);
+    await expect(page.locator('.route-summary')).toContainText(`${formatCoordinates(state.level.target)} is in ${answer.name}`);
+    await expect(page.locator('.marker-found text')).toHaveText(formatCoordinates(state.level.target));
+    await expect(page.locator('.bonus-life')).toHaveCount(0);
+    for (const selector of ['.route-status', '.map-frame', '.route-summary']) await inView(selector);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    await expect(page.getByRole('button', { name: 'Next level' })).toBeFocused();
+    state = engine.nextLevel(engine.guess(engine.guess(state, wrong).state, state.level.country).state);
+
+    // Enter goes on, and a second Enter must not reach Skip: the new level starts untouched.
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.grid-coords')).toHaveText(formatCoordinates(state.level.target));
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.route-summary')).toHaveCount(0);
+    await expect(lives).toHaveCount(3);
+    await expect(input).toBeFocused();
+
+    // A flawless find gives the life back, and a skip costs one.
+    await page.getByRole('button', { name: /Skip/ }).click();
+    await expect(page.locator('.route-summary.failed')).toContainText('Skipped: −1 ♥');
+    await expect(page.locator('.route-summary')).toContainText(getCountry(state.level.country)!.name);
+    await expect(lives).toHaveCount(2);
+    await expect(page.getByRole('button', { name: 'Change settings' })).toHaveCount(0);
+    const skipBox = (await page.getByRole('button', { name: 'Next level' }).boundingBox())!;
+    expect(skipBox.height).toBeGreaterThanOrEqual(44);
   });
 }
 

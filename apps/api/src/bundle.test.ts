@@ -15,6 +15,7 @@ import {
   createCircleArcade,
   createHalfway,
   createRiverRun,
+  createOnTheGrid,
   createNativeTongue,
   riverChoices,
   halfwayPools,
@@ -34,6 +35,7 @@ import {
 } from '@geogames/games';
 import { queryCountries } from '@geogames/geodata';
 import { loadRivers } from '@geogames/geodata/rivers';
+import { loadLandGrid } from '@geogames/geodata/land-grid';
 import { loadNativeNames } from '@geogames/geodata/native-names';
 import { bundle } from '../scripts/bundle.ts';
 
@@ -240,6 +242,28 @@ describe('the server bundle', () => {
     expect(full).toEqual({ score: state.score, finished: true });
     expect(full.score).toBeGreaterThan(0);
     expect(await server.replayGame(definition, settings, 43, state.moves)).toEqual(full);
+  });
+
+  it('scores On the Grid the same from the slimmed land grid: guesses, misses, skips', async () => {
+    const definition = GAMES.find((g) => g.kind === 'on-the-grid')!;
+    const settings = normalizeSettings({}, definition);
+    const engine = createOnTheGrid({ grid: await loadLandGrid(), countries: queryCountries() });
+    const wrongFor = (st: ReturnType<typeof engine.start>) => [...engine.countries.keys()].find((id) => id !== st.level.country && !st.level.guesses.includes(id))!;
+    let state = engine.start(41);
+    // 45 levels, into the band with one miss and the map hidden: a miss first on every third, a skip on every seventh.
+    for (let i = 1; i <= 45; i++) {
+      if (i % 7 === 0) state = engine.skip(state);
+      else {
+        if (i % 3 === 0) state = engine.guess(state, wrongFor(state)).state;
+        state = engine.guess(state, state.level.country).state;
+      }
+      if (state.status === 'level-over') state = engine.nextLevel(state);
+    }
+    while (state.status !== 'over') state = engine.skip(state.status === 'level-over' ? engine.nextLevel(state) : state);
+    const full = await replayGame(definition, settings, 41, state.moves);
+    expect(full).toEqual({ score: state.score, finished: true });
+    expect(full.score).toBeGreaterThan(0);
+    expect(await server.replayGame(definition, settings, 41, state.moves)).toEqual(full);
   });
 
   it('replays hard Border Route with its fixed guesses', async () => {
