@@ -174,7 +174,7 @@ export const GAMES: readonly GameDefinition[] = [
     kind: 'on-the-grid',
     subject: 'country',
     title: 'On the Grid',
-    tagline: '23°S, 47°W. Click it. First with the grid lines drawn, then without.',
+    tagline: '23°S, 47°W: which country is there? Only a blind map to go on.',
     status: 'live',
   },
   {

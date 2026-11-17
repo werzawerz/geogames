@@ -222,15 +222,13 @@ const ART: Record<string, () => ReactNode> = {
   ),
   'on-the-grid': () => (
     <>
-      {[100, 220, 340, 460].map((y) => (
-        <path key={y} className="art-meridian" d={`M0 ${y * 0.6}H${WIDTH}`} />
-      ))}
-      {[120, 240, 360, 480, 600].map((x) => (
-        <path key={x} className={x === 360 ? 'art-meridian art-greenwich' : 'art-meridian'} d={`M${x} 0V${HEIGHT}`} />
-      ))}
-      <circle className="art-ring" cx={400} cy={150} r={54} />
-      <path className="art-tick" d="M400 112V130M400 170V188M362 150H380M420 150H438" />
-      <Dot at={[400, 150]} r={7} />
+      <ellipse className="art-hidden" cx={WIDTH / 2} cy={HEIGHT / 2 - 10} rx={230} ry={105} />
+      <text className="art-coords" x={WIDTH / 2} y={HEIGHT / 2 - 14}>
+        23°S, 47°W
+      </text>
+      <text className="art-mark" x={WIDTH / 2} y={HEIGHT / 2 + 60}>
+        ?
+      </text>
     </>
   ),
   'native-tongue': () => (

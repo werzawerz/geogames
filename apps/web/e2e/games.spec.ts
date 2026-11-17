@@ -1779,97 +1779,86 @@ for (const [label, viewport] of [
   });
 }
 
-test('on the grid: click the coordinates; a miss shows the way, three misses or a skip cost a life, a find on the first click gives one back', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 720 });
-  await page.addInitScript(() => {
-    Math.random = () => 0.5;
-  });
-  const engine = createOnTheGrid({ grid: await loadLandGrid(), countries: queryCountries() });
-  let state = engine.start(Math.floor(0.5 * 2 ** 32));
-  const lives = page.locator('.lives .life:not(.lost)');
-  const map = page.locator('.world-map.pickable');
-  const inView = async () => {
-    for (const part of ['.route-status', '.grid-prompt', '.map-frame', '.grid-actions, .grid-result']) await expect(page.locator(part), part).toBeInViewport({ ratio: 1 });
+for (const [label, viewport] of [
+  ['desktop', { width: 1280, height: 720 }],
+  ['phone', { width: 390, height: 844 }],
+] as const) {
+  test(`on the grid (${label}): name the country at the coordinates on a blind map; a wrong one says which way and how far, a skip costs a life, and it all fits with no scrolling`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => {
+      Math.random = () => 0.5;
+    });
+    const engine = createOnTheGrid({ grid: await loadLandGrid(), countries: queryCountries() });
+    let state = engine.start(Math.floor(0.5 * 2 ** 32));
+    const lives = page.locator('.lives .life:not(.lost)');
+    const input = page.getByRole('combobox');
+    const guess = async (id: string) => {
+      await input.fill(getCountry(id)!.name);
+      await input.press('Enter');
+    };
+    const inView = async (selector: string) => {
+      const box = (await page.locator(selector).first().boundingBox())!;
+      expect(box.y, selector).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height, selector).toBeLessThanOrEqual(viewport.height);
+    };
+
+    await openGame(page, 'on-the-grid');
+    await page.getByRole('button', { name: 'Start game' }).click();
+    await expect(page.locator('.grid-coords')).toHaveText(formatCoordinates(state.level.target), { timeout: 20_000 });
+    await expect(page.locator('.world-map')).toBeVisible();
+    for (const selector of ['.route-status', '.grid-prompt', '.map-frame', '[role=combobox]', '.grid-skip']) await inView(selector);
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
-  };
-  // Where a coordinate is on the screen with the map unzoomed: the same projection WorldMap builds.
-  const project = async ([lat, lng]: readonly [number, number]) => {
-    const box = (await map.boundingBox())!;
-    const p = geoNaturalEarth1()
-      .rotate([0, 0])
-      .fitExtent([[48, 48], [912, 492]], { type: 'Sphere' })([lng, lat])!;
-    const s = Math.min(box.width / 960, box.height / 540);
-    return { x: box.x + box.width / 2 + (p[0] - 480) * s, y: box.y + box.height / 2 + (p[1] - 270) * s };
-  };
 
-  await openGame(page, 'on-the-grid');
-  await page.getByRole('button', { name: 'Start game' }).click();
-  await expect(map).toBeVisible({ timeout: 20_000 });
-  await expect(page.locator('.grid-coords')).toHaveText(formatCoordinates(state.level.target));
-  // Level 1 draws a line every 10°, with their degrees; the answer isn't in the page before it is revealed.
-  expect(await page.locator('.grid-line').count()).toBeGreaterThan(20);
-  await expect(page.locator('.grid-label').first()).toContainText('°');
-  await expect(page.locator('.marker-found')).toHaveCount(0);
-  await inView();
+    // Nothing on the page gives the answer away: no point, no names, no borders, no lines, no numbers on the map.
+    const answer = getCountry(state.level.country)!;
+    await expect(page.locator('.marker-found')).toHaveCount(0);
+    await expect(page.locator('.world-map text')).toHaveCount(0);
+    await expect(page.locator('.grid-line, .map-label, .map-highlight')).toHaveCount(0);
+    expect(await page.locator('.grid-game').innerHTML()).not.toContain(answer.name);
+    // A new level never starts with Skip focused: the input has the focus.
+    await expect(input).toBeFocused();
 
-  // Three clicks in the Pacific edge: each shows the way and the distance, the third costs the life.
-  const edge = async () => {
-    const box = (await map.boundingBox())!;
-    await page.mouse.click(box.x + 8, box.y + box.height * 0.5);
-  };
-  await edge();
-  await expect(page.locator('.grid-hint')).toContainText('km off');
-  await expect(page.locator('.grid-arrow')).toHaveCount(1);
-  await expect(page.locator('.grid-hint')).toContainText('2 clicks left');
-  await edge();
-  await expect(page.locator('.grid-hint')).toContainText('Last click');
-  await edge();
-  await expect(page.locator('.grid-result.failed')).toContainText('Not found: −1 ♥');
-  await expect(page.locator('.grid-result')).toContainText(formatCoordinates(state.level.target));
-  await expect(page.locator('.marker-found text')).toHaveText(formatCoordinates(state.level.target));
-  await expect(lives).toHaveCount(2);
-  // Three misses or a skip end a level the same way, and the next spot comes from the same place.
-  state = engine.skip(state);
-  await expect(page.getByRole('button', { name: 'Next level' })).toBeFocused();
-  await inView();
-  await page.keyboard.press('Enter');
-  state = engine.nextLevel(state);
+    // A wrong country shows which way the spot lies from it, and shades it on the map.
+    const wrong = ['BRA', 'AUS', 'JPN'].find((id) => id !== state.level.country)!;
+    await guess(wrong);
+    await expect(page.locator('.grid-hints li')).toHaveCount(1);
+    await expect(page.locator('.grid-hints li')).toContainText(getCountry(wrong)!.name);
+    await expect(page.locator('.grid-hints li')).toContainText(/km to the (north|east|south|west)|across the border/);
+    await expect(page.locator('.grid-misses')).toHaveText('1');
+    await expect(page.locator('.map-highlight.tone-far')).toHaveCount(1);
+    await inView('.grid-hints');
+    await inView('[role=combobox]');
 
-  // Level 2: the spot's own position is a find on the first click, and gives the life back.
-  await expect(page.locator('.grid-coords')).toHaveText(formatCoordinates(state.level.target));
-  const at = await project(state.level.target);
-  await page.mouse.click(at.x, at.y);
-  await expect(page.locator('.grid-result.solved')).toContainText('Found it!');
-  await expect(page.locator('.grid-result')).toContainText('Flawless! +1 ♥');
-  await expect(lives).toHaveCount(3);
-  await page.keyboard.press('Enter');
-  // A second Enter must not reach Skip: the new level starts untouched, with all the lives.
-  await page.keyboard.press('Enter');
-  await expect(page.locator('.route-status')).toContainText('Level 3');
-  await expect(page.locator('.grid-result')).toHaveCount(0);
-  await expect(lives).toHaveCount(3);
+    // The right country: points for the second guess, the point and its coordinates revealed.
+    await guess(state.level.country);
+    await expect(page.locator('.route-summary.solved')).toContainText(answer.name);
+    await expect(page.locator('.route-summary')).toContainText(`${formatCoordinates(state.level.target)} is in ${answer.name}`);
+    await expect(page.locator('.marker-found text')).toHaveText(formatCoordinates(state.level.target));
+    await expect(page.locator('.bonus-life')).toHaveCount(0);
+    for (const selector of ['.route-status', '.map-frame', '.route-summary']) await inView(selector);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    await expect(page.getByRole('button', { name: 'Next level' })).toBeFocused();
+    state = engine.nextLevel(engine.guess(engine.guess(state, wrong).state, state.level.country).state);
 
-  // Zoomed in, the lines keep their degrees at the edges of the view.
-  for (let i = 0; i < 5; i++) await page.getByRole('button', { name: 'Zoom in' }).click();
-  await expect(page.locator('.grid-label').first()).toContainText('°');
-  expect(await page.locator('.grid-label').count()).toBeGreaterThan(2);
-  await page.getByRole('button', { name: 'Reset zoom' }).click();
+    // Enter goes on, and a second Enter must not reach Skip: the new level starts untouched.
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.grid-coords')).toHaveText(formatCoordinates(state.level.target));
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.route-summary')).toHaveCount(0);
+    await expect(lives).toHaveCount(3);
+    await expect(input).toBeFocused();
 
-  // A skip costs a life, and the phone fits too.
-  await page.getByRole('button', { name: /Skip/ }).click();
-  await expect(page.locator('.grid-result.failed')).toContainText('Skipped: −1 ♥');
-  await expect(lives).toHaveCount(2);
-  await page.keyboard.press('Enter');
-  await page.setViewportSize({ width: 390, height: 844 });
-  await inView();
-  const skip = (await page.getByRole('button', { name: /Skip/ }).boundingBox())!;
-  expect(skip.height).toBeGreaterThanOrEqual(44);
-  // The phone's map fills the screen, and its zoom buttons are tap-sized.
-  expect((await map.boundingBox())!.height).toBeGreaterThan(330);
-  const zoomButton = (await page.getByRole('button', { name: 'Zoom in' }).boundingBox())!;
-  expect(zoomButton.width).toBeGreaterThanOrEqual(44);
-  expect(zoomButton.height).toBeGreaterThanOrEqual(44);
-});
+    // A flawless find gives the life back, and a skip costs one.
+    await page.getByRole('button', { name: /Skip/ }).click();
+    await expect(page.locator('.route-summary.failed')).toContainText('Skipped: −1 ♥');
+    await expect(page.locator('.route-summary')).toContainText(getCountry(state.level.country)!.name);
+    await expect(lives).toHaveCount(2);
+    await expect(page.getByRole('button', { name: 'Change settings' })).toHaveCount(0);
+    const skipBox = (await page.getByRole('button', { name: 'Next level' }).boundingBox())!;
+    expect(skipBox.height).toBeGreaterThanOrEqual(44);
+  });
+}
+
 for (const [label, viewport] of [
   ['desktop', { width: 1280, height: 720 }],
   ['phone', { width: 390, height: 844 }],
