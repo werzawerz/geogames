@@ -1779,6 +1779,7 @@ a {
 /* Clockwork */
 .art-meridian { stroke: color-mix(in srgb, var(--map-ink) 30%, transparent); stroke-width: 2; stroke-dasharray: 6 8; }
 .art-greenwich { stroke: var(--brass); }
+.art-coords { fill: var(--map-ink); font: 700 44px var(--font-head); text-anchor: middle; dominant-baseline: middle; }
 .art-tick { stroke: var(--accent); stroke-width: 4; stroke-linecap: round; }
 .art-hand { fill: none; stroke: var(--map-ink); stroke-width: 7; stroke-linecap: round; }
 .clock-meridian {
@@ -2761,6 +2762,154 @@ summary:focus-visible {
 
 .nowrap {
   white-space: nowrap;
+}
+
+/* on the grid */
+.grid-prompt {
+  margin: 0;
+  text-align: center;
+  font-size: 1.15rem;
+}
+
+.grid-coords {
+  font-family: var(--font-head);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.5rem;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* The page fits one screen: status, coordinates, the blind map, the input and the hints, with no scrolling. */
+.page:has(.grid-game) {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.page:has(.grid-game) .page-title {
+  margin-bottom: 0.4rem;
+}
+
+.grid-game {
+  gap: 0.5rem;
+  /* Everything but the map: header, title, status, question, input, message and hints. */
+  --grid-chrome: 410px;
+}
+
+.grid-game .map-frame {
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--sea);
+}
+
+.grid-game .world-map {
+  max-height: calc(100dvh - var(--grid-chrome));
+  min-height: 160px;
+  border: 0;
+  border-radius: 0;
+}
+
+/* Once the level is over the answer and its facts take the place of the input. */
+.grid-game.done {
+  --grid-chrome: 440px;
+}
+
+.grid-game .route-summary {
+  padding: 0.5rem 0.75rem;
+  gap: 0.25rem;
+}
+
+.grid-game .route-summary p {
+  margin: 0;
+}
+
+/* From level 41 there is no map during the question: the coordinates have the page to themselves. */
+.grid-game.no-map .grid-prompt {
+  padding: 2rem 0.5rem;
+  font-size: 1.3rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.grid-game.no-map .grid-coords {
+  display: block;
+  font-size: clamp(2rem, 9vw, 3.2rem);
+  margin-top: 0.4rem;
+}
+
+.grid-input {
+  max-width: 760px;
+  margin-inline: auto;
+  width: 100%;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.grid-input .search-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.grid-skip {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.grid-hints {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.15rem;
+  text-align: center;
+  color: var(--wrong-ink);
+  font-size: 0.95rem;
+}
+
+.grid-game .route-message {
+  margin: 0;
+}
+
+.grid-game .city-marker text {
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .grid-game {
+    --grid-chrome: 440px;
+  }
+
+  .grid-game.done {
+    --grid-chrome: 470px;
+  }
+
+  .grid-hints {
+    font-size: 0.85rem;
+  }
+
+  /* Tap-sized zoom buttons, in the corner that holds only the Southern Ocean. */
+  .grid-game .map-zoom {
+    top: auto;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    flex-direction: row;
+  }
+
+  .grid-game .map-zoom button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .grid-game .city-marker text {
+    font-size: 15px;
+    stroke-width: 4px;
+  }
+
+  .grid-game .city-marker circle {
+    r: 7px;
+  }
 }
 
 /* Native Tongue */

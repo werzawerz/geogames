@@ -234,6 +234,17 @@ const ART: Record<string, () => ReactNode> = {
       <text x={170} y={240} className="art-chain-pct">7%</text>
     </g>
   ),
+  'on-the-grid': () => (
+    <>
+      <ellipse className="art-hidden" cx={WIDTH / 2} cy={HEIGHT / 2 - 10} rx={230} ry={105} />
+      <text className="art-coords" x={WIDTH / 2} y={HEIGHT / 2 - 14}>
+        23°S, 47°W
+      </text>
+      <text className="art-mark" x={WIDTH / 2} y={HEIGHT / 2 + 60}>
+        ?
+      </text>
+    </>
+  ),
   'native-tongue': () => (
     <g className="art-tongue">
       <rect x={50} y={50} width={200} height={80} rx={14} />

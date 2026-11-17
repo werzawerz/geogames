@@ -15,6 +15,7 @@ export * from './border-blitz.ts';
 export * from './clockwork.ts';
 export * from './blank-atlas.ts';
 export * from './river-run.ts';
+export * from './on-the-grid.ts';
 export * from './native-tongue.ts';
 export * from './supply-chain.ts';
 export * from './replay.ts';
