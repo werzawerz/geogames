@@ -5,6 +5,7 @@ import { loadSupplyChain, type SupplyChainData } from '@geogames/geodata/supply-
 import { loadWorldShapes, type WorldShapes } from '@geogames/geodata/shapes';
 import {
   CHAIN_MAX_LIVES,
+  CHAIN_MIN_SHARE_SMALL,
   CHAIN_SKIP,
   CHAIN_TIE_BAND,
   chainPlan,
@@ -75,6 +76,9 @@ function useWide(): boolean {
   }, []);
   return wide;
 }
+
+/** Who the dependencies that can out-produce a country belong to, for the reveal's line about them. */
+const OWNER: Record<string, string> = { NCL: 'France', PYF: 'France', HKG: 'China', MAC: 'China', GRL: 'Denmark', PRI: 'United States' };
 
 const percent = (share: number) => `${(share * 100).toFixed(1)}%`;
 const ordinal = (n: number) => `${n}${['th', 'st', 'nd', 'rd'][n % 100 > 10 && n % 100 < 14 ? 0 : n % 10 < 4 ? n % 10 : 0]}`;
@@ -194,7 +198,9 @@ function ChainPlay({
   const extras = answers.accepted.filter((id) => !shown.includes(id));
   // One line that teaches: how much of the world the list makes, and who came next.
   const together = shown.reduce((sum, id) => sum + shareOf(id), 0);
-  const nextUp = commodity.producers.find((p) => !answers.accepted.includes(p.id) && countries.some((c) => c.id === p.id));
+  const nextUp = commodity.producers.find((p) => !answers.accepted.includes(p.id) && game.isNameable(p.id));
+  // A dependency that out-produces the next country (New Caledonia's nickel) has no place in the ranking, so it is named here instead.
+  const dependency = commodity.producers.find((p) => !game.isNameable(p.id) && p.share >= CHAIN_MIN_SHARE_SMALL && (!nextUp || p.value >= nextUp.value));
 
   /** A bar as wide as the share, scaled so a 40% producer fills it. */
   const bar = (share: number) => ({ width: `${Math.min(100, (share / 0.4) * 100)}%` });
@@ -306,6 +312,8 @@ function ChainPlay({
                   <p className="chain-teach">
                     These make {Math.round(together * 100)}% of the world’s output
                     {nextUp ? `; next: ${getCountry(nextUp.id)!.name}, ${ordinal(game.rank(level.commodity, nextUp.id)!)} (${percent(nextUp.share)}).` : '.'}
+                    {dependency &&
+                      ` ${getCountry(dependency.id)?.name ?? dependency.id}${OWNER[dependency.id] ? ` (${OWNER[dependency.id]})` : ''} also ${commodity.verb}s ${percent(dependency.share)}, but isn’t a country in this game.`}
                     {extras.length > 0 && ` Also counts: ${extras.map((id) => getCountry(id)?.name).join(', ')} (within ${Math.round(CHAIN_TIE_BAND * 100)}%).`}
                   </p>
                   <button ref={nextButton} className="btn btn-primary btn-lg chain-next" onClick={state.status === 'over' ? finish : next}>

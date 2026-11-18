@@ -7,6 +7,7 @@ import {
   CHAIN_MAX_LIVES,
   CHAIN_MAX_OVERLAP,
   CHAIN_MIN_SHARE,
+  CHAIN_MIN_SHARE_SMALL,
   CHAIN_SKIP,
   chainPlan,
   createSupplyChain,
@@ -25,6 +26,7 @@ const definition = getGame('supply-chain')!;
 const SEEDS = 60;
 /** The commodities with enough real producers to be asked. */
 const askable = data.commodities.filter((c) => game.answers(c.id, 5));
+const minShare = (c: { id: string }) => (game.answers(c.id, 5)!.limited ? CHAIN_MIN_SHARE_SMALL : CHAIN_MIN_SHARE);
 
 /** A country that counts for the level, not found yet. */
 const right = (state: ChainState) => game.answers(state.level.commodity, state.level.number)!.accepted.find((id) => !state.level.found.includes(id))!;
@@ -114,12 +116,87 @@ describe('the data', () => {
     for (const c of data.commodities) expect(c.verb, c.id).toBeTruthy();
   });
 
+  it('has the right leader for every mineral (the right table of the USGS chapter)', () => {
+    const leader: Record<string, string> = {
+      bauxite: 'GIN',
+      cobalt: 'COD',
+      lithium: 'AUS',
+      copper: 'CHL',
+      'iron-ore': 'AUS',
+      nickel: 'IDN',
+      platinum: 'ZAF',
+      palladium: 'RUS',
+      'rare-earths': 'CHN',
+      gold: 'CHN',
+      silver: 'MEX',
+      graphite: 'CHN',
+      tin: 'CHN',
+      zinc: 'CHN',
+      lead: 'CHN',
+      manganese: 'ZAF',
+      tungsten: 'CHN',
+      salt: 'CHN',
+      potash: 'CAN',
+      phosphate: 'CHN',
+      sulfur: 'CHN',
+      molybdenum: 'CHN',
+      chromium: 'ZAF',
+      vanadium: 'CHN',
+      antimony: 'CHN',
+      diamonds: 'RUS',
+      aluminium: 'CHN',
+      steel: 'CHN',
+      cement: 'CHN',
+    };
+    const mines = data.commodities.filter((c) => c.kind === 'mine').map((c) => c.id);
+    expect(mines.sort()).toEqual(Object.keys(leader).sort());
+    for (const [id, top] of Object.entries(leader)) expect(kindOf(id).producers[0]!.id, id).toBe(top);
+    // Bauxite, not alumina: Guinea mines a third of the world's, and the refineries (Ireland, Jamaica) are not on the list.
+    expect(
+      kindOf('bauxite')
+        .producers.slice(0, 5)
+        .map((p) => p.id),
+    ).toEqual(['GIN', 'AUS', 'CHN', 'BRA', 'IND']);
+    expect(kindOf('bauxite').producers[0]!.value).toBeGreaterThan(100);
+    expect(kindOf('bauxite').producers[0]!.value).toBeLessThan(200);
+    // Iron ore, not pig iron; crude steel, not pig iron.
+    expect(kindOf('iron-ore').producers[0]!.value).toBeGreaterThan(900);
+    expect(kindOf('steel').producers[0]!.value).toBeGreaterThan(900);
+  });
+
+  it('shows coal in metric tonnes', () => {
+    expect(kindOf('coal').unit).toBe('million tonnes');
+    // China mined about 4.9 billion short tons = 4.4 billion tonnes in 2024.
+    expect(kindOf('coal').producers[0]!.value).toBeGreaterThan(4000);
+    expect(kindOf('coal').producers[0]!.value).toBeLessThan(4700);
+  });
+
   it('is small enough to bundle', () => {
     expect(statSync(new URL('../../geodata/data/supply-chain.json', import.meta.url)).size).toBeLessThan(100_000);
   });
 });
 
 describe('what a level asks', () => {
+  it('can ask every commodity in the data, at some level', () => {
+    for (const c of data.commodities) expect(game.answers(c.id, 3), c.id).not.toBeNull();
+    // Cobalt and cement have only two countries over 3%: they are asked for three, with the 1.5% rule.
+    for (const id of ['cobalt', 'cement', 'tungsten']) {
+      const a = game.answers(id, 5)!;
+      expect(a.limited, id).toBe(true);
+      expect(a.need, id).toBe(3);
+    }
+    expect(game.answers('coffee', 5)!.limited).toBe(false);
+    // Commodities that could never make three real producers are not in the data.
+    for (const gone of ['quinoa', 'mushrooms', 'niobium']) expect(data.commodities.map((c) => c.id)).not.toContain(gone);
+  });
+
+  it('asks the limited commodities in a run, not only on paper', () => {
+    const limited = new Set(data.commodities.filter((c) => game.answers(c.id, 5)!.limited).map((c) => c.id));
+    let asked = 0;
+    for (let seed = 1; seed <= SEEDS; seed++) for (const level of playPerfect(seed, 30).levels) if (limited.has(level.commodity)) asked++;
+    expect(asked).toBeGreaterThan(0);
+  });
+
   it('counts the top N and anything within a tenth of the Nth', () => {
     for (const c of askable) {
       const a = game.answers(c.id, 1_000)!;
@@ -127,15 +204,15 @@ describe('what a level asks', () => {
       expect(a.accepted.length, c.id).toBeGreaterThanOrEqual(a.need);
       // No producer outside the set out-produces the last one inside it.
       const inside = c.producers.filter((p) => a.accepted.includes(p.id));
-      const rest = c.producers.filter((p) => !a.accepted.includes(p.id) && getCountry(p.id)!.sovereignty !== 'territory' && p.share >= CHAIN_MIN_SHARE);
+      const rest = c.producers.filter((p) => !a.accepted.includes(p.id) && getCountry(p.id)!.sovereignty !== 'territory' && p.share >= minShare(c));
       for (const out of rest) expect(out.value, `${c.id} ${out.id}`).toBeLessThan(inside[inside.length - 1]!.value);
     }
   });
 
-  it('never asks for a country with under 3% of the world, or a dependency', () => {
+  it('never asks for a country with under 3% of the world (1.5% where only three have more), or a dependency', () => {
     for (const c of askable) {
       for (const id of game.answers(c.id, 5)!.accepted) {
-        expect(c.producers.find((p) => p.id === id)!.share, `${c.id} ${id}`).toBeGreaterThanOrEqual(CHAIN_MIN_SHARE);
+        expect(c.producers.find((p) => p.id === id)!.share, `${c.id} ${id}`).toBeGreaterThanOrEqual(minShare(c));
         expect(getCountry(id)!.sovereignty, `${c.id} ${id}`).not.toBe('territory');
       }
     }
@@ -155,7 +232,11 @@ describe('what a level asks', () => {
 
   it('leaves the dependency out of nickel but keeps its place in the ranking', () => {
     expect(game.answers('nickel', 5)!.accepted).not.toContain('NCL');
-    expect(game.rank('nickel', 'NCL')).toBe(5);
+    // A dependency takes no place in the ranking, so China is 5th in nickel, not 6th.
+    expect(game.rank('nickel', 'NCL')).toBeNull();
+    expect(game.rank('nickel', 'CHN')).toBe(5);
+    expect(game.rank('nickel', 'CAN')).toBe(4);
+    expect(game.isNameable('NCL')).toBe(false);
   });
 });
 
@@ -347,7 +428,7 @@ describe('playing', () => {
     const accepted = new Set(game.answers(commodity, 1)!.accepted);
     const near = ranked.find((p, i) => !accepted.has(p.id) && i < 10 && getCountry(p.id)!.sovereignty !== 'territory');
     if (near) {
-      expect(game.rank(commodity, near.id)).toBe(ranked.indexOf(near) + 1);
+      expect(game.rank(commodity, near.id)).toBe(ranked.filter((p) => getCountry(p.id)!.sovereignty !== 'territory').indexOf(near) + 1);
       expect(game.guess(state, near.id).result).toBe('wrong');
     }
     expect(game.rank(commodity, 'ATA')).toBeNull();

@@ -103,6 +103,11 @@ export const CHAIN_FLAWLESS_SHARE = 0.5;
 export const CHAIN_PARTIAL_SHARE = 0.5;
 /** A country is only asked for if it makes this share of the world's output. */
 export const CHAIN_MIN_SHARE = 0.03;
+/**
+ * A commodity with fewer than three producers at 3% (cobalt, cement) is still asked, for exactly three countries,
+ * as long as three have this share of the world.
+ */
+export const CHAIN_MIN_SHARE_SMALL = 0.015;
 /** A producer within this share of the Nth's output counts as well. */
 export const CHAIN_TIE_BAND = 0.1;
 /** The ranks the data holds, and so the ranks a wrong guess can be told. */
@@ -154,6 +159,8 @@ export interface ChainAnswers {
   need: number;
   /** Every country that counts, biggest first. */
   accepted: readonly CountryId[];
+  /** The commodity has only three real producers, so its list is three long at any level. */
+  limited: boolean;
 }
 
 export function createSupplyChain({
@@ -171,13 +178,21 @@ export function createSupplyChain({
 
   /** The countries that count for a level of `size`, or null when the commodity has too few real producers. */
   function answers(commodity: Pick<Commodity, 'producers'>, size: number): ChainAnswers | null {
-    const real = commodity.producers.filter((p) => guessable.has(p.id) && p.share >= CHAIN_MIN_SHARE);
-    if (real.length < 3) return null;
-    const need = Math.min(size, real.length);
+    const typable = commodity.producers.filter((p) => guessable.has(p.id));
+    let real = typable.filter((p) => p.share >= CHAIN_MIN_SHARE);
+    let limited = false;
+    if (real.length < 3) {
+      // Cobalt and cement: three countries over 1.5% make a list of three, at any level.
+      real = typable.filter((p) => p.share >= CHAIN_MIN_SHARE_SMALL);
+      if (real.length < 3) return null;
+      limited = true;
+    }
+    const need = limited ? 3 : Math.min(size, real.length);
     const cut = real[need - 1]!.value * (1 - CHAIN_TIE_BAND);
     return {
       need,
       accepted: real.filter((p) => p.value >= cut).map((p) => p.id),
+      limited,
     };
   }
 
@@ -215,7 +230,7 @@ export function createSupplyChain({
       for (const group of tiers) {
         const options = group.filter((c) => {
           const a = planAnswers(c.id, plan);
-          if (!a || (full && a.need < plan.size)) return false;
+          if (!a || (full && a.need < plan.size && !a.limited)) return false;
           if (rules >= 1 && lastKind === c.kind) return false;
           return rules < 2 || overlapOk(a, past, plan);
         });
@@ -274,11 +289,17 @@ export function createSupplyChain({
     countryName: (id: CountryId) => byId.get(id)?.name ?? id,
     answers: (id: string, level: number) => answers(byCommodity.get(id)!, chainPlan(level).size),
 
-    /** The place a country holds among a commodity's producers (dependencies count), or null outside the top ten. */
+    /** The place a country holds among the countries a player can name (dependencies don't take a place), or null outside the top ten. */
     rank(commodity: string, id: CountryId): number | null {
-      const i = byCommodity.get(commodity)!.producers.findIndex((p) => p.id === id);
+      const i = byCommodity
+        .get(commodity)!
+        .producers.filter((p) => guessable.has(p.id))
+        .findIndex((p) => p.id === id);
       return i >= 0 && i < CHAIN_RANKS ? i + 1 : null;
     },
+
+    /** Whether players can name it: dependencies like New Caledonia can't be. */
+    isNameable: (id: CountryId) => guessable.has(id),
 
     start(seed: number): ChainState {
       const rng = createRng(seed);

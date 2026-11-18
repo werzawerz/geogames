@@ -152,6 +152,8 @@ interface Mineral {
   total?: number;
   /** Which value column (0-based) holds 2024, where the table has several (crude steel is the third). */
   col?: number;
+  /** The table is in kilograms; the game shows tonnes. */
+  kg?: boolean;
 }
 const MINE: Mineral[] = [
   // Argentina and Chile carry footnote 5 (read as 513,800 and 548,900), and the total footnote 8; the rows then sum to the total.
@@ -192,13 +194,20 @@ const MINE: Mineral[] = [
     tier: 1,
     unit: 'thousand tonnes of usable ore',
   },
+  // The chapter has two tables side by side: alumina refineries (first two columns) and bauxite mines (third and fourth).
+  // The mine column is read, with the total's footnote 8 off (428,000). The rows sum to it.
   {
     id: 'bauxite',
     slug: 'bauxite-alumina',
     name: 'bauxite (aluminium ore)',
     tier: 2,
     unit: 'thousand tonnes',
+    col: 2,
+    total: 428000,
   },
+  // The platinum-group chapter gives palladium first, then platinum, in kilograms: both are shown in tonnes.
+  { id: 'platinum', slug: 'platinum-group', name: 'platinum', tier: 3, unit: 'tonnes', col: 2, kg: true },
+  { id: 'palladium', slug: 'platinum-group', name: 'palladium', tier: 3, unit: 'tonnes', col: 0, kg: true },
   { id: 'gold', slug: 'gold', name: 'gold', tier: 1, unit: 'tonnes' },
   { id: 'silver', slug: 'silver', name: 'silver', tier: 2, unit: 'tonnes' },
   // Footnotes 11 and 12 are glued to the United States, Madagascar, Malaysia, Thailand and Vietnam; with them off the rows sum to the 380,000 total.
@@ -358,7 +367,8 @@ const MINE: Mineral[] = [
 const ENERGY: [string, string, string, string, Tier, string, string, number][] = [
   ['oil', '57-1', 'TBPD', 'crude oil', 1, 'produce', 'million barrels a day', 1000],
   ['gas', '26-1', 'BCM', 'natural gas', 1, 'produce', 'billion cubic metres', 1],
-  ['coal', '7-1', 'TST', 'coal', 1, 'mine', 'million short tons', 1000],
+  // Coal: EIA's thousand short tons x 0.90718474 = tonnes, so 1000 / 0.90718474 converts to million (metric) tonnes.
+  ['coal', '7-1', 'TST', 'coal', 1, 'mine', 'million tonnes', 1000 / 0.90718474],
   ['hydro', '33-12', 'BKWH', 'hydroelectric power', 2, 'generate', 'terawatt-hours', 1],
   ['wind', '37-12', 'BKWH', 'wind power', 2, 'generate', 'terawatt-hours', 1],
   ['solar', '36-12', 'BKWH', 'solar power', 2, 'generate', 'terawatt-hours', 1],
@@ -534,6 +544,8 @@ const USGS_NAMES: Record<string, string> = {
   Turkey: 'TUR',
   Türkiye: 'TUR',
   Russia: 'RUS',
+  // The platinum-group table marks Russia's row with an estimate footnote ("Russiae").
+  Russiae: 'RUS',
   Vietnam: 'VNM',
   Iran: 'IRN',
   Laos: 'LAO',
@@ -658,7 +670,7 @@ async function minerals(): Promise<Commodity[]> {
         `CHECK ${m.id}: rows sum to ${sum} but the world total is ${total} (${(off * 100).toFixed(1)}% off). withheld: ${withheld.join(',') || 'none'}`,
       );
     else console.log(`ok ${m.id}: sum ${sum} vs total ${total}${withheld.length ? ` withheld ${withheld.join(',')}` : ''}`);
-    const shown = friendly(m.unit, Math.max(...values.values()));
+    const shown = friendly(m.unit, Math.max(...values.values()) / (m.kg ? 1000 : 1));
     out.push({
       id: m.id,
       kind: 'mine',
@@ -668,14 +680,20 @@ async function minerals(): Promise<Commodity[]> {
       unit: shown.unit,
       source: 'usgs',
       year: SOURCES.usgs.year,
-      producers: toProducers(values, total, shown.divisor, 2),
+      producers: toProducers(values, total, shown.divisor * (m.kg ? 1000 : 1), 2),
       ...(withheld.length ? { withheld } : {}),
     });
   }
   return out;
 }
 
-const commodities = [...(await farm()), ...(await minerals()), ...(await energy())];
+// A commodity needs three real producers (countries, with 1.5% of the world or more) to make a question.
+const sovereignIds = new Set(countries.filter((c) => c.sovereignty !== 'territory').map((c) => c.id));
+const commodities = [...(await farm()), ...(await minerals()), ...(await energy())].filter((c) => {
+  const real = c.producers.filter((p) => sovereignIds.has(p.id) && p.share >= 0.015).length;
+  if (real < 3) console.log(`dropped ${c.id}: only ${real} producers with 1.5% or more`);
+  return real >= 3;
+});
 if (process.argv.includes('--check')) {
   for (const c of commodities)
     console.log(
