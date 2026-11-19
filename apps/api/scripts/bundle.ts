@@ -4,7 +4,7 @@ import { build, type Plugin } from 'esbuild';
 /**
  * The server only replays games, so it needs far less of the data than the web
  * app: no translations, sources or search names. Stripping them keeps the bundle
- * under the deploy limit (5 MB). Only fields the game engines read may stay out
+ * under the deploy limit (5 MB by Supabase, 4 MB by our own build check). Only fields the game engines read may stay out
  * of this: `bundle.test.ts` checks that replays give the same scores.
  */
 function slimCity(c: Record<string, any>) {
@@ -71,14 +71,40 @@ function slim(file: string, data: any): unknown {
   return data;
 }
 
+/** The per-region city lists, the bulk of the data: shipped as rows, not objects, to stay under the deploy limit. */
+const CITY_LIST = /cities[\\/](?!index|small-cities|city-proper)[a-z-]+\.json$/;
+
+/** One city as a row: [id, name, countryId, capital, lat, lng, plausibility, verified, recognizable, population]. */
+const cityRow = (c: ReturnType<typeof slimCity>) => [
+  c.id,
+  c.name,
+  c.countryId,
+  c.capital,
+  c.latlng[0],
+  c.latlng[1],
+  c.quality.plausibility,
+  c.quality.verified,
+  c.quality.recognizable,
+  c.metrics.population.value,
+];
+
+/** Turns rows back into the objects slimCity makes, in the bundle at load time. */
+const CITY_FROM_ROW =
+  '([id,name,countryId,capital,lat,lng,plausibility,verified,recognizable,value])=>' +
+  '({id,name,countryId,capital,latlng:[lat,lng],quality:{plausibility,verified,recognizable},metrics:{population:{value}}})';
+
 /** Loads data files as slimmed JSON text: much quicker for a function's cold start than object literals. */
 const slimData: Plugin = {
   name: 'slim-data',
   setup(b) {
-    b.onLoad({ filter: /geodata[\\/]data[\\/].*\.json$/ }, async ({ path }) => ({
-      contents: `export default JSON.parse(${JSON.stringify(JSON.stringify(slim(path, JSON.parse(await readFile(path, 'utf8')))))});`,
-      loader: 'js',
-    }));
+    b.onLoad({ filter: /geodata[\\/]data[\\/].*\.json$/ }, async ({ path }) => {
+      const data = slim(path, JSON.parse(await readFile(path, 'utf8')));
+      if (CITY_LIST.test(path)) {
+        const rows = JSON.stringify(JSON.stringify((data as ReturnType<typeof slimCity>[]).map(cityRow)));
+        return { contents: `export default JSON.parse(${rows}).map(${CITY_FROM_ROW});`, loader: 'js' };
+      }
+      return { contents: `export default JSON.parse(${JSON.stringify(JSON.stringify(data))});`, loader: 'js' };
+    });
   },
 };
 

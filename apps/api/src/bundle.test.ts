@@ -71,7 +71,7 @@ const playArcade = (game: CircleArcade, seed: number) => {
 
 describe('the server bundle', () => {
   it('stays under the deploy limit', () => {
-    expect(bytes).toBeLessThan(5 * 1024 * 1024);
+    expect(bytes).toBeLessThan(4 * 1024 * 1024); // Supabase refuses well before its stated 5 MB.
   });
 
   it('is on the same data version as the web app', () => {
