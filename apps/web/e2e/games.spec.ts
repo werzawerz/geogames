@@ -2,7 +2,6 @@ import { countries, getCountry, queryCountries } from '@geogames/geodata';
 import { loadGreatCircles } from '@geogames/geodata/cities';
 import { loadRivers } from '@geogames/geodata/rivers';
 import { loadLandGrid } from '@geogames/geodata/land-grid';
-import { geoNaturalEarth1 } from 'd3-geo';
 import { loadNativeNames } from '@geogames/geodata/native-names';
 import { BLANK_ATLAS_KIND_LABELS } from '@geogames/geodata/blank-atlas';
 import {
