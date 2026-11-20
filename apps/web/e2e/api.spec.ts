@@ -57,6 +57,8 @@ test('a game runs on a server seed, and its verified score reaches the global le
   // What the page shows is what the server computed by replaying.
   expect(finishes[0]!.score).toBe(shown);
   await expect(page.locator('.score-notice')).toHaveCount(0);
+  // Capitals can be duelled too: without an account the button leads to the new-duel page for this game.
+  await expect(page.getByRole('link', { name: '⚔️ Challenge a friend to these questions' })).toHaveAttribute('href', '#/duels/new/capitals');
 
   // Rename, then find the score on the public leaderboard.
   await page.getByRole('link', { name: 'Leaderboard' }).click();

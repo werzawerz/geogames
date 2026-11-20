@@ -64,8 +64,10 @@ export function NewDuelPage({ rematchOf, gameId }: { rematchOf?: string; gameId?
         else setRematch({ game: original, settings: dto.settings });
       },
       () => {
-        // Unreachable now: making the duel at the end will say so.
-        if (!cancelled) setChecked(true);
+        // Without the duel we don't know its game, so a run now might not be able to become its rematch.
+        if (cancelled) return;
+        setChecked(true);
+        setBlocked({ message: "We couldn't reach the server to check this duel. Reload the page to try again.", code: rematchOf });
       },
     );
     return () => {

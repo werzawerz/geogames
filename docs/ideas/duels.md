@@ -437,7 +437,7 @@ Cases:
 10. Optional: a "your turn" header badge.
 
 **Later:**
-- More games: any engine whose next puzzle doesn't depend on the moves (Border Route? Pin Drop?).
+- More games: done, see §10.
 - A live race mode over Realtime Broadcast, with cosmetic progress messages only. The result still comes from replay.
 
 ## 9. As built (deviations from the design)
@@ -456,3 +456,43 @@ Cases:
 - `GET /leaderboards/<game>/duel` without `scope=personal` is a 404: duel runs are on no world board.
 - A duel run whose finish fails isn't stored as a local score.
 - The duels list loads for anonymous players too, so a friend without an account finds the duels they took; the account gate shows only when they have none.
+
+## 10. Which games (more games, 2026-11-20)
+
+A game can be duelled when, for one seed and its settings, both players face the same puzzles in the same order whatever they do, and the score comes from `replayGame`.
+
+**Why they all qualify.** Every engine draws its puzzles only when a run starts and when it moves to the next level (`start`, `nextLevel`, `nextRound`, `next`), from the RNG state carried in the game state. Nothing else advances that state. The only other input is the list of earlier puzzles (circles, endpoints, countries, places), which is there to avoid repeats, and never the moves. So the next puzzle, and any options shown with it, depend on the seed and the level number alone. How far a player gets differs; what they see on a level they both reach doesn't.
+
+`packages/games/src/duel.test.ts` proves it per game: a careful player, a sloppy one (wrong answers, skips, give-ups, timeouts) and one mixing both play seeds 1 to 5, and every level they all reach shows the same puzzle and options. City Circle Arcade's own test stays in `circle-arcade.test.ts`.
+
+| Game | Duel? | Notes |
+|---|---|---|
+| City Circle Arcade | yes | The default. |
+| City Circle: Free Play | random circles only | With "own circles" each player places theirs, so `canDuel` refuses it; the new-duel page plays it with random circles. |
+| Border Route | yes | Easy or Hard, as the creator played it. A failed route ends both runs the same way. |
+| Border Blitz | yes | The clock runs on the player's screen: the time bonus (`t:<seconds>`, capped by the engine) and the timeout are the client's word, as on the leaderboards. |
+| Great Circle | yes | |
+| Mystery Country | yes | The clues follow each player's own guesses; the country doesn't. |
+| Pin Drop | yes | |
+| Halfway | yes | `past` holds each level as it was made, before any guess. |
+| Clockwork | yes | |
+| River Run | yes | The four names come from the seed and the level. How much of the river was drawn is the client's word, like Border Blitz's clock. |
+| Blank Atlas | yes | The four options are drawn with the level. |
+| On the Grid, Native Tongue, Supply Chain | yes | |
+| Higher or Lower (4 games) | yes | A streak, so no level table: the result compares scores. |
+| Flags, Capitals | yes | The options are drawn with the question. No level table. |
+
+**What the server can't check, for every game.** The challenger's browser needs the seed to play, so a tampered client could work out the answers, or play the duel privately first and send only its best run. "One try" is one server session, not one attempt. That is the same trust the leaderboards already place in the client; the duel only adds that the opponent is a friend.
+
+**What changed.**
+- Each engine's `replay…` function takes an optional observer. It changes nothing about play, scoring or the puzzles of a seed, so saved scores, dailies and `DATASET_VERSION` stay as they were.
+- `replayRun(game, settings, seed, moves)` in `replay.ts` replaces `arcadeRunSummary`: the score, whether the run is over, the level it reached, and each level's points and how it ended (`perfect`, `cleared`, `skipped`, `timeout`, `lost`). A level given up is `skipped` even where the engine counts it as done, which fixes City Circle Arcade's "0 ✓" for a level passed only by skipping.
+- `duel.ts`: `canDuel`, `duelSettings`, `duelThings` (what "same circles" says per game: routes, rivers, places…), `duelHasLevels` and `duelGames`.
+- API: `POST /duels` accepts any run `canDuel` allows, takes the level from `replayRun`, and refuses a rematch of a different game. No SQL change: the tables and functions never named a game.
+- Web:
+  - `#/duels/new` has a game picker (City Circle Arcade first), and `#/duels/new/<game-id>` opens it on a game.
+  - The game-over button reads "Challenge a friend to these rivers" and so on, for every duel game.
+  - The duel pages name the game and its puzzles, and show the creator's settings where the game has any.
+  - The level table works for every game with levels and has a key for its marks. Streaks and quizzes compare scores only.
+  - The duels list names each duel's game.
+- Higher or Lower, Flags and Capitals, Great Circle and City Circle now resume a run after a reload, like the others, so a challenger who reloads keeps their place.
