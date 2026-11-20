@@ -444,7 +444,7 @@ test('a Blank Atlas duel: picked on the new-duel page, the friend gets the same 
   await createAccount(alice);
   await alice.goto('/#/duels/new');
   await expect(alice.getByRole('heading', { name: 'New duel: City Circle Arcade' })).toBeVisible();
-  await alice.getByLabel('Game').selectOption('blank-atlas');
+  await alice.getByRole('combobox', { name: 'Game' }).selectOption('blank-atlas');
   await expect(alice.getByRole('heading', { name: 'New duel: Blank Atlas' })).toBeVisible();
   await expect(alice.getByText('gets exactly the same places')).toBeVisible();
   const started = alice.waitForResponse((r) => r.url().endsWith('/sessions') && r.status() === 201);

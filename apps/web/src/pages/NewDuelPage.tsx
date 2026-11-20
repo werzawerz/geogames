@@ -220,9 +220,9 @@ export function NewDuelPage({ rematchOf, gameId }: { rematchOf?: string; gameId?
 function GamePicker({ value, onChange }: { value: GameDefinition; onChange(game: GameDefinition): void }) {
   const games = duelGames();
   return (
-    <label className="duel-pick">
-      Game
-      <select value={value.id} onChange={(e) => onChange(games.find((g) => g.id === e.target.value)!)}>
+    <div className="duel-pick">
+      <label htmlFor="duel-game">Game</label>
+      <select id="duel-game" value={value.id} onChange={(e) => onChange(games.find((g) => g.id === e.target.value)!)}>
         {GROUPS.map((group) => {
           const inGroup = games.filter((g) => g.group === group.id);
           return (
@@ -239,6 +239,6 @@ function GamePicker({ value, onChange }: { value: GameDefinition; onChange(game:
         })}
       </select>
       <span className="muted small">{value.tagline}</span>
-    </label>
+    </div>
   );
 }
