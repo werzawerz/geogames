@@ -448,3 +448,11 @@ Cases:
 - Asking `POST /duels` again for a run that already has a duel returns its code before the 24 h check, so a reload days later still works.
 - The sign-in page opens on "Log in" for `#/sign-in/log-in` (the duel gate's two buttons).
 - Step 10 (a "your turn" header badge) was not built.
+
+### Review changes (Opus, 2026-11-20)
+
+- A rematch needs the duel it follows to be **finished** (not just taken): a duel still being played, or voided, can't have one. The new-duel page checks this before the run, so nobody plays a run that can't become the rematch.
+- **Void beats forfeit.** When the data changes while the challenger plays and they haven't finished, the duel is `expired/outdated` even after the 24 h deadline: their run can't be sent after an update, so they mustn't lose by forfeit. (A duel already finished stays finished.)
+- `GET /leaderboards/<game>/duel` without `scope=personal` is a 404: duel runs are on no world board.
+- A duel run whose finish fails isn't stored as a local score.
+- The duels list loads for anonymous players too, so a friend without an account finds the duels they took; the account gate shows only when they have none.
