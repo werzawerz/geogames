@@ -76,7 +76,7 @@ function NameSection() {
           {note.text}
         </p>
       )}
-      {account.status === 'signed-in' && <p className="muted small">Only this name is shown publicly. Your Google name and email never are.</p>}
+      {account.status === 'signed-in' && <p className="muted small">Only this name is shown publicly. Your email never is.</p>}
     </section>
   );
 }
@@ -92,16 +92,16 @@ function AccountSection() {
         <div className="profile-account">
           <Avatar account={account} name={player.name} />
           <p>
-            Signed in as <strong>{account.email ?? account.displayName ?? 'your Google account'}</strong> with Google. Your scores follow you to
-            any device you sign in on, and they appear on the public leaderboards.
+            Signed in as <strong>{account.email ?? player.name}</strong>. Your scores follow you to any device you sign in on, and they appear
+            on the public leaderboards.
           </p>
         </div>
       ) : (
         <>
           <p>You’re playing anonymously. Your scores are kept in this browser.</p>
           <p className="muted">
-            Sign in with Google to keep your scores across devices and to appear on the public leaderboards under your player name. The games you
-            have played so far come with you.
+            Create an account with your email to keep your scores across devices and to appear on the public leaderboards under your player name.
+            The games you have played so far come with you.
           </p>
           <p>
             <SignInButton />
@@ -226,7 +226,7 @@ function DeleteSection() {
             <li>your player and player name,</li>
             <li>all your games, scores and daily results,</li>
             <li>any feedback you sent,</li>
-            <li>your sign-in account (including the link to Google, if you signed in with it).</li>
+            <li>your sign-in account and its email address.</li>
           </ul>
           <p>You can keep playing afterwards, as a new anonymous player.</p>
           <label className="name-field">

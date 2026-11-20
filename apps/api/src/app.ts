@@ -8,6 +8,8 @@ import {
   dailySeed,
   dailySettings,
   dailyVariant,
+  MAX_PASSWORD_LENGTH,
+  MIN_PASSWORD_LENGTH,
   getGame,
   normalizeSettings,
   randomSeed,
@@ -15,6 +17,7 @@ import {
   variantKey,
   type ApiErrorCode,
   type ApiErrorResponse,
+  type CreateAccountResponse,
   type DeleteAccountResponse,
   type FinishSessionResponse,
   type GameSettings,
@@ -61,6 +64,11 @@ export interface AppOptions {
   verifyToken(token: string): Promise<Caller | null>;
   /** Deletes a sign-in account (needs the service role, so only the server can). */
   deleteUser(id: string): Promise<void>;
+  /**
+   * Gives an anonymous sign-in account an email and password, confirmed, which
+   * makes it a full account (needs the service role, so only the server can).
+   */
+  createLogin(id: string, email: string, password: string): Promise<void>;
   /** Games a player may start per day; null (the default) for no limit. A switch for a paid tier later. */
   freePlaysPerDay?: number | null;
   limits?: Partial<Limits>;
@@ -97,6 +105,7 @@ export function createApp({
   rpc,
   verifyToken,
   deleteUser,
+  createLogin,
   freePlaysPerDay = null,
   limits: limitOverrides,
   dailySecret,
@@ -180,9 +189,29 @@ export function createApp({
     return c.json<DeleteAccountResponse>({ deleted: true });
   });
 
-  // After "Sign in with Google" found the Google account already belongs to
-  // another player, the browser signs in to that one and hands over the token of
-  // the anonymous player it had: holding both tokens proves both are its own.
+  // "Create account": the anonymous player gets an email and password, keeping its
+  // games; the browser then signs in with them. Asked of the player's own token only.
+  app.post('/me/account', signedIn, async (c) => {
+    const caller = c.get('caller');
+    if (!caller.anonymous) return fail(c, 403, 'forbidden');
+    const input = await body(c);
+    const email = typeof input?.email === 'string' ? input.email.trim() : '';
+    const password = typeof input?.password === 'string' ? input.password : '';
+    if (
+      email.length > MAX_EMAIL_LENGTH ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+      password.length < MIN_PASSWORD_LENGTH ||
+      password.length > MAX_PASSWORD_LENGTH
+    ) {
+      return fail(c, 400, 'bad-request');
+    }
+    if (await rpc('email_in_use', { p_email: email })) return fail(c, 409, 'email-taken');
+    await createLogin(caller.id, email, password);
+    return c.json<CreateAccountResponse>({ created: true });
+  });
+
+  // After logging in to an existing account, the browser hands over the token of
+  // the anonymous player it had before: holding both tokens proves both are its own.
   app.post('/me/merge', signedIn, async (c) => {
     const caller = c.get('caller');
     if (caller.anonymous) return fail(c, 403, 'forbidden');

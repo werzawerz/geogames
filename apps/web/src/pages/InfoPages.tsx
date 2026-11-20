@@ -83,7 +83,7 @@ export function PrivacyPage() {
           are kept in it. Anonymous players do not appear on the public leaderboards; you only see your own scores.
         </li>
         <li>
-          <strong>Your player name</strong>, which you choose. Only players who signed in with Google appear on the public leaderboards, and
+          <strong>Your player name</strong>, which you choose. Only players with an account appear on the public leaderboards, and
           they appear under this player name. Do not use your real name if you prefer not to be identified.
         </li>
         <li>
@@ -91,10 +91,10 @@ export function PrivacyPage() {
           personal bests.
         </li>
         <li>
-          <strong>If you sign in with Google:</strong> your email address, name and profile picture as Google provides them. They are used only
-          to sign you in and to show you who you are signed in as; your Google name and email are never shown publicly. Signing in links the
-          Google account to the anonymous account you already have, so your games are kept. If that Google account already had a GeoGames account
-          (for example from another device), the games of the anonymous account are merged into it.
+          <strong>If you create an account:</strong> your email address and a password. The password is stored only as a secure hash (we can't
+          read it). Your email is used only to sign you in and to show you who you are signed in as; it is never shown publicly. Creating an
+          account keeps the games of the anonymous account you already have. If you log in to an account you made before (for example on
+          another device), the games of the anonymous account are merged into it.
         </li>
         <li>
           <strong>Feedback messages</strong> you send through the Contact page: the message, the contact address if you give one, the page you
@@ -115,9 +115,6 @@ export function PrivacyPage() {
         <li>
           <strong>GitHub Pages</strong>: hosts the website files. GitHub receives the technical data of every page request, such as your IP address.
         </li>
-        <li>
-          <strong>Google</strong>: only if you choose to sign in with Google, under Google's own privacy policy.
-        </li>
       </ul>
       <p>
         These providers may process data outside the European Economic Area, under the safeguards GDPR requires, such as standard contractual
@@ -133,7 +130,7 @@ export function PrivacyPage() {
       <h2>How long we keep it</h2>
       <p>
         Account data and scores are kept while your account exists. When you choose <strong>Delete my account</strong> on your Profile
-        page, your player, your games and scores, your feedback and your sign-in account (including the link to Google) are removed. Feedback messages are kept for as long as needed to deal with them, and no longer than
+        page, your player, your games and scores, your feedback and your sign-in account and its email address are removed. Feedback messages are kept for as long as needed to deal with them, and no longer than
         12 months. Accounts that were never used again may be deleted after 24 months of inactivity.
       </p>
 

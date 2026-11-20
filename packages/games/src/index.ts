@@ -21,3 +21,4 @@ export * from './supply-chain.ts';
 export * from './replay.ts';
 export * from './daily.ts';
 export type * from './api-contract.ts';
+export { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from './api-contract.ts';

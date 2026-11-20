@@ -1,7 +1,7 @@
 // Runs against the real API (`npm run dev:api`, real migrations, in-memory
 // Postgres) with the web app in API mode. Every test has a fresh browser, so a
-// fresh anonymous player. The dev API's made-up sign-in stands in for Google:
-// it keeps the player id, as linking Google does.
+// fresh anonymous player. In dev builds the browser checks passwords itself
+// (createDevAuth); creating an account keeps the player id, as on the server.
 import { test as plainTest } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 
@@ -22,10 +22,19 @@ async function playCapitals(page: import('@playwright/test').Page) {
   return Number(await over.innerText());
 }
 
-/** What "Sign in with Google" does in dev builds (createDevAuth); the page reloads as after the redirect. */
-async function signInDev(page: import('@playwright/test').Page) {
-  await page.evaluate(() => localStorage.setItem('geogames:dev-google', 'true'));
-  await page.reload();
+const newEmail = () => `player${Math.floor(Math.random() * 1e9)}@example.com`;
+
+/** Creates an account from the header's "Sign in", and comes back to the page it started on. */
+async function createAccount(page: import('@playwright/test').Page, email = newEmail(), password = 'correct horse') {
+  const from = new URL(page.url()).hash;
+  await page.getByRole('banner').getByRole('link', { name: 'Sign in' }).click();
+  await expect(page).toHaveURL(/#\/sign-in$/);
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password').fill(password);
+  await page.getByRole('button', { name: 'Create account', exact: true }).last().click();
+  await expect(page.getByRole('button', { name: /Account menu for/ })).toBeVisible();
+  expect(new URL(page.url()).hash).toBe(from);
+  return { email, password };
 }
 
 test('a game runs on a server seed, and its verified score reaches the global leaderboard once the player signs in', async ({ page }) => {
@@ -56,15 +65,15 @@ test('a game runs on a server seed, and its verified score reaches the global le
   await page.waitForTimeout(300);
   await page.getByRole('tab', { name: 'Global' }).click();
   // Anonymous players aren't on global leaderboards...
-  await expect(page.getByText('Global leaderboards show players who signed in')).toBeVisible();
+  await expect(page.getByText('Global leaderboards show players with an account')).toBeVisible();
   await expect(page.locator('.scores li').filter({ hasText: name })).toHaveCount(0);
   await page.getByRole('tab', { name: 'Your best' }).click();
   await expect(page.locator('.scores li').first()).toContainText(String(shown));
 
-  // ...until they sign in, with the games they played before.
-  await signInDev(page);
+  // ...until they make an account, with the games they played before.
+  await createAccount(page);
   await page.getByRole('tab', { name: 'Global' }).click();
-  await expect(page.getByText('Global leaderboards show players who signed in')).toHaveCount(0);
+  await expect(page.getByText('Global leaderboards show players with an account')).toHaveCount(0);
   if (shown > 0) {
     await expect(page.locator('.scores li').filter({ hasText: name })).toContainText(String(shown));
   }
@@ -152,13 +161,12 @@ plainTest('games stay playable when the server is unreachable, and say the score
   await expect(page.getByText("The global leaderboard isn't available right now.")).toBeVisible();
 });
 
-test('signing in from the header shows the avatar and name, and the Profile page says signed in', async ({ page }) => {
+test('creating an account from the header shows the avatar and name, and the Profile page says signed in', async ({ page }) => {
   await page.goto('/#/');
-  const signIn = page.getByRole('button', { name: 'Sign in with Google' });
+  const signIn = page.getByRole('banner').getByRole('link', { name: 'Sign in' });
   await expect(signIn).toBeVisible();
-  await signIn.click();
+  const { email, password } = await createAccount(page);
   const account = page.getByRole('button', { name: /Account menu for/ });
-  await expect(account).toBeVisible();
   await expect(account.locator('.avatar')).toBeVisible();
   await expect(signIn).toHaveCount(0);
 
@@ -167,12 +175,41 @@ test('signing in from the header shows the avatar and name, and the Profile page
   await page.getByRole('menuitem', { name: 'Profile' }).click();
   await expect(page).toHaveURL(/#\/profile$/);
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-  await expect(page.getByText('Signed in as')).toContainText('dev@example.com');
+  await expect(page.getByText('Signed in as')).toContainText(email);
   await expect(page).toHaveTitle('Profile · GeoGames');
 
-  // Signing out goes back to a fresh anonymous player.
+  // Signing out goes back to a fresh anonymous player...
+  const name = await page.getByLabel('Name on leaderboards').inputValue();
   await page.getByRole('button', { name: 'Sign out' }).click();
-  await expect(page.getByRole('banner').getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
+  await expect(signIn).toBeVisible();
+  await expect(page.getByLabel('Name on leaderboards')).not.toHaveValue(name);
+
+  // ...and logging in comes back to the account, after a wrong password.
+  await signIn.click();
+  await page.getByRole('button', { name: 'Log in', exact: true }).first().click();
+  await expect(page.getByRole('heading', { name: 'Log in' })).toBeVisible();
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password').fill('wrong password');
+  await page.getByRole('button', { name: 'Log in', exact: true }).last().click();
+  await expect(page.getByRole('alert')).toContainText('don’t match an account');
+  await page.getByLabel('Password').fill(password);
+  await page.getByRole('button', { name: 'Log in', exact: true }).last().click();
+  await expect(page).toHaveURL(/#\/profile$/);
+  await expect(page.getByLabel('Name on leaderboards')).toHaveValue(name);
+  await expect(page.getByText('Signed in as')).toContainText(email);
+});
+
+// Without the error-checking fixture: the refused request logs an error status.
+plainTest('an email that already has an account is refused, with a pointer to log in', async ({ page }) => {
+  await page.goto('/#/');
+  const { email } = await createAccount(page);
+  await page.getByRole('button', { name: /Account menu for/ }).click();
+  await page.getByRole('menuitem', { name: 'Sign out' }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Sign in' }).click();
+  await page.getByLabel('Email').fill(email.toUpperCase());
+  await page.getByLabel('Password').fill('another password');
+  await page.getByRole('button', { name: 'Create account', exact: true }).last().click();
+  await expect(page.getByRole('alert')).toContainText('already has an account. Log in instead.');
 });
 
 // Without the error-checking fixture: browsers log every error status to the console.
@@ -210,8 +247,7 @@ test('the contact form sends a message', async ({ page }) => {
 
 test('deleting the account needs DELETE typed, and leaves a fresh anonymous player', async ({ page }) => {
   await page.goto('/#/');
-  await page.getByRole('button', { name: 'Sign in with Google' }).click();
-  await expect(page.getByRole('button', { name: /Account menu for/ })).toBeVisible();
+  await createAccount(page);
   await page.goto('/#/profile');
   await page.getByRole('button', { name: 'Delete my account' }).click();
   const dialog = page.getByRole('dialog');
@@ -224,7 +260,7 @@ test('deleting the account needs DELETE typed, and leaves a fresh anonymous play
   await confirm.click();
   await expect(dialog).toBeHidden();
   await expect(page).toHaveURL(/#\/$/);
-  await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Sign in' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Account menu for/ })).toHaveCount(0);
 });
 
@@ -233,18 +269,16 @@ test.describe('on a phone', () => {
 
   test('the sign-in button is in the header, without sideways scrolling', async ({ page }) => {
     await page.goto('/#/');
-    const signIn = page.getByRole('button', { name: 'Sign in with Google' });
+    const signIn = page.getByRole('banner').getByRole('link', { name: 'Sign in' });
     await expect(signIn).toBeVisible();
-    await expect(signIn).toContainText('Sign in');
-    await expect(signIn.locator('.g-long')).toBeHidden();
     const box = (await signIn.boundingBox())!;
     expect(box.height).toBeGreaterThanOrEqual(44);
     expect(box.x + box.width).toBeLessThanOrEqual(390);
     const scrolls = () => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
     expect(await scrolls()).toBe(false);
 
-    await signIn.click();
-    await expect(page.getByRole('button', { name: /Account menu for/ })).toBeVisible();
+    await createAccount(page);
+    expect(await scrolls()).toBe(false);
     await page.getByRole('button', { name: /Account menu for/ }).click();
     await expect(page.getByRole('menuitem', { name: 'Profile' })).toBeVisible();
     expect(await scrolls()).toBe(false);

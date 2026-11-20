@@ -40,6 +40,11 @@ const app = createApp({
     const { error } = await supabase.auth.admin.deleteUser(id);
     if (error) throw new Error(`deleteUser: ${error.message}`);
   },
+  // Confirmed at once: no email is sent, and the account is no longer anonymous.
+  createLogin: async (id, email, password) => {
+    const { error } = await supabase.auth.admin.updateUserById(id, { email, password, email_confirm: true });
+    if (error) throw new Error(`createLogin: ${error.message}`);
+  },
   // Off unless set: the game is free. Kept as a switch for a paid tier later.
   freePlaysPerDay: parseDailyLimit(Deno.env.get('FREE_PLAYS_PER_DAY')),
   // Already a secret of this project, so a daily challenge needs no extra setup.

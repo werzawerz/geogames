@@ -70,7 +70,9 @@ export interface Backend {
   /** Opens or reopens today's run of a game. */
   startDaily(game: GameDefinition): Promise<DailyStart>;
   finishPlay(play: Play, game: FinishedGame, player: Player): Promise<FinishResult>;
-  signIn(): Promise<void>;
+  /** Both reject with a SignInError, or return who the player is afterwards. */
+  logIn(email: string, password: string): Promise<{ player: Player; account: Account }>;
+  createAccount(email: string, password: string): Promise<{ player: Player; account: Account }>;
   /** Both return who the player is afterwards: a fresh anonymous (or local) player. */
   signOut(): Promise<{ player: Player; account: Account }>;
   deleteAccount(): Promise<{ player: Player; account: Account }>;
@@ -108,7 +110,8 @@ export function createLocalBackend(): Backend {
       const result = await scores.submit({ ...game, playerId: player.id, playerName: player.name });
       return { ...result, status: 'local', score: game.score };
     },
-    signIn: unavailable,
+    logIn: unavailable,
+    createAccount: unavailable,
     signOut: unavailable,
     async deleteAccount() {
       // Everything this player has is in this browser.
