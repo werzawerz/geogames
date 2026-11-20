@@ -118,6 +118,76 @@ export interface LeaderboardResponse {
   entries: LeaderboardEntryDto[];
 }
 
+/** Duels: two players, the same circles, one try each (see docs/ideas/duels.md). */
+export const DUEL_GAMES: readonly string[] = ['city-circle-arcade'];
+/** The variant of the challenger's run, which keeps it off every leaderboard. */
+export const DUEL_VARIANT = 'duel';
+/** A duel nobody has taken lasts this many days. */
+export const DUEL_OPEN_DAYS = 7;
+/** Once the challenger starts, they have this many hours to finish. */
+export const DUEL_PLAY_HOURS = 24;
+
+/** POST /duels: makes a duel from the caller's own finished run (at most a day old). */
+export interface CreateDuelRequest {
+  sessionId: string;
+  /** The duel this one is a rematch of; only the other player can accept it. */
+  rematchOf?: string;
+}
+
+export interface CreateDuelResponse {
+  code: string;
+}
+
+/** POST /duels/:code/accept: the first caller to ask takes the duel and gets the seed. */
+export interface AcceptDuelRequest {
+  datasetVersion: string;
+}
+
+export interface AcceptDuelResponse {
+  sessionId: string;
+  seed: number;
+}
+
+export type DuelState = 'open' | 'playing' | 'finished' | 'expired';
+
+export interface DuelPlayerDto {
+  name: string;
+  /** Null until it may be shown (the challenger's, before the duel is over). */
+  score: number | null;
+  /** The level reached; null for the challenger, whose run is hidden until it's over. */
+  level: number | null;
+  status: 'playing' | 'finished' | 'forfeit';
+  durationSec: number | null;
+  /** Only once the duel is finished, and only when asked for (GET /duels/:code). */
+  moves?: string[];
+}
+
+export interface DuelDto {
+  code: string;
+  gameId: string;
+  settings: GameSettings;
+  createdAt: string;
+  expiresAt: string;
+  you: 'creator' | 'challenger' | 'visitor';
+  state: DuelState;
+  expiredReason?: 'time' | 'outdated';
+  creator: DuelPlayerDto;
+  challenger: DuelPlayerDto | null;
+  /** The name of the only player who may take this rematch. */
+  reservedFor: string | null;
+  reservedForYou: boolean;
+  outcome: 'creator' | 'challenger' | 'draw' | null;
+  /** Only for the challenger, while playing. */
+  session?: { sessionId: string; seed: number };
+  /** The newest rematch of this duel. */
+  rematch: { code: string; forYou: boolean; byYou: boolean; state: DuelState } | null;
+}
+
+/** GET /duels */
+export interface DuelListResponse {
+  duels: DuelDto[];
+}
+
 export type ApiErrorCode =
   | 'unauthorized'
   | 'forbidden'
@@ -133,6 +203,10 @@ export type ApiErrorCode =
   | 'update-required'
   /** The moves don't play the game to its end. */
   | 'unfinished-game'
+  /** POST /duels without an account: a duel needs to know who is playing. */
+  | 'account-required'
+  /** The duel was taken, expired or can't be played any more. */
+  | 'duel-unavailable'
   | 'internal';
 
 export interface ApiErrorResponse {

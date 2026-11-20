@@ -17,6 +17,7 @@ import {
 import { distanceKm } from './circle.ts';
 import { arcadePools } from './pools.ts';
 import { getGame } from './catalog.ts';
+import { arcadeRunSummary, replayGame } from './replay.ts';
 import { DEFAULT_SETTINGS, normalizeSettings, settingsFromVariant, variantKey } from './settings.ts';
 
 const pools = await arcadePools();
@@ -269,5 +270,51 @@ describe('city circle arcade', () => {
     expect(replayed.score).toBe(state.score);
     expect(replayed.lives).toBe(state.lives);
     expect(replayed.level.number).toBe(state.level.number);
+  });
+});
+
+describe('duels: one seed, the same circles whatever the player does', () => {
+  const shape = (state: ArcadeState) => ({
+    center: state.level.puzzle.center,
+    radiusKm: state.level.puzzle.radiusKm,
+    top: game.top(state.level),
+  });
+
+  it('gives a solver and a skipper identical circles for every level both reach', () => {
+    for (const seed of [1, 2, 3, 4, 5]) {
+      const solver: ReturnType<typeof shape>[] = [];
+      let a = game.start(seed);
+      for (let n = 1; n <= 8; n++) {
+        solver.push(shape(a));
+        a = game.nextLevel(clear(a));
+      }
+      // The skipper uses a hint and skips, losing lives on the way.
+      const skipper: ReturnType<typeof shape>[] = [];
+      let b = game.start(seed);
+      while (b.status !== 'over' && skipper.length < 8) {
+        skipper.push(shape(b));
+        b = game.hint(b);
+        while (b.status === 'playing') b = game.skip(b);
+        if (b.status === 'level-clear') b = game.nextLevel(b);
+      }
+      expect(skipper.length).toBeGreaterThan(1);
+      expect(skipper).toEqual(solver.slice(0, skipper.length));
+    }
+  });
+
+  it('summarises a run the way replayGame scores it', async () => {
+    const definition = getGame('city-circle-arcade')!;
+    const settings = normalizeSettings({}, definition);
+    let state = clear(game.start(21));
+    state = clear(game.nextLevel(state));
+    while (state.status !== 'over') {
+      if (state.status === 'level-clear') state = game.nextLevel(state);
+      state = game.skip(state);
+    }
+    const summary = await arcadeRunSummary(settings, 21, state.moves);
+    expect(summary).toEqual({ score: state.score, finished: true, level: state.level.number, cleared: state.level.number - 1 });
+    expect((await replayGame(definition, settings, 21, state.moves)).score).toBe(summary.score);
+    // A run that hasn't ended says so.
+    expect((await arcadeRunSummary(settings, 21, [])).finished).toBe(false);
   });
 });
