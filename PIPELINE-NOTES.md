@@ -14,7 +14,7 @@ Premise tests: packages/games/src/duel.test.ts (arcade's stays in circle-arcade.
 - duel.ts: canDuel, duelSettings, duelThings (per-game noun), duelHasLevels, duelGames.
 
 ## Next
-1. API: POST /duels uses replayRun + canDuel; rematch must be the same game. app.test.ts for a 2nd game.
+(API done: POST /duels uses replayRun + canDuel, rematch must be the same game; Mystery Country duel test in app.test.ts; bundle test compares replayRun.)
 2. Web: router `duels/new/<game-id>`; NewDuelPage game picker; GamePage button for every duel game;
    DuelPage per-game copy; DuelLevels generic (skipped shown as skipped); DuelsPage game titles; Home copy.
 3. Resume (initialMoves/onMovesChange) for HigherLower, Quiz, GreatCircle, CircleScreen.

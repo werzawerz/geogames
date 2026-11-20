@@ -1,9 +1,11 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { queryCountries } from '@geogames/geodata';
 import {
   DATASET_VERSION,
   arcadePools,
   createCircleArcade,
   createHigherLowerGame,
+  createMysteryCountry,
   dailyDate,
   dailySeed,
   dailyVariant,
@@ -607,8 +609,9 @@ describe('duels', () => {
     const run = await finishedRun('alice');
     expect((await make('bob', run.sessionId)).status).toBe(404);
     expect((await make('alice', 'nope')).status).toBe(400);
-    const capitals = await call('POST', '/sessions', 'alice', { gameId: 'capitals', settings: {}, datasetVersion: DATASET_VERSION });
-    expect((await make('alice', capitals.json.sessionId)).status).toBe(400);
+    // City Circle with circles the player places: a friend couldn't play the same ones.
+    const placed = await start('alice', 'city-circle', { circlePlacement: 'custom' });
+    expect((await make('alice', placed.json.sessionId)).status).toBe(400);
     // A daily run and a duel run.
     const daily = await call('POST', '/daily/city-circle-arcade/start', 'alice', { datasetVersion: DATASET_VERSION });
     const dailyPlay = await playArcade(daily.json.seed, 0);
@@ -868,5 +871,46 @@ describe('duels', () => {
     expect(listed.seed).toBeUndefined();
     const bobsList = (await call('GET', '/duels', 'bob')).json.duels[0];
     expect(bobsList.creator.moves).toBeUndefined();
+  });
+
+  /** Plays Mystery Country from the server's seed: solves `solved` levels at once, then runs out of guesses. */
+  function playMystery(seed: number, solved: number) {
+    const countries = queryCountries();
+    const game = createMysteryCountry({ countries, rounds: 20 });
+    let state = game.start(seed);
+    for (let i = 0; i < solved; i++) state = game.nextLevel(game.guess(state, state.target).state);
+    while (state.status !== 'over') {
+      const wrong = countries.find((c) => c.id !== state.target && !state.guesses.includes(c.id))!;
+      state = game.guess(state, wrong.id).state;
+    }
+    return state;
+  }
+
+  it('plays a duel of another game end to end: Mystery Country', async () => {
+    const { json: session } = await start('alice', 'mystery-country');
+    const mine = playMystery(session.seed, 3);
+    await call('POST', `/sessions/${session.sessionId}/finish`, 'alice', { moves: mine.moves });
+    const made = await call('POST', '/duels', 'alice', { sessionId: session.sessionId });
+    expect(made.status).toBe(201);
+    const code = made.json.code as string;
+    const open = (await call('GET', `/duels/${code}`, 'bob')).json;
+    expect(open).toMatchObject({ gameId: 'mystery-country', state: 'open', creator: { score: mine.score, level: 4 } });
+    // Bob gets Alice's seed, so the same mystery countries in the same order.
+    const taken = await accept('bob', code);
+    expect(taken.json.seed).toBe(session.seed);
+    const theirs = playMystery(taken.json.seed, 1);
+    expect(theirs.past).toEqual(mine.past.slice(0, theirs.past.length));
+    const finished = await call('POST', `/sessions/${taken.json.sessionId}/finish`, 'bob', { moves: theirs.moves });
+    expect(finished.json.score).toBe(theirs.score);
+    const result = (await call('GET', `/duels/${code}`, 'bob')).json;
+    expect(result).toMatchObject({ state: 'finished', outcome: 'creator', seed: session.seed, challenger: { score: theirs.score } });
+    expect(result.creator.moves).toEqual(mine.moves);
+    expect(result.challenger.moves).toEqual(theirs.moves);
+    // A rematch is the same game again, not another one.
+    const other = await finishedRun('bob');
+    expect((await call('POST', '/duels', 'bob', { sessionId: other.sessionId, rematchOf: code })).status).toBe(400);
+    const { json: again } = await start('bob', 'mystery-country');
+    await call('POST', `/sessions/${again.sessionId}/finish`, 'bob', { moves: playMystery(again.seed, 0).moves });
+    expect((await call('POST', '/duels', 'bob', { sessionId: again.sessionId, rematchOf: code })).status).toBe(201);
   });
 });
