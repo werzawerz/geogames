@@ -3,6 +3,8 @@
 // fresh anonymous player. In dev builds the browser checks passwords itself
 // (createDevAuth); creating an account keeps the player id, as on the server.
 import { test as plainTest } from '@playwright/test';
+import { countries } from '@geogames/geodata';
+import { arcadePools, createCircleArcade, type ArcadeState } from '@geogames/games';
 import { expect, test } from './fixtures.ts';
 
 // Follows playwright.config.ts: E2E_PORT_BASE moves every test port.
@@ -285,4 +287,143 @@ test.describe('on a phone', () => {
     await page.getByRole('button', { name: 'Open menu' }).click();
     expect(await scrolls()).toBe(false);
   });
+});
+
+// Duels: a run by an account holder becomes a link; a friend with no account plays the same circles once.
+type Page = import('@playwright/test').Page;
+type Engine = Awaited<ReturnType<typeof duelEngine>>;
+const duelEngine = async () => createCircleArcade(await arcadePools());
+
+/** Types a city and picks it from the suggestions (the country tells namesakes apart). */
+async function pickCity(page: Page, engine: Engine, id: string) {
+  const city = engine.cities.get(id)!;
+  const country = countries.find((c) => c.id === city.countryId)!.name;
+  await page.getByRole('combobox').fill(city.name);
+  await page.locator('.suggestions li').filter({ hasText: country }).filter({ hasText: city.name }).first().click();
+}
+
+/** Skips until the lives are gone, going on to the next level when one is cleared. */
+async function skipOut(page: Page, engine: Engine, state: ArcadeState) {
+  const skip = page.getByRole('button', { name: /Skip city/ });
+  while (state.status !== 'over') {
+    if (state.status === 'level-clear') {
+      await page.getByRole('button', { name: 'Next level' }).click();
+      state = engine.nextLevel(state);
+    }
+    await skip.click();
+    state = engine.skip(state);
+  }
+  return state;
+}
+
+test('a duel: an account holder challenges, an anonymous friend plays the same circles on a phone and wins', async ({ browser }) => {
+  test.slow();
+  const engine = await duelEngine();
+
+  // A: an account, one city found, then out of lives; the run becomes a duel.
+  const alice = await (await browser.newContext()).newPage();
+  await alice.goto('/#/');
+  await createAccount(alice);
+  const started = alice.waitForResponse((r) => r.url().endsWith('/sessions') && r.status() === 201);
+  await alice.goto('/#/duels/new');
+  await expect(alice.getByText('Play your run first')).toBeVisible();
+  await alice.getByRole('button', { name: 'Play', exact: true }).click();
+  const { seed } = (await (await started).json()) as { seed: number };
+  await expect(alice.getByRole('combobox')).toBeVisible({ timeout: 20_000 });
+  let a = engine.start(seed);
+  const first = engine.top(a.level)[0]!;
+  await pickCity(alice, engine, first);
+  a = engine.guess(a, first).state;
+  a = await skipOut(alice, engine, a);
+  await alice.getByRole('button', { name: 'See final score' }).click();
+  await expect(alice).toHaveURL(/#\/duel\/[2-9A-HJKMNP-Z]{8}$/);
+  const link = alice.url();
+  await expect(alice.locator('.big-score')).toHaveText(String(a.score));
+  await expect(alice.getByRole('button', { name: 'Send the link' })).toBeVisible();
+  await expect(alice.getByText('Waiting for a challenger.')).toBeVisible();
+
+  // B: no account, on a phone. The invitation shows the stake, not the answers.
+  const bobContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const bob = await bobContext.newPage();
+  await bob.goto(link);
+  await expect(bob.getByRole('heading', { name: /challenges you/ })).toBeVisible();
+  await expect(bob.locator('.duel-invite .lead')).toContainText(`scored ${a.score} on City Circle Arcade`);
+  await expect(bob.getByLabel('Your name in this duel')).toBeVisible();
+  const accepted = bob.waitForResponse((r) => r.url().endsWith('/accept') && r.status() === 200);
+  await bob.getByRole('button', { name: 'Play the duel' }).click();
+  expect(((await (await accepted).json()) as { seed: number }).seed).toBe(seed);
+  await expect(bob.locator('.duel-strip')).toContainText(`to beat: ${a.score}`);
+  await expect(bob.getByRole('combobox')).toBeVisible({ timeout: 20_000 });
+
+  // The whole question fits a 390 x 844 screen without scrolling.
+  for (const selector of ['.duel-strip', '.route-status', '.world-map', '[role=combobox]']) {
+    const box = (await bob.locator(selector).first().boundingBox())!;
+    expect(box.y, selector).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height, selector).toBeLessThanOrEqual(844);
+  }
+
+  // A third person finds the duel taken.
+  const carol = await (await browser.newContext()).newPage();
+  await carol.goto(link);
+  await expect(carol.getByText('Someone else already played this duel.')).toBeVisible();
+  await expect(carol.getByRole('button', { name: 'Play the duel' })).toHaveCount(0);
+  // And Alice is told Bob is playing.
+  await alice.reload();
+  await expect(alice.getByText('took your duel and is playing now')).toBeVisible();
+
+  // Bob plays the same circles: the first city, then a reload in the middle keeps his place.
+  let b = engine.start(seed);
+  const [t1, t2, t3] = engine.top(b.level);
+  await pickCity(bob, engine, t1!);
+  b = engine.guess(b, t1!).state;
+  await bob.reload();
+  await expect(bob.getByRole('combobox')).toBeVisible({ timeout: 20_000 });
+  await expect(bob.locator('.rank-slots .slot-found')).toHaveCount(1);
+  await expect(bob.locator('.route-status')).toContainText('Level 1');
+  for (const id of [t2!, t3!]) {
+    await pickCity(bob, engine, id);
+    b = engine.guess(b, id).state;
+  }
+  b = await skipOut(bob, engine, b);
+  await bob.getByRole('button', { name: 'See final score' }).click();
+
+  // The result: Bob wins, with both runs side by side, stacked on a phone.
+  await expect(bob.locator('.duel-headline')).toContainText('You win!', { timeout: 15_000 });
+  await expect(bob.locator('.duel-headline')).toContainText(`${b.score} to ${a.score}`);
+  const cards = bob.locator('.duel-card');
+  await expect(cards).toHaveCount(2);
+  const one = (await cards.nth(0).boundingBox())!;
+  const two = (await cards.nth(1).boundingBox())!;
+  expect(two.y).toBeGreaterThanOrEqual(one.y + one.height - 1);
+  await expect(bob.locator('.duel-levels tbody tr').first()).toContainText('30 ✓');
+  await expect(bob.getByRole('link', { name: 'Rematch' })).toBeVisible();
+
+  // Alice sees the same result from her side, and the duels list.
+  await alice.reload();
+  await expect(alice.locator('.duel-headline')).toContainText('wins.');
+  await expect(alice.locator('.duel-headline')).not.toContainText('You win');
+  await alice.getByRole('link', { name: 'All duels' }).first().click();
+  await expect(alice.locator('.duel-list')).toContainText(`Lost ${a.score}–${b.score}`);
+  expect(await alice.evaluate(() => window.scrollY)).toBe(0);
+});
+
+test('duels need an account: an anonymous player gets the gate, and comes back to it after creating one', async ({ page }) => {
+  await page.goto('/#/duels/new');
+  await expect(page.getByText('Duels need an account')).toBeVisible();
+  await page.getByRole('link', { name: 'Create account' }).click();
+  await page.getByLabel('Email').fill(newEmail());
+  await page.getByLabel('Password').fill('correct horse');
+  await page.getByRole('button', { name: 'Create account', exact: true }).last().click();
+  await expect(page).toHaveURL(/#\/duels\/new$/);
+  await expect(page.getByText('Play your run first')).toBeVisible();
+  // With an account, the Duels page has none yet.
+  await page.getByRole('banner').getByRole('link', { name: 'Duels' }).click();
+  await expect(page.getByRole('heading', { name: 'Duels' })).toBeVisible();
+  await expect(page.getByText('No duels yet.')).toBeVisible();
+});
+
+// Without the error-checking fixture: the 404 is logged by the browser.
+plainTest('a duel link that does not exist says so', async ({ page }) => {
+  await page.goto('/#/duel/ZZZZZZZZ');
+  await expect(page.getByText("This duel link doesn't work")).toBeVisible();
 });
