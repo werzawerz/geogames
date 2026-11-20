@@ -4,7 +4,7 @@
 // (createDevAuth); creating an account keeps the player id, as on the server.
 import { test as plainTest } from '@playwright/test';
 import { countries } from '@geogames/geodata';
-import { arcadePools, createCircleArcade, type ArcadeState } from '@geogames/games';
+import { arcadePools, blankAtlasGame, createCircleArcade, type ArcadeState } from '@geogames/games';
 import { expect, test } from './fixtures.ts';
 
 // Follows playwright.config.ts: E2E_PORT_BASE moves every test port.
@@ -413,6 +413,83 @@ test('a duel: an account holder challenges, an anonymous friend plays the same c
   await alice.getByRole('link', { name: 'All duels' }).first().click();
   await expect(alice.locator('.duel-list')).toContainText(`Lost ${a.score}–${b.score}`);
   expect(await alice.evaluate(() => window.scrollY)).toBe(0);
+});
+
+// Duels of other games: the game is picked on the new-duel page, and the level table tells a skip from a clear.
+type Atlas = Awaited<ReturnType<typeof blankAtlasGame>>;
+type AtlasState = ReturnType<Atlas['start']>;
+
+/** Plays one Blank Atlas level in the browser and the engine alike: the right name, a wrong one, or a skip. */
+async function atlasLevel(page: Page, engine: Atlas, state: AtlasState, how: 'right' | 'wrong' | 'skip') {
+  const { level } = state;
+  const pick = how === 'right' ? level.feature : level.options.find((id) => id !== level.feature)!;
+  if (how === 'skip') {
+    await page.getByRole('button', { name: /Skip/ }).click();
+    state = engine.skip(state);
+  } else {
+    await page.locator('.atlas-option').nth(level.options.indexOf(pick)).click();
+    state = engine.guess(state, pick).state;
+  }
+  await page.getByRole('button', { name: state.status === 'over' ? 'See final score' : 'Next level' }).click();
+  return state.status === 'over' ? state : engine.nextLevel(state);
+}
+
+test('a Blank Atlas duel: picked on the new-duel page, the friend gets the same places, and a skipped level shows as skipped', async ({ browser }) => {
+  test.slow();
+  const engine = await blankAtlasGame();
+
+  // A picks Blank Atlas, clears level 1, skips level 2 and misses two more.
+  const alice = await (await browser.newContext()).newPage();
+  await alice.goto('/#/');
+  await createAccount(alice);
+  await alice.goto('/#/duels/new');
+  await expect(alice.getByRole('heading', { name: 'New duel: City Circle Arcade' })).toBeVisible();
+  await alice.getByLabel('Game').selectOption('blank-atlas');
+  await expect(alice.getByRole('heading', { name: 'New duel: Blank Atlas' })).toBeVisible();
+  await expect(alice.getByText('gets exactly the same places')).toBeVisible();
+  const started = alice.waitForResponse((r) => r.url().endsWith('/sessions') && r.status() === 201);
+  await alice.getByRole('button', { name: 'Play', exact: true }).click();
+  const { seed } = (await (await started).json()) as { seed: number };
+  await expect(alice.locator('.atlas-option').first()).toBeVisible({ timeout: 20_000 });
+  let a = engine.start(seed);
+  for (const how of ['right', 'skip', 'wrong', 'wrong'] as const) a = await atlasLevel(alice, engine, a, how);
+  expect(a.status).toBe('over');
+  await expect(alice).toHaveURL(/#\/duel\/[2-9A-HJKMNP-Z]{8}$/, { timeout: 15_000 });
+  const link = alice.url();
+  await expect(alice.locator('.eyebrow')).toHaveText('Duel · Blank Atlas');
+  await expect(alice.locator('.big-score')).toHaveText(String(a.score));
+  await expect(alice.getByText('Reached level 4')).toBeVisible();
+
+  // B, with no account and on a phone, is told which game and gets the same places.
+  const bob = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+  await bob.goto(link);
+  await expect(bob.locator('.duel-invite .lead')).toContainText(`scored ${a.score} on Blank Atlas and reached level 4`);
+  await expect(bob.getByText('You get exactly the same places, in the same order.')).toBeVisible();
+  const accepted = bob.waitForResponse((r) => r.url().endsWith('/accept') && r.status() === 200);
+  await bob.getByRole('button', { name: 'Play the duel' }).click();
+  expect(((await (await accepted).json()) as { seed: number }).seed).toBe(seed);
+  await expect(bob.locator('.atlas-option').first()).toBeVisible({ timeout: 20_000 });
+  let b = engine.start(seed);
+  // The same first place, with the same four names.
+  await expect(bob.locator('.atlas-option')).toHaveText(b.level.options.map((id, i) => `${i + 1}${engine.features.get(id)!.name}`));
+  for (const how of ['right', 'right', 'right', 'wrong', 'wrong', 'wrong'] as const) b = await atlasLevel(bob, engine, b, how);
+  expect(b.score).toBeGreaterThan(a.score);
+
+  // Bob wins; level 2 shows Alice's skip as a skip, not a clear.
+  await expect(bob.locator('.duel-headline')).toContainText('You win!', { timeout: 15_000 });
+  await expect(bob.locator('.duel-headline')).toContainText(`${b.score} to ${a.score}`);
+  await expect(bob.locator('.duel-result .eyebrow')).toHaveText('Duel · Blank Atlas');
+  const rows = bob.locator('.duel-levels tbody tr');
+  await expect(rows).toHaveCount(6);
+  await expect(rows.nth(0).locator('td').nth(1)).toContainText('✓★');
+  await expect(rows.nth(1).locator('td').nth(0)).toContainText('✓★');
+  await expect(rows.nth(1).locator('td').nth(1)).toContainText('0 ↷');
+  await expect(rows.nth(1).getByLabel('skipped')).toBeVisible();
+  await expect(rows.nth(4).locator('td').nth(1)).toContainText('–');
+  await expect(bob.locator('.duel-key')).toContainText('↷ skipped');
+  await bob.goto(link.split('#')[0] + '#/duels');
+  await expect(bob.locator('.duel-list')).toContainText(`Won ${b.score}–${a.score} vs`);
+  await expect(bob.locator('.duel-list')).toContainText('Blank Atlas');
 });
 
 test('duels need an account: an anonymous player gets the gate, and comes back to it after creating one', async ({ page }) => {

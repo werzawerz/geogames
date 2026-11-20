@@ -7,6 +7,7 @@ import {
   circleCities,
   createCircleGame,
   formatPopulationShort,
+  replayCircle,
   type CircleCity,
   type CircleDefinition,
   type CircleGame,
@@ -29,7 +30,7 @@ interface Loaded {
 }
 
 /** Loads map shapes and the city pool (both lazily), then plays. */
-export function CircleScreen({ game: definition, settings, seed, onGameOver }: GameScreenProps<CircleDefinition>) {
+export function CircleScreen({ game: definition, settings, seed, initialMoves, onMovesChange, onGameOver }: GameScreenProps<CircleDefinition>) {
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [error, setError] = useState(false);
   useEffect(() => {
@@ -57,7 +58,9 @@ export function CircleScreen({ game: definition, settings, seed, onGameOver }: G
 
   if (error) return <p className="panel center">Couldn't load the map. Check your connection and try again.</p>;
   if (!loaded) return <p className="panel center muted">Loading map…</p>;
-  return <CirclePlay {...loaded} seed={seed} region={settings.region} onGameOver={onGameOver} />;
+  return (
+    <CirclePlay {...loaded} seed={seed} region={settings.region} initialMoves={initialMoves} onMovesChange={onMovesChange} onGameOver={onGameOver} />
+  );
 }
 
 const MESSAGES: Record<CircleGuessResult, (city: CircleCity | undefined, rank: number | null) => string> = {
@@ -73,9 +76,14 @@ function CirclePlay({
   game,
   seed,
   region,
+  initialMoves,
+  onMovesChange,
   onGameOver,
-}: Loaded & { seed: number; region: Region; onGameOver: GameScreenProps['onGameOver'] }) {
-  const [state, setState] = useState<CircleGameState>(() => game.start(seed));
+}: Loaded &
+  Pick<GameScreenProps, 'initialMoves' | 'onMovesChange' | 'onGameOver'> & { seed: number; region: Region }) {
+  // A run left part-way (a duel, after a reload) picks up where it was.
+  const [state, setState] = useState<CircleGameState>(() => replayCircle(game, seed, initialMoves ?? []));
+  useEffect(() => onMovesChange?.(state.moves), [state.moves, onMovesChange]);
   const round = game.current(state);
   const number = state.status === 'placing' ? state.rounds.length + 1 : state.rounds.length;
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { DuelDto } from '@geogames/games';
+import { getGame, type DuelDto } from '@geogames/games';
 import { DuelGate, DuelsNeedServer } from '../components/DuelGate.tsx';
 import { usePlatform } from '../platform/PlatformProvider.tsx';
 import { href } from '../router.ts';
@@ -32,6 +32,9 @@ export function recordsByOpponent(duels: readonly DuelDto[]): Map<string, [numbe
 
 const myScore = (d: DuelDto) => (d.you === 'challenger' ? d.challenger?.score : d.creator.score) ?? 0;
 const theirScore = (d: DuelDto) => (d.you === 'challenger' ? d.creator.score : d.challenger?.score) ?? 0;
+
+/** The duel's game, for the list: duels of different games sit side by side. */
+const titleOf = (d: DuelDto) => getGame(d.gameId)?.title ?? d.gameId;
 
 const ago = (iso: string) => {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
@@ -109,7 +112,7 @@ export function DuelsPage() {
         </div>
       )}
       {none && (
-        <p className="panel center muted">No duels yet. Play a City Circle Arcade run and challenge a friend to the same circles.</p>
+        <p className="panel center muted">No duels yet. Pick a game, play a run and challenge a friend to the same puzzles.</p>
       )}
 
       {groups.yourTurn.length > 0 && (
@@ -119,7 +122,7 @@ export function DuelsPage() {
             {groups.yourTurn.map((d) => (
               <li key={d.code}>
                 <span>
-                  {d.state === 'playing' ? `Your duel vs ${d.creator.name}` : `Rematch from ${d.creator.name}`} · to beat {d.creator.score}
+                  {d.state === 'playing' ? `Your duel vs ${d.creator.name}` : `Rematch from ${d.creator.name}`} · {titleOf(d)} · to beat {d.creator.score}
                 </span>
                 <a className="btn btn-primary" href={href({ page: 'duel', code: d.code })}>
                   {d.state === 'playing' ? 'Carry on' : 'Play it'}
@@ -157,7 +160,7 @@ export function DuelsPage() {
                         {result}
                       </span>
                     )}{' '}
-                    {result ? `${verb} ${myScore(d)}–${d.challenger?.status === 'forfeit' ? 'did not finish' : theirScore(d)}` : 'Duel'} vs {who} · {ago(d.createdAt)}
+                    {result ? `${verb} ${myScore(d)}–${d.challenger?.status === 'forfeit' ? 'did not finish' : theirScore(d)}` : 'Duel'} vs {who} · {titleOf(d)} · {ago(d.createdAt)}
                     {who && records.get(who) && <span className="muted small"> (vs {who}: {records.get(who)!.join('–')})</span>}
                   </span>
                   <a className="link" href={href({ page: 'duel', code: d.code })}>
@@ -179,7 +182,7 @@ function WaitingRow({ duel }: { duel: DuelDto }) {
   return (
     <li>
       <span>
-        {duel.state === 'playing' ? `${duel.challenger?.name} is playing` : 'Waiting for a challenger'} · you scored {duel.creator.score}
+        {duel.state === 'playing' ? `${duel.challenger?.name} is playing` : 'Waiting for a challenger'} · {titleOf(duel)} · you scored {duel.creator.score}
       </span>
       <span className="row">
         {duel.state === 'open' && (

@@ -32,7 +32,7 @@ export function Home() {
           Duels
         </h2>
         <p className="muted">
-          Duel a friend: same circles, one try each.{' '}
+          Duel a friend: the same puzzles, one try each.{' '}
           <a className="link" href={href({ page: 'duels' })}>
             Start a duel →
           </a>

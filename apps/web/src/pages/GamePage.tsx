@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import {
-  DUEL_GAMES,
   MIN_POOL_SIZE,
+  canDuel,
+  duelThings,
   describeSettings,
   hasSettings,
   normalizeSettings,
@@ -140,15 +141,15 @@ export function GamePage({ game }: { game: GameDefinition }) {
               {phase.result.notice}
             </p>
           )}
-          {DUEL_GAMES.includes(game.id) && duels && phase.result?.status === 'saved' && phase.play?.sessionId && (
+          {canDuel(game, phase.settings) && duels && phase.result?.status === 'saved' && phase.play?.sessionId && (
             <div className="duel-challenge">
               {account.status === 'signed-in' ? (
                 <button className="btn" disabled={challenge === 'making'} onClick={() => challengeFriend(phase.play!.sessionId!)}>
-                  ⚔️ Challenge a friend to these circles
+                  ⚔️ Challenge a friend to these {duelThings(game)}
                 </button>
               ) : (
-                <a className="btn" href={href({ page: 'duel-new' })}>
-                  ⚔️ Challenge a friend to these circles
+                <a className="btn" href={href({ page: 'duel-new', gameId: game.id })}>
+                  ⚔️ Challenge a friend to these {duelThings(game)}
                 </a>
               )}
               {challenge === 'failed' && (

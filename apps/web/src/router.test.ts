@@ -14,6 +14,7 @@ describe('router', () => {
       { page: 'duels' },
       { page: 'duel-new' },
       { page: 'duel-new', rematchOf: 'K7Q2M9XD' },
+      { page: 'duel-new', gameId: 'mystery-country' },
       { page: 'duel', code: 'K7Q2M9XD' },
       { page: 'play', gameId: 'pin-drop' },
       { page: 'daily', gameId: 'pin-drop' },
@@ -31,6 +32,8 @@ describe('router', () => {
     expect(href({ page: 'duel', code: 'K7Q2M9XD' })).toBe('#/duel/K7Q2M9XD');
     expect(href({ page: 'duel-new', rematchOf: 'K7Q2M9XD' })).toBe('#/duels/new/K7Q2M9XD');
     expect(parseRoute('#/duels/new')).toEqual({ page: 'duel-new' });
+    expect(href({ page: 'duel-new', gameId: 'pin-drop' })).toBe('#/duels/new/pin-drop');
+    expect(parseRoute('#/duels/new/pin-drop')).toEqual({ page: 'duel-new', gameId: 'pin-drop' });
   });
 
   it('parses #/profile', () => {

@@ -7,7 +7,8 @@ export type Route =
   | { page: 'daily'; gameId: string }
   | { page: 'scores'; gameId: string; variant?: string }
   | { page: 'duels' }
-  | { page: 'duel-new'; rematchOf?: string }
+  /** A new duel: of a game (`duels/new/<game-id>`), or a rematch of a duel (`duels/new/<CODE>`). */
+  | { page: 'duel-new'; rematchOf?: string; gameId?: string }
   | { page: 'duel'; code: string }
   | { page: 'profile' }
   | { page: 'sign-in' }
@@ -15,6 +16,8 @@ export type Route =
   | { page: 'privacy' }
   | { page: 'terms' }
   | { page: 'contact' };
+
+const DUEL_CODE = /^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{8}$/;
 
 /** Pages with no game in the route. */
 export const INFO_PAGES = ['about', 'privacy', 'terms', 'contact'] as const;
@@ -26,7 +29,11 @@ export function parseRoute(hash: string): Route {
   if (page === 'daily' && !arg) return { page: 'dailies' };
   if (page === 'daily' && arg) return { page: 'daily', gameId: arg };
   if (page === 'scores' && arg) return { page: 'scores', gameId: arg, variant };
-  if (page === 'duels' && arg === 'new') return { page: 'duel-new', ...(variant ? { rematchOf: variant } : {}) };
+  if (page === 'duels' && arg === 'new') {
+    // Duel codes are upper case and game ids lower case, so one place in the path serves both.
+    if (!variant) return { page: 'duel-new' };
+    return DUEL_CODE.test(variant) ? { page: 'duel-new', rematchOf: variant } : { page: 'duel-new', gameId: variant };
+  }
   if (page === 'duels') return { page: 'duels' };
   if (page === 'duel' && arg) return { page: 'duel', code: arg };
   if (page === 'profile') return { page: 'profile' };
@@ -44,7 +51,7 @@ export function href(route: Route): string {
     case 'duels':
       return '#/duels';
     case 'duel-new':
-      return `#/duels/new${route.rematchOf ? `/${route.rematchOf}` : ''}`;
+      return `#/duels/new${route.rematchOf ? `/${route.rematchOf}` : route.gameId ? `/${route.gameId}` : ''}`;
     case 'duel':
       return `#/duel/${route.code}`;
     case 'profile':
