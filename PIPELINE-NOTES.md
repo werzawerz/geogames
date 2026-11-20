@@ -28,6 +28,6 @@ duel-able run (arcade and daily), and "Random or Today's daily" when starting a 
 
 ## Status
 - [x] SQL + API + API tests (7 new "daily duels" tests in apps/api/src/app.test.ts)
-- [ ] web
+- [x] web (ChallengeFriend component, NewDuelPage card grid + random/daily, DuelPage daily copy) — typecheck + 497 unit tests pass
 - [ ] e2e + screenshots
 - [ ] docs/ideas/duels.md

@@ -3221,29 +3221,70 @@ summary:focus-visible {
   width: 100%;
 }
 
-.duel-pick {
+/* The start step: the game's picture, then random or today's daily. */
+.duel-new .card-art {
+  width: min(26rem, 100%);
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.duel-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  width: min(32rem, 100%);
+}
+
+.duel-mode {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  width: min(24rem, 100%);
+  gap: 0.25rem;
+  min-height: 44px;
+  padding: 0.75rem 0.9rem;
   text-align: left;
-  font-weight: 600;
-}
-
-.duel-pick select {
   font: inherit;
-  font-weight: 400;
   color: var(--text);
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.5rem 0.7rem;
-  min-height: 44px;
-  width: 100%;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
 }
 
-.duel-pick .small {
-  font-weight: 400;
+.duel-mode span {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.duel-mode:hover {
+  border-color: var(--border-strong);
+}
+
+.duel-mode[aria-checked='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Not colour alone: the chosen one is ticked. */
+.duel-mode[aria-checked='true'] strong::before {
+  content: '✓ ';
+  color: var(--accent);
+}
+
+.duel-mode:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .duel-modes {
+    grid-template-columns: 1fr;
+  }
+}
+
+.duel-game-card .game-card-footer {
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .duel-cards {

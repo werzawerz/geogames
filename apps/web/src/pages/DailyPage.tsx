@@ -8,13 +8,25 @@ import type { RankedScore } from '../platform/scores.ts';
 import { load, remove, save } from '../platform/storage.ts';
 import { href } from '../router.ts';
 import { AnonymousNote } from './ScoresPage.tsx';
+import { ChallengeFriend } from '../components/ChallengeFriend.tsx';
 
 type Phase =
   | { name: 'loading' }
   | { name: 'unavailable' }
   | { name: 'update-required' }
   | { name: 'playing'; date: string; play: Play; moves: readonly string[] }
-  | { name: 'done'; date: string; score: number; message?: string; shareLine?: string; notice?: string; status?: FinishStatus };
+  | {
+      name: 'done';
+      date: string;
+      score: number;
+      /** The run's server session, so it can become a daily duel. */
+      sessionId: string | null;
+      message?: string;
+      shareLine?: string;
+      notice?: string;
+      /** Undefined while the result is on its way to the server. */
+      status?: FinishStatus;
+    };
 
 /** What's kept to show or share a finished challenge again. */
 interface SavedResult {
@@ -23,6 +35,9 @@ interface SavedResult {
 }
 
 const key = (game: GameDefinition, date: string) => `daily:${game.id}:${date}`;
+
+/** Where a daily run in progress keeps its moves; a daily duel uses the same, so either page resumes it. */
+export const dailyMovesKey = (game: GameDefinition, date: string) => `${key(game, date)}:moves`;
 
 export function DailyPage({ game }: { game: GameDefinition }) {
   const { startDaily, finishPlay } = usePlatform();
@@ -39,7 +54,14 @@ export function DailyPage({ game }: { game: GameDefinition }) {
       if (result.status === 'update-required') return setPhase({ name: 'update-required' });
       const { date, play, finishedScore } = result;
       if (finishedScore !== null) {
-        return setPhase({ name: 'done', date, score: finishedScore, ...load<SavedResult>(`${key(game, date)}:result`, {}) });
+        return setPhase({
+          name: 'done',
+          date,
+          score: finishedScore,
+          sessionId: play.sessionId,
+          status: play.sessionId ? 'saved' : 'local',
+          ...load<SavedResult>(`${key(game, date)}:result`, {}),
+        });
       }
       // A reload picks the run up again rather than starting it over.
       const moves = load<{ version: string; moves: string[] } | null>(`${key(game, date)}:moves`, null);
@@ -67,12 +89,13 @@ export function DailyPage({ game }: { game: GameDefinition }) {
     async ({ score, moves, message, shareLine }: GameOutcome) => {
       if (!play || !date || finishing.current) return;
       finishing.current = true;
-      setPhase({ name: 'done', date, score, message, shareLine });
+      const sessionId = play.sessionId;
+      setPhase({ name: 'done', date, score, sessionId, message, shareLine });
       const result = await finishPlay(play, { gameId: game.id, variant: dailyVariant(date), score, seed: play.seed, moves });
       const saved: SavedResult = { message, shareLine };
       save(`${key(game, date)}:result`, saved);
       remove(`${key(game, date)}:moves`);
-      setPhase({ name: 'done', date, score: result.score, message, shareLine, notice: result.notice, status: result.status });
+      setPhase({ name: 'done', date, score: result.score, sessionId, message, shareLine, notice: result.notice, status: result.status });
     },
     [finishPlay, game, play, date],
   );
@@ -131,10 +154,12 @@ function DailyResult({
   shareLine,
   notice,
   status,
+  sessionId,
 }: {
   game: GameDefinition;
   date: string;
   score: number;
+  sessionId: string | null;
   message?: string;
   shareLine?: string;
   notice?: string;
@@ -178,6 +203,7 @@ function DailyResult({
             Other daily challenges
           </a>
         </div>
+        <ChallengeFriend game={game} settings={dailySettings(game)} sessionId={sessionId} saved={status && status === 'saved'} daily />
         <p className="muted">One try a day. The next challenge starts at {nextChallengeAt()}.</p>
       </div>
       <div className="panel">

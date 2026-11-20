@@ -33,8 +33,13 @@ export function recordsByOpponent(duels: readonly DuelDto[]): Map<string, [numbe
 const myScore = (d: DuelDto) => (d.you === 'challenger' ? d.challenger?.score : d.creator.score) ?? 0;
 const theirScore = (d: DuelDto) => (d.you === 'challenger' ? d.creator.score : d.challenger?.score) ?? 0;
 
-/** The duel's game, for the list: duels of different games sit side by side. */
-const titleOf = (d: DuelDto) => getGame(d.gameId)?.title ?? d.gameId;
+/** The duel's game, for the list: duels of different games sit side by side. A daily duel names its day. */
+const titleOf = (d: DuelDto) => {
+  const title = getGame(d.gameId)?.title ?? d.gameId;
+  if (!d.daily) return title;
+  const day = new Date(`${d.daily}T12:00:00Z`).toLocaleDateString([], { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  return `${title} (daily, ${day})`;
+};
 
 const ago = (iso: string) => {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);

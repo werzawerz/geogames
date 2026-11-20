@@ -5,6 +5,8 @@ import {
   DUEL_OPEN_DAYS,
   DUEL_PLAY_HOURS,
   DUEL_VARIANT,
+  dailyDate,
+  dailyDateOf,
   duelHasLevels,
   duelThings,
   getGame,
@@ -23,6 +25,7 @@ import type { Play } from '../platform/backend.ts';
 import { usePlatform } from '../platform/PlatformProvider.tsx';
 import { load, remove, save } from '../platform/storage.ts';
 import { href } from '../router.ts';
+import { dailyMovesKey } from './DailyPage.tsx';
 
 type Phase =
   | { name: 'loading' }
@@ -37,7 +40,21 @@ type Phase =
 const POLL_MS = 20_000;
 const POLL_FOR_MS = 15 * 60_000;
 
-const movesKey = (code: string) => `duel:${code}:moves`;
+/**
+ * Where the challenger's run keeps its moves. A daily duel is played on the player's own
+ * daily run, so it shares the daily page's place and either page resumes it.
+ */
+const movesKey = (dto: DuelDto) => {
+  const date = dto.session && dailyDateOf(dto.session.variant);
+  return date ? dailyMovesKey(gameOf(dto), date) : `duel:${dto.code}:moves`;
+};
+/** "City Circle Arcade", or "City Circle Arcade · daily of Fri 20 Nov". */
+const duelTitle = (dto: DuelDto) => `${gameOf(dto).title}${dto.daily ? ` · daily of ${dayText(dto.daily)}` : ''}`;
+/** "today's daily", or "the daily of Wed 18 Nov" once that day is over. */
+const dailyName = (date: string) => (date === dailyDate() ? "today's daily" : `the daily of ${dayText(date)}`);
+/** "Fri 20 Nov", for a daily duel's day. */
+const dayText = (date: string) =>
+  new Date(`${date}T12:00:00Z`).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 const dateText = (iso: string) => new Date(iso).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' });
 const minutes = (seconds: number | null) => (seconds === null ? null : `in ${Math.max(1, Math.round(seconds / 60))} min`);
 const levelText = (level: number | null) => (level === null ? null : `level ${level}`);
@@ -64,7 +81,8 @@ export function DuelPage({ code }: { code: string }) {
   const [phase, setPhase] = useState<Phase>({ name: 'loading' });
   const [attempt, setAttempt] = useState(0);
   // Keeps the moves of a run in progress, so a reload picks it up where it was.
-  const onMovesChange = useCallback((moves: readonly string[]) => save(movesKey(code), { version: DATASET_VERSION, moves }), [code]);
+  const keyRef = useRef(`duel:${code}:moves`);
+  const onMovesChange = useCallback((moves: readonly string[]) => save(keyRef.current, { version: DATASET_VERSION, moves }), []);
   const [pollStopped, setPollStopped] = useState(false);
   // A slow network shouldn't let a second click send the result twice.
   const sending = useRef(false);
@@ -81,9 +99,10 @@ export function DuelPage({ code }: { code: string }) {
       try {
         const settings = dto.settings;
         const finalScore = score ?? (await replayRun(gameOf(dto), settings, play.seed, moves)).score;
-        const result = await finishRef.current(play, { gameId: dto.gameId, variant: DUEL_VARIANT, score: finalScore, seed: play.seed, moves });
+        const variant = dto.session?.variant ?? DUEL_VARIANT;
+        const result = await finishRef.current(play, { gameId: dto.gameId, variant, score: finalScore, seed: play.seed, moves });
         if (result.status === 'saved') {
-          remove(movesKey(code));
+          remove(movesKey(dto));
           const fresh = await duels?.get(code);
           setPhase(fresh ? { name: 'ready', dto: fresh } : { name: 'not-found' });
         } else {
@@ -107,7 +126,8 @@ export function DuelPage({ code }: { code: string }) {
         if (!dto) return setPhase({ name: 'not-found' });
         if (dto.you === 'challenger' && dto.state === 'playing' && dto.session) {
           const play: Play = { seed: dto.session.seed, sessionId: dto.session.sessionId };
-          const stored = load<{ version: string; moves: string[] } | null>(movesKey(code), null);
+          keyRef.current = movesKey(dto);
+          const stored = load<{ version: string; moves: string[] } | null>(keyRef.current, null);
           const moves = stored?.version === DATASET_VERSION ? stored.moves : [];
           // A run that was over when the page closed still has to be sent.
           if (moves.length > 0 && (await replayRun(gameOf(dto), dto.settings, play.seed, moves)).finished) {
@@ -218,6 +238,7 @@ export function DuelPage({ code }: { code: string }) {
         <>
           <p className="duel-strip" role="status">
             Duel vs {phase.dto.creator.name} · to beat: <strong>{phase.dto.creator.score}</strong>
+            {phase.dto.session && dailyDateOf(phase.dto.session.variant) && ` · ${dailyName(phase.dto.daily!)}`}
           </p>
           <GameScreen
             key={phase.play.seed}
@@ -324,7 +345,7 @@ function DuelBody({
     if (dto.you === 'creator') {
       return (
         <div className="panel center">
-          <p className="eyebrow">Duel · {gameOf(dto).title}</p>
+          <p className="eyebrow">Duel · {duelTitle(dto)}</p>
           <p className="big-score">{dto.creator.score}</p>
           <p className="lead" role="status">
             {dto.challenger?.name} took your duel and is playing now. You'll see the result here.
@@ -348,7 +369,8 @@ function SharePanel({ dto }: { dto: DuelDto }) {
   const [note, setNote] = useState<string | null>(null);
   const url = location.origin + location.pathname + href({ page: 'duel', code: dto.code });
   const game = gameOf(dto);
-  const text = `⚔️ I scored ${dto.creator.score} on ${game.title}${reached(game, dto.creator.level)}. Same ${duelThings(game)}, one try: can you beat me?\n${url}`;
+  const on = dto.daily ? `${dailyName(dto.daily)} of ${game.title}` : game.title;
+  const text = `⚔️ I scored ${dto.creator.score} on ${on}${reached(game, dto.creator.level)}. Same ${duelThings(game)}, one try: can you beat me?\n${url}`;
   const copy = async (message: string, what = text) => {
     try {
       await navigator.clipboard.writeText(what);
@@ -370,7 +392,7 @@ function SharePanel({ dto }: { dto: DuelDto }) {
   };
   return (
     <div className="panel center duel-share">
-      <p className="eyebrow">Duel · {game.title}</p>
+      <p className="eyebrow">Duel · {duelTitle(dto)}</p>
       <p className="big-score">{dto.creator.score}</p>
       {duelHasLevels(game) && dto.creator.level && <p className="lead">Reached level {dto.creator.level}</p>}
       <div className="row">
@@ -420,6 +442,7 @@ function Invitation({
         <li>You get exactly the same {duelThings(game)}, in the same order.</li>
         <li>One try. Your score is checked by the server.</li>
         <li>{dto.creator.name}'s answers stay hidden until you've finished.</li>
+        {dto.daily && <li className="duel-daily-note">{dailyNote(dto)}</li>}
       </ul>
       {data && <p className="muted small">City data: {data.label.toLowerCase()} ({data.id === 'metro' ? 'UN' : 'GeoNames'})</p>}
       {settingsNote(game, dto.settings) && <p className="muted small">{settingsNote(game, dto.settings)}</p>}
@@ -438,11 +461,21 @@ function Invitation({
           setBusy(false);
         }}
       >
-        Play the duel
+        {dto.yourDaily?.status === 'finished' ? 'See who wins' : 'Play the duel'}
       </button>
       <p className="muted small">Pressing Play takes this duel: nobody else can play it.</p>
     </div>
   );
+}
+
+/** What taking a daily duel does with the player's own daily run. */
+function dailyNote(dto: DuelDto): string {
+  const day = dailyName(dto.daily!);
+  const today = dto.daily === dailyDate();
+  if (dto.yourDaily?.status === 'finished') return `This is ${day}, and you've played it: your ${dto.yourDaily.score} points are your duel score.`;
+  if (dto.yourDaily?.status === 'playing') return `This is ${day}, which you've started: you carry on where you left off.`;
+  if (today) return "This is today's daily challenge: playing it here uses your one daily try, and your score counts on today's leaderboard.";
+  return `This is ${day}. That day is over, so your run counts for this duel only.`;
 }
 
 function Result({ dto, refreshButton }: { dto: DuelDto; refreshButton: React.ReactNode }) {
@@ -504,7 +537,7 @@ function Result({ dto, refreshButton }: { dto: DuelDto; refreshButton: React.Rea
   return (
     <>
       <div className={`panel center duel-result tone-${tone}`}>
-        <p className="eyebrow">Duel · {game.title}</p>
+        <p className="eyebrow">Duel · {duelTitle(dto)}</p>
         <p className="lead duel-headline" role="status">
           {headline}
         </p>
@@ -557,6 +590,9 @@ function Result({ dto, refreshButton }: { dto: DuelDto; refreshButton: React.Rea
         <div className="panel">
           <DuelLevels data={runs} left={leftName} right={right.name} />
         </div>
+      )}
+      {levels && !forfeit && dto.daily && dto.seed === undefined && (
+        <p className="panel center muted small">The level-by-level answers show once you've played this daily, or when its day is over.</p>
       )}
     </>
   );
