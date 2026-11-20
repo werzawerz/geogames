@@ -403,7 +403,7 @@ test('a duel: an account holder challenges, an anonymous friend plays the same c
   await expect(bob.locator('.duel-levels tbody tr').first()).toContainText('30 ✓');
   await expect(bob.getByRole('link', { name: 'Rematch' })).toBeVisible();
   // Bob has no account, and his duels list still has it.
-  await bob.goto(link.replace(/#/duel/.*/, '#/duels'));
+  await bob.goto(link.split('#')[0] + '#/duels');
   await expect(bob.locator('.duel-list')).toContainText(`Won ${b.score}–${a.score}`);
 
   // Alice sees the same result from her side, and the duels list.
