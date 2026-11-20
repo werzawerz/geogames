@@ -153,7 +153,10 @@ export const DUEL_OPEN_DAYS = 7;
 /** Once the challenger starts, they have this many hours to finish. */
 export const DUEL_PLAY_HOURS = 24;
 
-/** POST /duels: makes a duel from the caller's own finished run (at most a day old). */
+/**
+ * POST /duels: makes a duel from the caller's own finished run (at most a day old). A
+ * daily run makes a daily duel: the friend's run is their daily of the same day.
+ */
 export interface CreateDuelRequest {
   sessionId: string;
   /** The duel this one is a rematch of; only the other player can accept it. */
@@ -192,6 +195,13 @@ export interface DuelDto {
   code: string;
   gameId: string;
   settings: GameSettings;
+  /**
+   * The day of a daily duel ("2026-11-20"), whose runs are both players' one daily run of
+   * that day; null for a duel of a random run.
+   */
+  daily: string | null;
+  /** The viewer's own daily run of a daily duel's day, if they have one. */
+  yourDaily: { status: 'playing' | 'finished'; score: number | null } | null;
   createdAt: string;
   expiresAt: string;
   you: 'creator' | 'challenger' | 'visitor';
@@ -203,10 +213,13 @@ export interface DuelDto {
   reservedFor: string | null;
   reservedForYou: boolean;
   outcome: 'creator' | 'challenger' | 'draw' | null;
-  /** Once the duel is finished (and only then): both runs can be replayed from it. */
+  /**
+   * Once the duel is finished (and only then): both runs can be replayed from it. For a
+   * daily duel, only to a viewer who can't use the day's answers any more.
+   */
   seed?: number;
-  /** Only for the challenger, while playing. */
-  session?: { sessionId: string; seed: number };
+  /** Only for the challenger, while playing. `variant` is "daily-…" when it is their daily run. */
+  session?: { sessionId: string; seed: number; variant: string };
   /** The newest rematch of this duel. */
   rematch: { code: string; forYou: boolean; byYou: boolean; state: DuelState } | null;
 }

@@ -12,6 +12,11 @@ export const dailyDate = (now: Date = new Date()): string => now.toISOString().s
 /** Each day's scores are a leaderboard of their own. */
 export const dailyVariant = (date: string): string => `daily-${date}`;
 
+/** The day of a daily run's variant ("daily-2026-11-05" → "2026-11-05"); null for any other variant. */
+export const dailyDateOf = (variant: string): string | null => /^daily-(\d{4}-\d{2}-\d{2})$/.exec(variant)?.[1] ?? null;
+
+export const hasDaily = (game: Pick<GameDefinition, 'id'>): boolean => DAILY_GAMES.includes(game.id);
+
 /** Everyone plays the default settings, so scores compare. */
 export const dailySettings = (game: GameDefinition): GameSettings => normalizeSettings({}, game);
 

@@ -9,7 +9,9 @@ import {
   DUEL_VARIANT,
   canDuel,
   dailyDate,
+  dailyDateOf,
   dailySeed,
+  hasDaily,
   dailySettings,
   dailyVariant,
   MAX_PASSWORD_LENGTH,
@@ -410,8 +412,15 @@ export function createApp({
     } | null;
     if (!source) return fail(c, 404, 'not-found');
     const game = getGame(source.gameId);
-    // Only runs whose seed gives a friend the very same puzzles (see canDuel), and not dailies or duels.
-    if (!game || !canDuel(game, source.settings) || source.variant === DUEL_VARIANT || source.variant.startsWith('daily-')) {
+    // Only runs whose seed gives a friend the very same puzzles (see canDuel), and not
+    // duel runs. A daily run makes a daily duel: the friend answers with their daily.
+    const daily = source.variant.startsWith('daily-');
+    if (
+      !game ||
+      !canDuel(game, source.settings) ||
+      source.variant === DUEL_VARIANT ||
+      (daily && (!hasDaily(game) || !dailyDateOf(source.variant)))
+    ) {
       return fail(c, 400, 'bad-request');
     }
     if (source.status !== 'finished') return fail(c, 422, 'unfinished-game');

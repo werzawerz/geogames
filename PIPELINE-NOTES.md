@@ -27,7 +27,7 @@ duel-able run (arcade and daily), and "Random or Today's daily" when starting a 
    - DuelPage: daily copy, daily moves key shared with DailyPage.
 
 ## Status
-- [ ] SQL + API + API tests
+- [x] SQL + API + API tests (7 new "daily duels" tests in apps/api/src/app.test.ts)
 - [ ] web
 - [ ] e2e + screenshots
 - [ ] docs/ideas/duels.md
