@@ -4,6 +4,11 @@ import { cors } from 'hono/cors';
 import {
   DAILY_GAMES,
   DATASET_VERSION,
+  DUEL_GAMES,
+  DUEL_OPEN_DAYS,
+  DUEL_PLAY_HOURS,
+  DUEL_VARIANT,
+  arcadeRunSummary,
   dailyDate,
   dailySeed,
   dailySettings,
@@ -16,8 +21,12 @@ import {
   replayGame,
   variantKey,
   type ApiErrorCode,
+  type AcceptDuelResponse,
   type ApiErrorResponse,
   type CreateAccountResponse,
+  type CreateDuelResponse,
+  type DuelDto,
+  type DuelListResponse,
   type DeleteAccountResponse,
   type FinishSessionResponse,
   type GameSettings,
@@ -47,6 +56,8 @@ export interface Limits {
   finishesPerHour: number;
   feedbackPerPlayerHour: number;
   feedbackPerIpHour: number;
+  duelsPerHour: number;
+  openDuelsMax: number;
 }
 
 export const DEFAULT_LIMITS: Limits = {
@@ -56,6 +67,8 @@ export const DEFAULT_LIMITS: Limits = {
   finishesPerHour: 300,
   feedbackPerPlayerHour: 5,
   feedbackPerIpHour: 20,
+  duelsPerHour: 20,
+  openDuelsMax: 20,
 };
 
 export interface AppOptions {
@@ -89,6 +102,22 @@ const MAX_FEEDBACK_LENGTH = 2000;
 const MAX_EMAIL_LENGTH = 254;
 const MAX_PAGE_LENGTH = 200;
 const UUID = /^[0-9a-f-]{36}$/i;
+// No 0, 1, I, L or O: a code read out or typed from a phone can't be misread.
+const CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+const CODE = /^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{8}$/;
+const DUEL_MAX_AGE_MS = 24 * 3_600_000;
+
+function newDuelCode(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  // 32 symbols in the alphabet, so a byte modulo 32 is unbiased.
+  return [...bytes].map((b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join('');
+}
+
+/** A code from the URL: pasted lowercase works; anything of the wrong shape is no duel. */
+const duelCode = (raw: string | undefined) => {
+  const code = (raw ?? '').toUpperCase();
+  return CODE.test(code) ? code : null;
+};
 
 const newPlayerName = () => `Explorer ${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -343,6 +372,101 @@ export function createApp({
     const { score, finished } = await replayGame(game, session.settings, Number(session.seed), moves);
     if (!finished) return fail(c, 422, 'unfinished-game');
     return finish(score);
+  });
+
+  // A duel is made from the caller's own finished run, so it needs an account:
+  // the friend should know who they're playing, and the duel follows the player.
+  app.post('/duels', signedIn, async (c) => {
+    if (c.get('caller').anonymous) return fail(c, 403, 'account-required');
+    const input = await body(c);
+    const sessionId = input?.sessionId;
+    const rematchOf = input?.rematchOf === undefined ? null : duelCode(typeof input.rematchOf === 'string' ? input.rematchOf : undefined);
+    if (typeof sessionId !== 'string' || !UUID.test(sessionId) || (input?.rematchOf !== undefined && !rematchOf)) {
+      return fail(c, 400, 'bad-request');
+    }
+    const player = c.get('caller').id;
+    const source = (await rpc('duel_source', { p_session: sessionId, p_player: player })) as {
+      gameId: string;
+      variant: string;
+      settings: GameSettings;
+      seed: number;
+      datasetVersion: string;
+      status: 'playing' | 'finished';
+      finishedAt: string | null;
+      moves: string[] | null;
+      duelCode: string | null;
+    } | null;
+    if (!source) return fail(c, 404, 'not-found');
+    if (!DUEL_GAMES.includes(source.gameId) || source.variant === DUEL_VARIANT || source.variant.startsWith('daily-')) {
+      return fail(c, 400, 'bad-request');
+    }
+    if (source.status !== 'finished') return fail(c, 422, 'unfinished-game');
+    if (source.duelCode) return c.json<CreateDuelResponse>({ code: source.duelCode });
+    if (Date.now() - new Date(source.finishedAt!).getTime() > DUEL_MAX_AGE_MS) return fail(c, 400, 'bad-request');
+    if (source.datasetVersion !== DATASET_VERSION) return fail(c, 409, 'update-required');
+    const { level } = await arcadeRunSummary(source.settings, Number(source.seed), source.moves ?? []);
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const made = (await rpc('create_duel', {
+        p_player: player,
+        p_code: newDuelCode(),
+        p_session: sessionId,
+        p_level: level,
+        p_rematch_of: rematchOf,
+        p_open_days: DUEL_OPEN_DAYS,
+        p_per_hour: limits.duelsPerHour,
+        p_max_open: limits.openDuelsMax,
+      })) as { ok: boolean; code?: string; error?: string };
+      if (made.ok) return c.json<CreateDuelResponse>({ code: made.code! }, 201);
+      if (made.error === 'rate-limited') return fail(c, 429, 'rate-limited');
+      if (made.error === 'forbidden') return fail(c, 403, 'forbidden');
+      if (made.error !== 'code-taken') return fail(c, 404, 'not-found');
+    }
+    return fail(c, 500, 'internal');
+  });
+
+  const duelArgs = (c: Context<Env>) => ({
+    p_player: c.get('caller').id,
+    p_dataset_version: DATASET_VERSION,
+    p_play_hours: DUEL_PLAY_HOURS,
+  });
+
+  app.get('/duels', signedIn, async (c) => {
+    const duels = (await rpc('list_duels', { ...duelArgs(c), p_limit: 50 })) as DuelDto[];
+    return c.json<DuelListResponse>({ duels });
+  });
+
+  // Anonymous players may look: the link is what a friend opens first.
+  app.get('/duels/:code', signedIn, async (c) => {
+    const code = duelCode(c.req.param('code'));
+    if (!code) return fail(c, 404, 'not-found');
+    const duel = (await rpc('get_duel', { p_code: code, ...duelArgs(c) })) as DuelDto | null;
+    return duel ? c.json<DuelDto>(duel) : fail(c, 404, 'not-found');
+  });
+
+  app.post('/duels/:code/accept', signedIn, async (c) => {
+    const code = duelCode(c.req.param('code'));
+    if (!code) return fail(c, 404, 'not-found');
+    const input = await body(c);
+    if (input?.datasetVersion !== DATASET_VERSION) return fail(c, 409, 'update-required');
+    const result = (await rpc('accept_duel', {
+      ...who(c),
+      p_code: code,
+      p_dataset_version: DATASET_VERSION,
+      p_per_minute: limits.startsPerMinute,
+      p_per_hour: limits.startsPerHour,
+    })) as { ok: boolean; error?: string; sessionId?: string; seed?: number };
+    if (result.ok) return c.json<AcceptDuelResponse>({ sessionId: result.sessionId!, seed: Number(result.seed) });
+    switch (result.error) {
+      case 'not-found':
+        return fail(c, 404, 'not-found');
+      case 'forbidden':
+      case 'reserved':
+        return fail(c, 403, 'forbidden');
+      case 'rate-limited':
+        return fail(c, 429, 'rate-limited');
+      default:
+        return fail(c, 409, 'duel-unavailable');
+    }
   });
 
   app.get('/leaderboards/:gameId/:variant', async (c) => {

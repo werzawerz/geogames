@@ -113,6 +113,9 @@ export function SiteHeader({ route }: { route: Route }) {
         <a className="nav-link" href={href({ page: 'dailies' })} aria-current={current('dailies')}>
           Daily
         </a>
+        <a className="nav-link" href={href({ page: 'duels' })} aria-current={['duels', 'duel-new', 'duel'].includes(route.page) ? 'page' : undefined}>
+          Duels
+        </a>
         <a className="nav-link" href={href({ page: 'about' })} aria-current={current('about')}>
           About
         </a>

@@ -56,7 +56,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await local.db.exec('delete from public.feedback; delete from public.game_sessions; delete from public.players; delete from auth.users;');
+  await local.db.exec('delete from public.feedback; delete from public.duels; delete from public.game_sessions; delete from public.players; delete from auth.users;');
   for (const { id } of Object.values(TOKENS)) await local.addUser(id);
   deleted = [];
   logins = [];
@@ -561,5 +561,228 @@ describe('feedback', () => {
     expect((await send('bob', { message: 'c' })).status).toBe(201);
     expect((await send('alice', { message: 'd' })).status).toBe(429);
     expect((await send('alice', { message: 'd' }, '192.0.2.1')).status).toBe(201);
+  });
+});
+
+describe('duels', () => {
+  /** Starts and finishes an arcade run, clearing `levels` levels first. */
+  async function finishedRun(token: string, levels = 1) {
+    const { json: session } = await start(token);
+    const played = await playArcade(session.seed, levels);
+    await call('POST', `/sessions/${session.sessionId}/finish`, token, { moves: played.moves });
+    return { sessionId: session.sessionId as string, seed: session.seed as number, score: played.score };
+  }
+  const makeDuel = async (token: string, levels = 1) => {
+    const run = await finishedRun(token, levels);
+    const made = await call('POST', '/duels', token, { sessionId: run.sessionId });
+    return { ...run, code: made.json.code as string, made };
+  };
+  const accept = (token: string, code: string) => call('POST', `/duels/${code}/accept`, token, { datasetVersion: DATASET_VERSION });
+  /** The challenger plays their duel run to the end, clearing `levels` levels. */
+  async function play(token: string, code: string, levels: number) {
+    const taken = await accept(token, code);
+    const played = await playArcade(taken.json.seed, levels);
+    const finished = await call('POST', `/sessions/${taken.json.sessionId}/finish`, token, { moves: played.moves });
+    return { ...taken.json, score: played.score, moves: played.moves as string[], finished };
+  }
+
+  it('makes a duel from a finished run, and the same one again', async () => {
+    const { made, sessionId } = await makeDuel('alice', 2);
+    expect(made.status).toBe(201);
+    expect(made.json.code).toMatch(/^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{8}$/);
+    const again = await call('POST', '/duels', 'alice', { sessionId });
+    expect(again.json.code).toBe(made.json.code);
+  });
+
+  it('needs an account to make one', async () => {
+    const run = await finishedRun('anon');
+    const res = await call('POST', '/duels', 'anon', { sessionId: run.sessionId });
+    expect(res).toEqual({ status: 403, json: { error: 'account-required' } });
+  });
+
+  it('refuses runs that cannot become a duel', async () => {
+    const make = (token: string, sessionId: string) => call('POST', '/duels', token, { sessionId });
+    const { json: open } = await start('alice');
+    expect((await make('alice', open.sessionId)).status).toBe(422);
+    const run = await finishedRun('alice');
+    expect((await make('bob', run.sessionId)).status).toBe(404);
+    expect((await make('alice', 'nope')).status).toBe(400);
+    const capitals = await call('POST', '/sessions', 'alice', { gameId: 'capitals', settings: {}, datasetVersion: DATASET_VERSION });
+    expect((await make('alice', capitals.json.sessionId)).status).toBe(400);
+    // A daily run and a duel run.
+    const daily = await call('POST', '/daily/city-circle-arcade/start', 'alice', { datasetVersion: DATASET_VERSION });
+    const dailyPlay = await playArcade(daily.json.seed, 0);
+    await call('POST', `/sessions/${daily.json.sessionId}/finish`, 'alice', { moves: dailyPlay.moves });
+    expect((await make('alice', daily.json.sessionId)).status).toBe(400);
+    const { code } = await makeDuel('bob');
+    const taken = await play('alice', code, 0);
+    expect((await make('alice', taken.sessionId)).status).toBe(400);
+    // Finished more than a day ago, or on old data.
+    const old = await finishedRun('alice');
+    await local.db.exec(`update public.game_sessions set finished_at = now() - interval '25 hours' where id = '${old.sessionId}'`);
+    expect((await make('alice', old.sessionId)).status).toBe(400);
+    const stale = await finishedRun('alice');
+    await local.db.exec(`update public.game_sessions set dataset_version = 'old' where id = '${stale.sessionId}'`);
+    expect((await make('alice', stale.sessionId)).status).toBe(409);
+  });
+
+  it('shows a visitor the stake but not the seed, the moves or the session', async () => {
+    const { code, seed, score } = await makeDuel('alice', 2);
+    const { status, json } = await call('GET', `/duels/${code}`, 'anon');
+    expect(status).toBe(200);
+    expect(json).toMatchObject({ code, you: 'visitor', state: 'open', creator: { score, level: expect.any(Number) }, challenger: null, outcome: null });
+    expect(json.creator.moves).toBeUndefined();
+    expect(json.session).toBeUndefined();
+    expect(JSON.stringify(json)).not.toContain(String(seed));
+    expect((await call('GET', `/duels/${code}`, 'alice')).json.you).toBe('creator');
+  });
+
+  it('takes bad and lowercase codes in its stride', async () => {
+    const { code } = await makeDuel('alice');
+    expect((await call('GET', '/duels/short', 'bob')).status).toBe(404);
+    expect((await call('GET', '/duels/AAAAAAAA', 'bob')).status).toBe(404);
+    expect((await call('GET', '/duels/IIIIIIII', 'bob')).status).toBe(404);
+    expect((await call('GET', `/duels/${code.toLowerCase()}`, 'bob')).json.code).toBe(code);
+  });
+
+  it('gives the first player to accept the same seed, once', async () => {
+    const { code, seed } = await makeDuel('alice');
+    const taken = await accept('anon', code);
+    expect(taken.status).toBe(200);
+    expect(taken.json.seed).toBe(seed);
+    expect((await accept('anon', code)).json).toEqual(taken.json);
+    expect((await accept('bob', code)).json).toEqual({ error: 'duel-unavailable' });
+    expect((await accept('alice', code)).status).toBe(403);
+    expect((await accept('bob', 'ZZZZZZZZ')).status).toBe(404);
+    expect((await call('POST', `/duels/${code}/accept`, 'bob', { datasetVersion: 'old' })).status).toBe(409);
+  });
+
+  it('hides the challenger while they play', async () => {
+    const { code, seed } = await makeDuel('alice');
+    const taken = await accept('anon', code);
+    const creatorView = (await call('GET', `/duels/${code}`, 'alice')).json;
+    expect(creatorView).toMatchObject({ state: 'playing', challenger: { score: null, status: 'playing' } });
+    expect(creatorView.session).toBeUndefined();
+    expect(creatorView.challenger.moves).toBeUndefined();
+    const mine = (await call('GET', `/duels/${code}`, 'anon')).json;
+    expect(mine).toMatchObject({ you: 'challenger', state: 'playing', session: { sessionId: taken.json.sessionId, seed } });
+    const stranger = (await call('GET', `/duels/${code}`, 'bob')).json;
+    expect(stranger.session).toBeUndefined();
+  });
+
+  it('settles a finished duel and reveals both runs', async () => {
+    const { code, score } = await makeDuel('alice', 1);
+    const won = await play('anon', code, 3);
+    expect(won.score).toBeGreaterThan(score);
+    for (const token of ['alice', 'anon', 'bob']) {
+      const { json } = await call('GET', `/duels/${code}`, token);
+      expect(json).toMatchObject({ state: 'finished', outcome: 'challenger', challenger: { score: won.score, status: 'finished' }, creator: { score } });
+      expect(json.challenger.moves).toEqual(won.moves);
+      expect(json.creator.moves.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('calls equal scores a draw, and a lower score a loss', async () => {
+    const drawn = await makeDuel('alice', 1);
+    await play('bob', drawn.code, 1);
+    expect((await call('GET', `/duels/${drawn.code}`, 'alice')).json.outcome).toBe('draw');
+    const lost = await makeDuel('alice', 3);
+    await play('bob', lost.code, 1);
+    expect((await call('GET', `/duels/${lost.code}`, 'alice')).json.outcome).toBe('creator');
+  });
+
+  it("keeps the challenger's run off the leaderboards and out of their bests", async () => {
+    const { code, score } = await makeDuel('alice');
+    const won = await play('bob', code, 2);
+    expect(won.finished.status).toBe(200);
+    expect((await call('GET', '/me', 'bob')).json.bests).toEqual({});
+    const world = (await call('GET', '/leaderboards/city-circle-arcade/world')).json.entries;
+    expect(world.map((e: { score: number }) => e.score)).toEqual([score]);
+  });
+
+  it('expires an untaken duel, and one whose data has changed', async () => {
+    const { code } = await makeDuel('alice');
+    await local.db.exec(`update public.duels set expires_at = now() - interval '1 minute'`);
+    expect((await call('GET', `/duels/${code}`, 'bob')).json).toMatchObject({ state: 'expired', expiredReason: 'time' });
+    expect((await accept('bob', code)).status).toBe(409);
+    const other = await makeDuel('alice');
+    await local.db.exec(`update public.duels set dataset_version = 'old' where code = '${other.code}'`);
+    expect((await call('GET', `/duels/${other.code}`, 'bob')).json).toMatchObject({ state: 'expired', expiredReason: 'outdated' });
+    expect((await accept('bob', other.code)).status).toBe(409);
+  });
+
+  it('gives a forfeit to the creator when the challenger takes more than a day', async () => {
+    const { code, score } = await makeDuel('alice');
+    await accept('bob', code);
+    await local.db.exec(`update public.game_sessions set started_at = now() - interval '25 hours' where variant = 'duel'`);
+    const { json } = await call('GET', `/duels/${code}`, 'alice');
+    expect(json).toMatchObject({ state: 'finished', outcome: 'creator', challenger: { status: 'forfeit', score: null }, creator: { score } });
+  });
+
+  it('reserves a rematch for the other player', async () => {
+    const first = await makeDuel('alice');
+    await play('bob', first.code, 1);
+    const run = await finishedRun('bob');
+    expect((await call('POST', '/duels', 'bob', { sessionId: run.sessionId, rematchOf: 'ZZZZZZZZ' })).status).toBe(403);
+    const made = await call('POST', '/duels', 'bob', { sessionId: run.sessionId, rematchOf: first.code });
+    expect(made.status).toBe(201);
+    const rematch = made.json.code as string;
+    expect((await call('GET', `/duels/${rematch}`, 'alice')).json).toMatchObject({ reservedFor: expect.any(String), reservedForYou: true });
+    expect((await accept('anon', rematch)).status).toBe(403);
+    expect((await call('GET', `/duels/${first.code}`, 'alice')).json.rematch).toEqual({ code: rematch, forYou: true, byYou: false, state: 'open' });
+    expect((await call('GET', `/duels/${first.code}`, 'bob')).json.rematch).toMatchObject({ byYou: true, forYou: false });
+    expect((await call('GET', `/duels/${first.code}`, 'anon')).json.rematch).toBeNull();
+    // Only a player of the first duel can ask for a rematch.
+    const others = await makeDuel('bob');
+    await accept('anon', others.code);
+    const mine = await finishedRun('alice');
+    expect((await call('POST', '/duels', 'alice', { sessionId: mine.sessionId, rematchOf: others.code })).status).toBe(403);
+    expect((await accept('alice', rematch)).status).toBe(200);
+  });
+
+  it("lists the caller's duels, including rematches waiting for them", async () => {
+    const mine = await makeDuel('alice');
+    const theirs = await makeDuel('bob');
+    await play('alice', theirs.code, 0);
+    const run = await finishedRun('bob');
+    const rematch = (await call('POST', '/duels', 'bob', { sessionId: run.sessionId, rematchOf: theirs.code })).json.code;
+    const list = (await call('GET', '/duels', 'alice')).json.duels as { code: string; you: string; creator: { moves?: unknown } }[];
+    expect(list.map((d) => [d.code, d.you]).sort()).toEqual(
+      [[mine.code, 'creator'], [theirs.code, 'challenger'], [rematch, 'visitor']].sort(),
+    );
+    expect(list.every((d) => d.creator.moves === undefined)).toBe(true);
+    expect((await call('GET', '/duels', 'anon2')).json.duels).toEqual([]);
+  });
+
+  it("moves an anonymous challenger's duels into the account they sign in to", async () => {
+    const { code } = await makeDuel('alice');
+    await accept('anon', code);
+    expect((await call('POST', '/me/merge', 'bob', { anonymousToken: 'anon' })).status).toBe(200);
+    expect((await call('GET', `/duels/${code}`, 'bob')).json.you).toBe('challenger');
+  });
+
+  it('drops a duel that would pit a player against themselves when accounts merge', async () => {
+    const { code } = await makeDuel('bob');
+    await accept('anon', code);
+    await call('POST', '/me/merge', 'bob', { anonymousToken: 'anon' });
+    expect((await call('GET', `/duels/${code}`, 'bob')).status).toBe(404);
+  });
+
+  it("deletes a player's duels with them", async () => {
+    const { code } = await makeDuel('alice');
+    await call('DELETE', '/me', 'alice');
+    expect((await call('GET', `/duels/${code}`, 'bob')).status).toBe(404);
+  });
+
+  it('limits how many duels one player makes', async () => {
+    app = makeApp({ limits: { duelsPerHour: 1 } });
+    await makeDuel('alice');
+    const run = await finishedRun('alice');
+    expect((await call('POST', '/duels', 'alice', { sessionId: run.sessionId })).status).toBe(429);
+    app = makeApp({ limits: { openDuelsMax: 1 } });
+    await local.db.exec('delete from public.duels');
+    await makeDuel('bob');
+    const next = await finishedRun('bob');
+    expect((await call('POST', '/duels', 'bob', { sessionId: next.sessionId })).status).toBe(429);
   });
 });

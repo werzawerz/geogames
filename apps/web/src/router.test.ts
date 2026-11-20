@@ -11,6 +11,10 @@ describe('router', () => {
     const routes: Route[] = [
       { page: 'home' },
       { page: 'dailies' },
+      { page: 'duels' },
+      { page: 'duel-new' },
+      { page: 'duel-new', rematchOf: 'K7Q2M9XD' },
+      { page: 'duel', code: 'K7Q2M9XD' },
       { page: 'play', gameId: 'pin-drop' },
       { page: 'daily', gameId: 'pin-drop' },
       { page: 'scores', gameId: 'pin-drop', variant: 'x' },
@@ -21,6 +25,12 @@ describe('router', () => {
       { page: 'profile' },
     ];
     for (const r of routes) expect(parseRoute(href(r))).toEqual(r);
+  });
+
+  it('puts duels at #/duels, #/duels/new[/CODE] and #/duel/CODE', () => {
+    expect(href({ page: 'duel', code: 'K7Q2M9XD' })).toBe('#/duel/K7Q2M9XD');
+    expect(href({ page: 'duel-new', rematchOf: 'K7Q2M9XD' })).toBe('#/duels/new/K7Q2M9XD');
+    expect(parseRoute('#/duels/new')).toEqual({ page: 'duel-new' });
   });
 
   it('parses #/profile', () => {
