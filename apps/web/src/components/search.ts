@@ -9,6 +9,8 @@ export interface SearchItem {
   iso2?: string;
   /** Other names that should match ("Czech Republic", "Wien", "San Jose" for San Francisco). */
   aliases?: readonly string[];
+  /** Short forms (TX, NSW) that match but are never shown as the reason, so a suggestion always reads as the full name. */
+  quietAliases?: readonly string[];
   /** Names of the item's country ("United States", "USA", "US"), so "San Jose USA" narrows the list. */
   scope?: readonly string[];
   /** Bigger first among equally good matches (population, prominence). */
@@ -56,15 +58,16 @@ const allowedTypos = (length: number) => (length >= 8 ? 2 : length >= 4 ? 1 : 0)
 
 interface Indexed {
   item: SearchItem;
-  names: { raw: string; key: string; words: string[]; isLabel: boolean }[];
+  names: { raw: string; key: string; words: string[]; isLabel: boolean; quiet: boolean }[];
   scope: Set<string>;
 }
 
 export function buildIndex(items: readonly SearchItem[]): Indexed[] {
   return items.map((item) => ({
     item,
-    names: [item.label, ...(item.aliases ?? [])].map((raw, i) => ({
+    names: [item.label, ...(item.aliases ?? []), ...(item.quietAliases ?? [])].map((raw, i) => ({
       raw,
+      quiet: i > (item.aliases?.length ?? 0),
       key: normalize(raw),
       words: raw.split(/[\s\-–/,()[\]]+/).map(normalize).filter(Boolean),
       isLabel: i === 0,
@@ -132,7 +135,7 @@ export function search(index: readonly Indexed[], text: string, exclude: Readonl
         const s = score(name, n);
         if (s === null) continue;
         const rank = s + (n.isLabel ? 0 : 1) - (country ? 0.5 : 0);
-        if (!found || rank < found.rank) found = { rank, via: n.isLabel ? undefined : n.raw };
+        if (!found || rank < found.rank) found = { rank, via: n.isLabel || n.quiet ? undefined : n.raw };
       }
       if (!found) continue;
       const previous = best.get(entry.item.id);

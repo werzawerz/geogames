@@ -74,7 +74,17 @@ const COUNTRIES: Config[] = [
   C('CAN', 'Canada', 1, { famous: ['Nova Scotia', 'Yukon', 'Nunavut', 'Northwest Territories', 'Newfoundland and Labrador'] }),
   C('AUS', 'Australia', 1, {
     clip: [112, -45, 155, -9],
-    names: { 'Jervis Bay Territory': null, 'Lord Howe Island': null, 'Macquarie Island': null },
+    names: {
+      'Jervis Bay Territory': null, 'Lord Howe Island': null, 'Macquarie Island': null,
+      'New South Wales': ['New South Wales', 'NSW'],
+      Queensland: ['Queensland', 'Qld'],
+      Victoria: ['Victoria', 'Vic'],
+      Tasmania: ['Tasmania', 'Tas'],
+      'South Australia': ['South Australia', 'SA'],
+      'Western Australia': ['Western Australia', 'WA'],
+      'Northern Territory': ['Northern Territory', 'NT'],
+      'Australian Capital Territory': ['Australian Capital Territory', 'ACT', 'Canberra'],
+    },
     famous: ['Tasmania', 'Victoria', 'Northern Territory', 'South Australia'],
   }),
   C('DEU', 'Germany', 1, { famous: ['Saxony', 'Hesse', 'Brandenburg', 'Saarland', 'Thuringia'] }),
@@ -166,12 +176,18 @@ const COUNTRIES: Config[] = [
   C('ARG', 'Argentina', 3, { clip: [-76, -56, -52, -21], names: { 'Ciudad de Buenos Aires': null, 'Buenos Aires': ['Buenos Aires Province', 'Buenos Aires', 'Provincia de Buenos Aires'] }, famous: ['Buenos Aires', 'Patagonia', 'Mendoza', 'Tierra del Fuego', 'Córdoba'] }),
   C('TUR', 'Turkey', 3, { famous: ['Istanbul', 'Ankara', 'Izmir', 'Antalya'] }),
   C('POL', 'Poland', 3, { names: { Podkarpackie: ['Subcarpathian', 'Podkarpackie'], Podlaskie: ['Podlaskie', 'Podlachian'] }, famous: ['Masovian', 'Lesser Poland', 'Pomeranian', 'Greater Poland', 'Silesian'] }),
-  C('IDN', 'Indonesia', 3, { famous: ['Bali', 'Jakarta Raya', 'Papua', 'Java', 'Yogyakarta'] }),
+  C('IDN', 'Indonesia', 3, {
+    names: {
+      'Jakarta Raya': ['Jakarta', 'Jakarta Raya', 'DKI Jakarta', 'Djakarta'],
+      Yogyakarta: ['Yogyakarta', 'Daerah Istimewa Yogyakarta', 'Jogja'],
+      'Sulawesi Barat': ['West Sulawesi', 'Sulawesi Barat', 'Sulbar'],
+    },
+    famous: ['Bali', 'Jakarta', 'Papua', 'Yogyakarta'],
+  }),
   C('COL', 'Colombia', 3, { clip: [-80, -5, -66, 14] }),
-  C('PER', 'Peru', 3, { names: { 'Lima Province': null, 'Cusco Departament': ['Cusco', 'Cuzco'], Callao: null } }),
-  C('ZAF', 'South Africa', 3, { clip: [15, -36, 34, -21] }),
+  C('PER', 'Peru', 3, { names: { 'Lima Province': null, Cusco: ['Cusco', 'Cuzco', 'Qosqo'], Callao: null } }),
+  C('ZAF', 'South Africa', 3, { clip: [15, -36, 34, -21], names: { 'Free State': ['Free State', 'Orange Free State', 'Vrystaat'] } }),
   C('IRN', 'Iran', 3, {}),
-  C('KAZ', 'Kazakhstan', 3, { names: { 'Almaty City': null, Astana: null } }),
   C('SWE', 'Sweden', 3, { famous: ['Skåne', 'Gotland', 'Stockholm', 'Lapland'] }),
   C('NLD', 'Netherlands', 3, { clip: [3, 50.5, 7.5, 54], famous: ['Friesland', 'North Holland', 'South Holland', 'Zeeland', 'Limburg'] }),
   C('CHE', 'Switzerland', 3, {}),
@@ -186,7 +202,7 @@ const UNITS: Record<string, string> = {
   USA: 'state', CAN: 'province or territory', AUS: 'state or territory', DEU: 'state', BRA: 'state', FRA: 'region', ITA: 'region',
   ESP: 'autonomous community', MEX: 'state', IND: 'state or territory', JPN: 'prefecture', CHN: 'province', ARG: 'province',
   TUR: 'province', POL: 'voivodeship', IDN: 'province', COL: 'department', PER: 'department', ZAF: 'province', IRN: 'province',
-  KAZ: 'region', SWE: 'county', NLD: 'province', CHE: 'canton', AUT: 'state', KOR: 'province', NGA: 'state', EGY: 'governorate',
+  SWE: 'county', NLD: 'province', CHE: 'canton', AUT: 'state', KOR: 'province', NGA: 'state', EGY: 'governorate',
 };
 
 // ---- geometry -----------------------------------------------------------------------------------
@@ -335,7 +351,7 @@ const noPrefecture = (s: string) => s.replace(/ (Prefecture|Province|Region|Gove
 
 /** Other names the source gives (`name_alt`, separated by bars), the plausible ones only. */
 function altNames(p: Props): string[] {
-  const postal = /^(USA|CAN|AUS)$/.test(p.adm0_a3) ? p.postal : null;
+  const postal = /^(USA|CAN)$/.test(p.adm0_a3) ? p.postal : null;
   // Poland and Indonesia are known by their own names for the divisions, which the source keeps in name_alt.
   const own = /^(POL|IDN)$/.test(p.adm0_a3) ? (p.name_alt ?? '').split('|').slice(0, 2) : [];
   return [p.name_local, postal, ...own].filter((s): s is string => !!s && LATIN.test(s) && s.length <= 28);
@@ -396,6 +412,9 @@ for (const config of COUNTRIES) {
 
   // Names must be told apart: a name another division here uses is no alias.
   const labels = new Set(kept.map((d) => d.name.toLowerCase()));
+  // An alias two divisions share (Jawa, Rhio) names neither: it's dropped from both.
+  const aliasCount = new Map<string, number>();
+  for (const d of kept) for (const a of new Set(d.aliases.map((x) => x.toLowerCase()))) aliasCount.set(a, (aliasCount.get(a) ?? 0) + 1);
   const dup = kept.map((d) => d.name).filter((n, i, a) => a.indexOf(n) !== i);
   if (dup.length) console.warn(`${config.id}: DUPLICATE names ${dup.join(', ')}`);
 
@@ -424,7 +443,7 @@ for (const config of COUNTRIES) {
     return {
       id: `${config.id}-${d.key.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
       name: d.name,
-      aliases: [...new Set(d.aliases.filter((a) => a && !labels.has(a.toLowerCase()) && a !== d.name))].slice(0, 6),
+      aliases: [...new Set(d.aliases.filter((a) => a && !labels.has(a.toLowerCase()) && a !== d.name && aliasCount.get(a.toLowerCase()) === 1))].slice(0, 6),
       fame: targetable[i] ? round(famous ? Math.max(0.8, fameOf(i)) : fameOf(i), 3) : 0,
       target: targetable[i]!,
       poly,
@@ -439,6 +458,6 @@ for (const config of COUNTRIES) {
 const data: RegionData = { generatedAt: new Date().toISOString().slice(0, 10), countries };
 const json = JSON.stringify(data);
 await writeFile(join(ROOT, 'data', 'regions.json'), json);
-await writeFile(join(ROOT, 'data', 'regions-version.json'), JSON.stringify({ generatedAt: data.generatedAt + '+ne-admin1' }));
+await writeFile(join(ROOT, 'data', 'regions-version.json'), JSON.stringify({ generatedAt: data.generatedAt + '+ne-admin1.2' }));
 console.log(`regions.json: ${(json.length / 1024).toFixed(0)} KB`);
 void geoCentroid;

@@ -4,6 +4,8 @@ import { DATASET_VERSION, replayGame } from './replay.ts';
 import { getGame } from './catalog.ts';
 import {
   REGION_COUNTRY_GAP,
+  REGION_LATE_COUNTRIES,
+  REGION_LATE_FROM,
   REGION_MAX_LIVES,
   REGION_MISSES,
   REGION_PLANS,
@@ -119,6 +121,33 @@ describe('region run', () => {
     expect(mixed).toEqual(perfect.slice(0, mixed.length));
   });
 
+  it('gives Australia real short forms, and no junk codes or shared aliases', () => {
+    const aliases = (id: string) => new Map(data.countries.find((c) => c.id === id)!.divisions.map((d) => [d.name, d.aliases] as const));
+    const aus = aliases('AUS');
+    expect(aus.get('New South Wales')).toContain('NSW');
+    expect(aus.get('Queensland')).toContain('Qld');
+    expect(aus.get('Victoria')).toContain('Vic');
+    expect(aus.get('Tasmania')).toContain('Tas');
+    expect([...aus.values()].flat()).not.toEqual(expect.arrayContaining(['QL', 'NS', 'VI', 'TS', 'CT']));
+    for (const c of data.countries) {
+      const all = c.divisions.flatMap((d) => d.aliases.map((a) => a.toLowerCase()));
+      expect(new Set(all).size, `${c.id} shares an alias`).toBe(all.length);
+      if (!['USA', 'CAN', 'AUS'].includes(c.id)) for (const a of all) expect(a, c.id).not.toMatch(/^[a-z]{2}$/);
+    }
+    const idn = data.countries.find((c) => c.id === 'IDN')!.divisions;
+    expect(idn.flatMap((d) => d.aliases)).not.toContain('Jawa');
+    expect(idn.find((d) => d.name === 'West Sulawesi')!.aliases).not.toContain('Sulsel');
+  });
+
+  it('names divisions plainly, and leaves out Kazakhstan, whose map predates 2022', () => {
+    const names = data.countries.flatMap((c) => c.divisions.map((d) => d.name));
+    expect(names).toContain('Free State');
+    expect(names).toContain('Cusco');
+    expect(names).not.toContain('Free');
+    expect(names.some((n) => /Departament/.test(n))).toBe(false);
+    expect(data.countries.map((c) => c.id)).not.toContain('KAZ');
+  });
+
   it('plans four bands, the tiers and fame opening up as levels go on', () => {
     expect(regionPlan(1).minFame).toEqual({ 1: 0.6 });
     expect(regionPlan(8).band).toBe(1);
@@ -129,6 +158,39 @@ describe('region run', () => {
     for (let i = 1; i < REGION_PLANS.length; i++) {
       const [a, b] = [REGION_PLANS[i - 1]!, REGION_PLANS[i]!];
       for (const tier of [1, 2, 3] as const) expect(b.minFame[tier] ?? Infinity).toBeLessThanOrEqual(a.minFame[tier] ?? Infinity);
+    }
+  });
+
+  it('keeps China and India to level 21 and later', () => {
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      for (const l of playPerfect(seed, 60).levels) {
+        if (l.number < REGION_LATE_FROM) expect(REGION_LATE_COUNTRIES, `seed ${seed} level ${l.number}`).not.toContain(l.country);
+      }
+    }
+  });
+
+  it('asks the lesser-known divisions from level 40 on, relaxing only when they run out', () => {
+    let late = 0;
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      for (const l of playPerfect(seed, 90).levels) {
+        if (l.number < 40) continue;
+        late++;
+        expect(divisionOf.get(l.division)!.fame, `seed ${seed} level ${l.number} ${l.division}`).toBeLessThanOrEqual(0.6);
+      }
+    }
+    expect(late).toBeGreaterThan(1000);
+  });
+
+  it('never repeats a division, whatever the player does: skips, misses and clean finds', () => {
+    for (let seed = 1; seed <= 60; seed++) {
+      let s = game.start(seed);
+      const seen = new Set<string>();
+      for (let i = 0; i < 80; i++) {
+        expect(seen.has(s.level.division), `seed ${seed} level ${s.level.number}`).toBe(false);
+        seen.add(s.level.division);
+        s = i % 3 === 0 ? game.skip(s) : i % 3 === 1 ? right(game.guess(s, wrongFor(s)).state) : right(s);
+        s = game.nextLevel({ ...s, status: 'level-over', lives: 3 });
+      }
     }
   });
 

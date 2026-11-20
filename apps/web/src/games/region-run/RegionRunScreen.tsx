@@ -49,6 +49,9 @@ export function RegionRunScreen({ seed, initialMoves, onMovesChange, onGameOver 
  * country they are in. A name the lit country also has (Amazonas, Córdoba) is
  * left out of the others, so typing it in full is never ambiguous.
  */
+/** A postal-style short form (TX, NSW): accepted, never shown. */
+const isCode = (a: string) => /^[A-Z]{2,3}$/.test(a);
+
 function searchItems(data: RegionData, current: string): SearchItem[] {
   const own = new Set(data.countries.find((c) => c.id === current)!.divisions.flatMap((d) => [d.name, ...d.aliases].map(normalize)));
   return data.countries.flatMap((c) => {
@@ -56,7 +59,7 @@ function searchItems(data: RegionData, current: string): SearchItem[] {
     const scope = [c.name, c.id, getCountry(c.id)?.iso2 ?? ''].filter(Boolean);
     return c.divisions
       .filter((d) => here || !own.has(normalize(d.name)))
-      .map((d) => ({ id: d.id, label: d.name, aliases: here ? d.aliases : d.aliases.filter((a) => !own.has(normalize(a))), detail: here ? undefined : c.name, scope, weight: here ? 1 : 0 }));
+      .map((d) => ({ id: d.id, label: d.name, aliases: (here ? d.aliases : d.aliases.filter((a) => !own.has(normalize(a)))).filter((a) => !isCode(a)), quietAliases: d.aliases.filter((a) => isCode(a) && (here || !own.has(normalize(a)))), detail: here ? undefined : c.name, scope, weight: here ? 1 : 0 }));
   });
 }
 
@@ -176,6 +179,7 @@ function RegionPlay({
               label={`Name the ${country.unit}`}
               exactOnly
               focusWithoutScroll
+              compactOnPhone
             />
             <button type="button" className="btn grid-skip" onClick={skip}>
               ⏭ Skip <span className="muted">−1 ♥</span>
@@ -196,7 +200,7 @@ function RegionPlay({
         <div className={`route-summary ${level.status === 'cleared' ? 'solved' : 'failed'}`} role="status">
           <p className="route-summary-title">{level.status === 'cleared' ? `${answer}! +${level.points}` : skipped ? 'Skipped: −1 ♥' : `${REGION_MISSES} misses: −1 ♥`}</p>
           <p>
-            {answer} is a {country.unit} of {country.name}.
+            {answer} is {/^[aeiou]/i.test(country.unit) ? 'an' : 'a'} {country.unit} of {country.name}.
           </p>
           {level.flawless && <p className="bonus-life">{state.bonusLife ? 'Flawless! +1 ♥' : `Flawless! Lives are full (${REGION_MAX_LIVES} at most).`}</p>}
           {state.status === 'over' && <p className="route-summary-title">Out of lives</p>}

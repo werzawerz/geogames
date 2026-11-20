@@ -38,6 +38,8 @@ export interface RegionPlan {
   band: 1 | 2 | 3 | 4;
   /** Per tier, the least fame a division needs to be asked (a tier left out is not asked). */
   minFame: Readonly<Partial<Record<1 | 2 | 3, number>>>;
+  /** The most fame a division may have, while the plan has others left: keeps the late levels off the famous ones. */
+  maxFame?: number;
 }
 
 export const REGION_PLANS: readonly RegionPlan[] = [
@@ -45,7 +47,13 @@ export const REGION_PLANS: readonly RegionPlan[] = [
   { from: 9, band: 2, minFame: { 1: 0.3, 2: 0.55 } },
   { from: 21, band: 3, minFame: { 1: 0, 2: 0.3, 3: 0.55 } },
   { from: 36, band: 4, minFame: { 1: 0, 2: 0, 3: 0.2 } },
+  // The ramp has run out of new countries, so from here on it keeps getting harder by asking the lesser-known divisions.
+  { from: 40, band: 4, minFame: { 1: 0, 2: 0, 3: 0 }, maxFame: 0.6 },
 ];
+
+/** China and India are only asked from this level: their divisions are hard to tell apart for most players. */
+export const REGION_LATE_FROM = 21;
+export const REGION_LATE_COUNTRIES: readonly string[] = ['CHN', 'IND'];
 
 export const regionPlan = (level: number): RegionPlan => [...REGION_PLANS].reverse().find((p) => level >= p.from)!;
 
@@ -100,15 +108,21 @@ export function createRegionRun({ countries }: { countries: readonly RegionRunCo
   const byId = new Map(countries.map((c) => [c.id, c]));
   for (const c of countries) for (const d of c.divisions) countryOf.set(d.id, c.id);
 
-  function nextDivision(rng: Rng, plan: RegionPlan, past: readonly string[], pastCountries: readonly string[]): { country: string; division: string } {
+  function nextDivision(rng: Rng, level: number, plan: RegionPlan, past: readonly string[], pastCountries: readonly string[]): { country: string; division: string } {
     const used = new Set(past);
     const recent = new Set(pastCountries.slice(-REGION_COUNTRY_GAP));
     const last = pastCountries.at(-1);
+    const early = (c: RegionRunCountry) => level < REGION_LATE_FROM && REGION_LATE_COUNTRIES.includes(c.id);
+    const calm = (d: RegionRunDivision) => d.fame <= (plan.maxFame ?? Infinity);
     const fits = (c: RegionRunCountry, d: RegionRunDivision, relaxed: boolean) =>
-      d.target && !used.has(d.id) && (relaxed || d.fame >= (plan.minFame[c.tier] ?? Infinity));
+      d.target && !used.has(d.id) && !early(c) && (relaxed || d.fame >= (plan.minFame[c.tier] ?? Infinity));
     // Country first, then a division in it: otherwise the big countries (the United States, Turkey) take over.
     // Countries asked lately wait while others remain; then any target of the plan; then any unseen target; then a repeat.
     const tiers: ((c: RegionRunCountry, d: RegionRunDivision) => boolean)[] = [
+      ...(plan.maxFame === undefined ? [] : [
+        (c: RegionRunCountry, d: RegionRunDivision) => !recent.has(c.id) && calm(d) && fits(c, d, false),
+        (c: RegionRunCountry, d: RegionRunDivision) => c.id !== last && calm(d) && fits(c, d, false),
+      ]),
       (c, d) => !recent.has(c.id) && fits(c, d, false),
       (c, d) => c.id !== last && fits(c, d, false),
       (c, d) => fits(c, d, false),
@@ -127,7 +141,7 @@ export function createRegionRun({ countries }: { countries: readonly RegionRunCo
   const pastCountriesOf = (past: readonly string[]) => past.map((id) => countryOf.get(id)!);
 
   function makeLevel(rng: Rng, number: number, past: readonly string[]): RegionLevel {
-    const { country, division } = nextDivision(rng, regionPlan(number), past, pastCountriesOf(past));
+    const { country, division } = nextDivision(rng, number, regionPlan(number), past, pastCountriesOf(past));
     return { number, country, division, guesses: [], status: 'playing', points: 0, flawless: false };
   }
 
