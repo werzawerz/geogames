@@ -5,6 +5,9 @@ import { buildIndex, exactMatch, normalize, search, type SearchItem } from './se
 export type { SearchItem } from './search.ts';
 
 const MAX_SUGGESTIONS = 8;
+/** With the keyboard up a phone has room for about this many. */
+const NARROW_SUGGESTIONS = 5;
+const narrow = () => typeof matchMedia !== 'undefined' && matchMedia('(max-width: 640px)').matches;
 
 /**
  * Type-ahead picker. Matches names and aliases (San Jose → San Francisco),
@@ -21,6 +24,7 @@ export function SearchInput({
   cleanQuery = (t) => t,
   exactOnly = false,
   focusWithoutScroll = false,
+  compactOnPhone = false,
 }: {
   items: readonly SearchItem[];
   exclude: ReadonlySet<string>;
@@ -35,6 +39,8 @@ export function SearchInput({
   exactOnly?: boolean;
   /** Focuses on mount without scrolling the page, instead of autoFocus. */
   focusWithoutScroll?: boolean;
+  /** Shows fewer suggestions on a narrow screen, where the keyboard leaves little room. */
+  compactOnPhone?: boolean;
 }) {
   const listId = useId();
   const [text, setText] = useState('');
@@ -44,7 +50,7 @@ export function SearchInput({
 
   const index = useMemo(() => buildIndex(items), [items]);
   const query = cleanQuery(text);
-  const suggestions = useMemo(() => search(index, query, exclude, MAX_SUGGESTIONS), [index, query, exclude]);
+  const suggestions = useMemo(() => search(index, query, exclude, compactOnPhone && narrow() ? NARROW_SUGGESTIONS : MAX_SUGGESTIONS), [index, query, exclude, compactOnPhone]);
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (focusWithoutScroll) input.current?.focus({ preventScroll: true });

@@ -3373,3 +3373,79 @@ summary:focus-visible {
     font-weight: 600;
   }
 }
+
+/* Region Run: the country's divisions as plain shapes; the lit one is told apart by colour alone. */
+.art-region path { fill: var(--land-2); stroke: var(--land-line); stroke-width: 3; stroke-linejoin: round; }
+.art-region .art-lit { fill: var(--accent); stroke: var(--map-ink); }
+
+.region-map .map-sea { fill: var(--surface-2); }
+
+.region-game .map-frame {
+  background: var(--surface-2);
+}
+
+.region-game {
+  --grid-chrome: 390px;
+}
+
+.region-game.done {
+  --grid-chrome: 400px;
+}
+
+.map-country.region-lit {
+  fill: var(--accent);
+  stroke: var(--map-ink);
+  stroke-width: 1.2;
+}
+
+.map-country.region-wrong {
+  fill: var(--wrong);
+  fill-opacity: 0.75;
+  stroke: var(--map-ink);
+  stroke-width: 0.8;
+}
+
+.map-country.region-answer {
+  fill: var(--correct);
+  stroke: var(--map-ink);
+  stroke-width: 1.2;
+}
+
+/* A ring round a lit division too small to find on a phone. */
+.region-ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-dasharray: 5 4;
+  pointer-events: none;
+}
+
+.region-name {
+  fill: var(--map-ink);
+  font: 700 15px var(--font-body);
+  text-anchor: middle;
+  dominant-baseline: middle;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.region-country {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .region-game {
+    --grid-chrome: 350px;
+  }
+
+  .region-game.done {
+    --grid-chrome: 440px;
+  }
+
+  .region-name {
+    font-size: 26px;
+  }
+}

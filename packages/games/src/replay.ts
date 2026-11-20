@@ -19,6 +19,8 @@ import { createHalfway, replayHalfway, type Halfway } from './halfway.ts';
 import { createGreatCircle, replayGreatCircle } from './great-circle.ts';
 import { createMysteryCountry, replayMysteryCountry } from './mystery-country.ts';
 import { createOnTheGrid, replayOnTheGrid } from './on-the-grid.ts';
+import { REGIONS_VERSION, loadRegions } from '@geogames/geodata/regions';
+import { createRegionRun, replayRegionRun } from './region-run.ts';
 import { createPinDrop, replayPinDrop } from './pin-drop.ts';
 import { createRiverRun, replayRiverRun } from './river-run.ts';
 import { arcadePools, circleCities, halfwayPools, loadPool, quizItems, routeCountries } from './pools.ts';
@@ -32,8 +34,9 @@ import type { GameSettings } from './settings.ts';
 // The tz release too: Clockwork's offsets come from it, so a rebuild of them must ask clients to update.
 // And Blank Atlas's features, the rivers and On the Grid's land points: a rebuild can change which options a seed gives.
 // And the supply-chain data: which countries lead which commodity decides the answers.
+// And the divisions of Region Run: which are asked, and how well known each is, decides every level.
 // And the CLDR release behind Native Tongue's names: which countries make a puzzle depends on them.
-export const DATASET_VERSION = `${dataset.generatedAt}|${cityIndex.generatedAt}|tz${CLOCK_TZDB}|atlas${BLANK_ATLAS_VERSION}|rivers${RIVERS_VERSION}|names${NATIVE_NAMES_VERSION}|grid${LAND_GRID_VERSION}|chain${SUPPLY_CHAIN_VERSION}`;
+export const DATASET_VERSION = `${dataset.generatedAt}|${cityIndex.generatedAt}|tz${CLOCK_TZDB}|atlas${BLANK_ATLAS_VERSION}|rivers${RIVERS_VERSION}|names${NATIVE_NAMES_VERSION}|grid${LAND_GRID_VERSION}|chain${SUPPLY_CHAIN_VERSION}|regions${REGIONS_VERSION}`;
 
 export interface ReplayResult {
   score: number;
@@ -150,6 +153,10 @@ export async function replayGame(
     }
     case 'on-the-grid': {
       const state = replayOnTheGrid(createOnTheGrid({ grid: await loadLandGrid(), countries: queryCountries() }), seed, moves);
+      return { score: state.score, finished: state.status === 'over' };
+    }
+    case 'region-run': {
+      const state = replayRegionRun(createRegionRun({ countries: (await loadRegions()).countries }), seed, moves);
       return { score: state.score, finished: state.status === 'over' };
     }
     case 'native-tongue': {

@@ -4,6 +4,7 @@ import { loadRivers } from '@geogames/geodata/rivers';
 import { loadLandGrid } from '@geogames/geodata/land-grid';
 import { loadNativeNames } from '@geogames/geodata/native-names';
 import { loadSupplyChain } from '@geogames/geodata/supply-chain';
+import { loadRegions } from '@geogames/geodata/regions';
 import { BLANK_ATLAS_KIND_LABELS } from '@geogames/geodata/blank-atlas';
 import {
   DEFAULT_SETTINGS,
@@ -25,6 +26,7 @@ import {
   createHalfway,
   createRiverRun,
   createOnTheGrid,
+  createRegionRun,
   formatCoordinates,
   createNativeTongue,
   createSupplyChain,
@@ -1862,6 +1864,91 @@ for (const [label, viewport] of [
     await expect(page.getByRole('button', { name: 'Change settings' })).toHaveCount(0);
     const skipBox = (await page.getByRole('button', { name: 'Next level' }).boundingBox())!;
     expect(skipBox.height).toBeGreaterThanOrEqual(44);
+  });
+}
+
+for (const [label, viewport] of [
+  ['desktop', { width: 1280, height: 720 }],
+  ['phone', { width: 390, height: 844 }],
+] as const) {
+  test(`region-run (${label}): a country's divisions with no names, one lit; a wrong one is shaded red, another country's is free, a skip costs a life, and it all fits with no scrolling`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => {
+      Math.random = () => 0.5;
+    });
+    const { countries: regionCountries } = await loadRegions();
+    const names = new Map(regionCountries.flatMap((c) => c.divisions.map((d) => [d.id, d.name] as const)));
+    const engine = createRegionRun({ countries: regionCountries });
+    let state = engine.start(Math.floor(0.5 * 2 ** 32));
+    const lives = page.locator('.lives .life:not(.lost)');
+    const input = page.getByRole('combobox');
+    const guess = async (id: string) => {
+      await input.fill(names.get(id)!);
+      await input.press('Enter');
+    };
+    const inView = async (selector: string) => {
+      const box = (await page.locator(selector).first().boundingBox())!;
+      expect(box.y, selector).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height, selector).toBeLessThanOrEqual(viewport.height);
+    };
+    const country = regionCountries.find((c) => c.id === state.level.country)!;
+    const answer = names.get(state.level.division)!;
+    const wrongId = country.divisions.find((d) => d.id !== state.level.division && d.target)!.id;
+    const elsewhereId = regionCountries.find((c) => c.id !== country.id)!.divisions.find((d) => d.target)!.id;
+
+    await openGame(page, 'region-run');
+    await page.getByRole('button', { name: 'Start game' }).click();
+    await expect(page.locator('.region-country')).toHaveText(country.name, { timeout: 20_000 });
+    await expect(page.locator('.region-map .region-lit')).toHaveCount(1);
+    for (const selector of ['.route-status', '.grid-prompt', '.map-frame', '[role=combobox]', '.grid-skip']) await inView(selector);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+    // Nothing on the page gives the answer away: no names, labels or markers on the map, and no division name anywhere before the end.
+    await expect(page.locator('.region-map text')).toHaveCount(0);
+    await expect(page.locator('.region-map path')).toHaveCount(country.divisions.length);
+    expect(await page.locator('.grid-game').innerHTML()).not.toContain(answer);
+    await expect(input).toBeFocused();
+
+    // A wrong division of this country is shaded red where it is: a miss, with free ones left.
+    await guess(wrongId);
+    await expect(page.locator('.grid-misses')).toHaveText('1');
+    await expect(page.locator('.region-map .region-wrong')).toHaveCount(1);
+    await expect(page.locator('.grid-hints li')).toContainText(names.get(wrongId)!);
+    await expect(page.locator('.route-message')).toContainText('shaded red');
+    // A division of another country costs nothing.
+    await guess(elsewhereId);
+    await expect(page.locator('.route-message')).toContainText('No miss for that');
+    await expect(page.locator('.grid-misses')).toHaveText('1');
+    await inView('.grid-hints');
+    await inView('[role=combobox]');
+
+    // The right one: points for the second guess, its name written on the map.
+    await guess(state.level.division);
+    await expect(page.locator('.route-summary.solved')).toContainText(answer);
+    await expect(page.locator('.region-map .region-answer')).toHaveCount(1);
+    await expect(page.locator('.region-map text')).toHaveText(answer);
+    await expect(page.locator('.bonus-life')).toHaveCount(0);
+    for (const selector of ['.route-status', '.map-frame', '.route-summary']) await inView(selector);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    await expect(page.getByRole('button', { name: 'Next level' })).toBeFocused();
+    state = engine.nextLevel(engine.guess(engine.guess(state, wrongId).state, state.level.division).state);
+
+    // Enter goes on, and a second Enter must not reach Skip.
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.region-country')).toHaveText(regionCountries.find((c) => c.id === state.level.country)!.name);
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.route-summary')).toHaveCount(0);
+    await expect(lives).toHaveCount(3);
+    await expect(input).toBeFocused();
+
+    // A skip costs a life and shows the answer.
+    await page.getByRole('button', { name: /Skip/ }).click();
+    await expect(page.locator('.route-summary.failed')).toContainText('Skipped: −1 ♥');
+    await expect(page.locator('.route-summary')).toContainText(names.get(state.level.division)!);
+    await expect(lives).toHaveCount(2);
+    await expect(page.getByRole('button', { name: 'Change settings' })).toHaveCount(0);
+    const nextBox = (await page.getByRole('button', { name: 'Next level' }).boundingBox())!;
+    expect(nextBox.height).toBeGreaterThanOrEqual(44);
   });
 }
 

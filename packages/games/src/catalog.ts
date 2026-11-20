@@ -110,6 +110,11 @@ export interface OnTheGridDefinition extends BaseDefinition {
   subject: 'country';
 }
 
+export interface RegionRunDefinition extends BaseDefinition {
+  kind: 'region-run';
+  subject: 'country';
+}
+
 export interface NativeTongueDefinition extends BaseDefinition {
   kind: 'native-tongue';
   subject: 'country';
@@ -143,6 +148,7 @@ export type GameDefinition =
   | BlankAtlasDefinition
   | RiverRunDefinition
   | OnTheGridDefinition
+  | RegionRunDefinition
   | NativeTongueDefinition
   | SupplyChainDefinition;
 
@@ -181,6 +187,15 @@ export const GAMES: readonly GameDefinition[] = [
     subject: 'country',
     title: 'On the Grid',
     tagline: '23°S, 47°W: which country is there? Only a blind map to go on.',
+    status: 'live',
+  },
+  {
+    id: 'region-run',
+    group: 'map',
+    kind: 'region-run',
+    subject: 'country',
+    title: 'Region Run',
+    tagline: 'A country’s states or provinces, with no names. One lights up: which is it?',
     status: 'live',
   },
   {

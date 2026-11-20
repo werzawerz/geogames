@@ -14,12 +14,15 @@
     "./rivers": "./src/rivers.ts",
     "./land-grid": "./src/land-grid.ts",
     "./native-names": "./src/native-names.ts",
-    "./supply-chain": "./src/supply-chain.ts"
+    "./supply-chain": "./src/supply-chain.ts",
+    "./regions": "./src/regions.ts",
+    "./regions-map": "./src/regions-map.ts"
   },
   "scripts": {
     "build:data": "node scripts/build-countries.ts && node scripts/build-cities.ts",
     "build:rivers": "node scripts/build-rivers.ts",
-    "build:land-grid": "node scripts/build-land-grid.ts"
+    "build:land-grid": "node scripts/build-land-grid.ts",
+    "build:regions": "node scripts/build-regions.ts"
   },
   "dependencies": {
     "topojson-client": "^3.1.0",
