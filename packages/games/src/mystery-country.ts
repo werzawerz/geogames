@@ -128,12 +128,13 @@ export function createMysteryCountry({ countries, rounds }: { countries: readonl
 export type MysteryCountry = ReturnType<typeof createMysteryCountry>;
 
 /** Replays a move log from a seed; this is what a server uses to verify a score. */
-export function replayMysteryCountry(game: MysteryCountry, seed: number, moves: readonly string[]): MysteryState {
+export function replayMysteryCountry(game: MysteryCountry, seed: number, moves: readonly string[], observe?: (state: MysteryState, move: string) => void): MysteryState {
   let state = game.start(seed);
   for (const move of moves) {
     if (state.status === 'level-clear') state = game.nextLevel(state);
     if (state.status === 'over') break;
     state = game.guess(state, move).state;
+    observe?.(state, move);
   }
   return state;
 }

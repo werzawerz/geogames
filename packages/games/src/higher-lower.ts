@@ -138,11 +138,13 @@ export function replayHigherLower<T extends Comparable>(
   game: HigherLowerGame<T>,
   seed: number,
   guesses: readonly Guess[],
+  observe?: (state: HigherLowerState<T>, move: Guess) => void,
 ): HigherLowerState<T> {
   let state = game.start(seed);
   for (const g of guesses) {
     if (state.status === 'over') break;
     state = game.next(game.guess(state, g));
+    observe?.(state, g);
   }
   return state;
 }

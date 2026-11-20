@@ -317,7 +317,7 @@ export function createCircleArcade({ cities, famous }: ArcadeOptions) {
 export type CircleArcade = ReturnType<typeof createCircleArcade>;
 
 /** Replays a move log from a seed; this is what a server uses to verify a score. */
-export function replayCircleArcade(game: CircleArcade, seed: number, moves: readonly string[]): ArcadeState {
+export function replayCircleArcade(game: CircleArcade, seed: number, moves: readonly string[], observe?: (state: ArcadeState, move: string) => void): ArcadeState {
   let state = game.start(seed);
   for (const move of moves) {
     if (state.status === 'level-clear') state = game.nextLevel(state);
@@ -325,6 +325,7 @@ export function replayCircleArcade(game: CircleArcade, seed: number, moves: read
     if (move === SKIP) state = game.skip(state);
     else if (move === HINT) state = game.hint(state);
     else state = game.guess(state, move).state;
+    observe?.(state, move);
   }
   return state;
 }

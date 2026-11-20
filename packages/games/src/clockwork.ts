@@ -324,7 +324,7 @@ export function createClockwork({ countries }: { countries: readonly Country[] }
 export type Clockwork = ReturnType<typeof createClockwork>;
 
 /** Replays a move log from a seed; this is what a server uses to verify a score. */
-export function replayClockwork(game: Clockwork, seed: number, moves: readonly string[]): ClockState {
+export function replayClockwork(game: Clockwork, seed: number, moves: readonly string[], observe?: (state: ClockState, move: string) => void): ClockState {
   let state = game.start(seed);
   for (const move of moves) {
     if (state.status === 'level-over') state = game.nextLevel(state);
@@ -335,6 +335,7 @@ export function replayClockwork(game: Clockwork, seed: number, moves: readonly s
       if (minutes === null) continue;
       state = game.guess(state, minutes).state;
     }
+    observe?.(state, move);
   }
   return state;
 }

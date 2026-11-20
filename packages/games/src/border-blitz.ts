@@ -369,11 +369,12 @@ export function createBorderBlitz({ countries, rounds }: { countries: readonly C
 export type BorderBlitz = ReturnType<typeof createBorderBlitz>;
 
 /** Replays a move log from a seed; this is what a server uses to verify a score. */
-export function replayBorderBlitz(game: BorderBlitz, seed: number, moves: readonly string[]): BlitzState {
+export function replayBorderBlitz(game: BorderBlitz, seed: number, moves: readonly string[], observe?: (state: BlitzState, move: string) => void): BlitzState {
   let state = game.start(seed);
   for (const move of moves) {
     if (move.startsWith(TIME_MOVE)) {
       state = game.claimTime(state, Number(move.slice(TIME_MOVE.length)));
+      observe?.(state, move);
       continue;
     }
     if (state.status === 'level-clear') state = game.nextLevel(state);
@@ -381,6 +382,7 @@ export function replayBorderBlitz(game: BorderBlitz, seed: number, moves: readon
     if (move === BLITZ_TIMEOUT) state = game.timeout(state);
     else if (move === BLITZ_GIVE_UP) state = game.giveUp(state);
     else state = game.guess(state, move).state;
+    observe?.(state, move);
   }
   return state;
 }

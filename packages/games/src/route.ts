@@ -401,12 +401,13 @@ export function createRouteGame({ countries, rounds, hard = false }: RouteGameOp
 export type RouteGame = ReturnType<typeof createRouteGame>;
 
 /** Replays a guess log from a seed; this is what a server uses to verify a score. */
-export function replayRoute(game: RouteGame, seed: number, moves: readonly CountryId[]): RouteGameState {
+export function replayRoute(game: RouteGame, seed: number, moves: readonly CountryId[], observe?: (state: RouteGameState, move: CountryId) => void): RouteGameState {
   let state = game.start(seed);
   for (const id of moves) {
     if (state.status === 'round-over') state = game.nextRound(state);
     if (state.status === 'over') break;
     state = game.guess(state, id).state;
+    observe?.(state, id);
   }
   return state;
 }

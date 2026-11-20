@@ -261,12 +261,13 @@ export function createOnTheGrid({ grid, countries }: { grid: LandGrid; countries
 export type OnTheGrid = ReturnType<typeof createOnTheGrid>;
 
 /** Replays a move log from a seed; this is what a server uses to verify a score. */
-export function replayOnTheGrid(game: OnTheGrid, seed: number, moves: readonly string[]): GridState {
+export function replayOnTheGrid(game: OnTheGrid, seed: number, moves: readonly string[], observe?: (state: GridState, move: string) => void): GridState {
   let state = game.start(seed);
   for (const move of moves) {
     if (state.status === 'level-over') state = game.nextLevel(state);
     if (state.status === 'over') break;
     state = move === GRID_SKIP ? game.skip(state) : game.guess(state, move).state;
+    observe?.(state, move);
   }
   return state;
 }

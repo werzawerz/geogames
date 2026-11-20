@@ -118,8 +118,34 @@ export interface LeaderboardResponse {
   entries: LeaderboardEntryDto[];
 }
 
-/** Duels: two players, the same circles, one try each (see docs/ideas/duels.md). */
-export const DUEL_GAMES: readonly string[] = ['city-circle-arcade'];
+/**
+ * Duels: two players, the same puzzles, one try each (see docs/ideas/duels.md).
+ * A game is here only once a test shows that one seed gives every player the
+ * same puzzles in the same order, whatever they do (docs/ideas/duels.md, "Which games").
+ * The first is the default.
+ */
+export const DUEL_GAMES: readonly string[] = [
+  'city-circle-arcade',
+  'border-route',
+  'pin-drop',
+  'halfway',
+  'great-circle',
+  'border-blitz',
+  'mystery-country',
+  'river-run',
+  'blank-atlas',
+  'on-the-grid',
+  'clockwork',
+  'native-tongue',
+  'supply-chain',
+  'city-circle',
+  'higher-lower-population',
+  'higher-lower-area',
+  'higher-lower-gdp-per-capita',
+  'higher-lower-city-population',
+  'flags',
+  'capitals',
+];
 /** The variant of the challenger's run, which keeps it off every leaderboard. */
 export const DUEL_VARIANT = 'duel';
 /** A duel nobody has taken lasts this many days. */

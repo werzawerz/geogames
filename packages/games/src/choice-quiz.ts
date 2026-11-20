@@ -128,11 +128,12 @@ export function createChoiceQuiz({ items, lives, optionCount = 4 }: ChoiceQuizOp
 export type ChoiceQuiz = ReturnType<typeof createChoiceQuiz>;
 
 /** Replays answers from a seed; this is what a server uses to verify a score. */
-export function replayChoiceQuiz(quiz: ChoiceQuiz, seed: number, moves: readonly number[]): QuizState {
+export function replayChoiceQuiz(quiz: ChoiceQuiz, seed: number, moves: readonly number[], observe?: (state: QuizState, move: number) => void): QuizState {
   let state = quiz.start(seed);
   for (const index of moves) {
     if (state.status === 'over') break;
     state = quiz.next(quiz.answer(state, index));
+    observe?.(state, index);
   }
   return state;
 }
