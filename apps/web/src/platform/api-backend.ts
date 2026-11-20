@@ -3,6 +3,7 @@ import {
   randomSeed,
   type ApiErrorCode,
   type ApiErrorResponse,
+  type CreateAccountRequest,
   type FeedbackRequest,
   type FinishSessionRequest,
   type FinishSessionResponse,
@@ -15,7 +16,7 @@ import {
   type StartSessionRequest,
   type StartSessionResponse,
 } from '@geogames/games';
-import type { Auth } from './auth.ts';
+import { SignInError, type Auth } from './auth.ts';
 import { createLocalBackend, type Backend, type FinishResult } from './backend.ts';
 import { loadPlayer } from './player.ts';
 import { clearAll, load, remove, save } from './storage.ts';
@@ -62,16 +63,9 @@ export function createApiBackend(baseUrl: string, auth: Auth): Backend {
     throw new ApiError(failure?.error ?? 'internal');
   };
 
-  // Before anything else: finishing a sign-in may move an anonymous player's
-  // games into the account, which /me should already include.
+  // Before anything else: the session this browser kept.
   let settled: Promise<void> | null = null;
-  const settle = () =>
-    (settled ??= auth.ready().then(async ({ mergeFrom }) => {
-      if (!mergeFrom) return;
-      await request('POST', '/me/merge', { anonymousToken: mergeFrom } satisfies MergeRequest).catch(() => {
-        // The anonymous player's games stay behind; nothing else to do.
-      });
-    }));
+  const settle = () => (settled ??= auth.ready());
 
   // Best scores per game and variant, from sign-in on. Null until the server answers.
   let bests: MeResponse['bests'] | null = null;
@@ -212,9 +206,33 @@ export function createApiBackend(baseUrl: string, auth: Auth): Backend {
         return keepLocally('refused', error.code === 'update-required' ? NOTICES.updated : error.code === 'rate-limited' ? NOTICES.busy : NOTICES.offline);
       }
     },
-    async signIn() {
+    async logIn(email, password) {
       await settle();
-      await auth.signIn();
+      const { mergeFrom } = await auth.logIn(email, password).catch((error: unknown) => {
+        throw error instanceof SignInError ? error : new SignInError('offline');
+      });
+      if (mergeFrom) {
+        await request('POST', '/me/merge', { anonymousToken: mergeFrom } satisfies MergeRequest).catch(() => {
+          // The anonymous player's games stay behind; nothing else to do.
+        });
+      }
+      return startOver();
+    },
+    async createAccount(email, password) {
+      await settle();
+      await auth
+        .createAccount(email, password, async () => {
+          await request('POST', '/me/account', { email: email.trim(), password } satisfies CreateAccountRequest);
+        })
+        .catch((error: unknown) => {
+          if (error instanceof SignInError) throw error;
+          if (error instanceof ApiError && error.code === 'email-taken') throw new SignInError('email-taken');
+          if (error instanceof ApiError && error.code === 'bad-request') throw new SignInError('bad-input');
+          throw new SignInError('offline');
+        });
+      // The same player: only the account changed.
+      me = null;
+      return loadAll();
     },
     async signOut() {
       await settle();

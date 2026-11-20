@@ -10,7 +10,7 @@ const MIGRATIONS = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..
 const SUPABASE_STANDINS = `
   create role anon; create role authenticated; create role service_role;
   create schema auth;
-  create table auth.users (id uuid primary key);
+  create table auth.users (id uuid primary key, email text);
 `;
 
 /**
@@ -37,5 +37,9 @@ export async function createLocalDb() {
   const deleteUser = async (id: string) => {
     await db.query('delete from auth.users where id = $1', [id]);
   };
-  return { db, rpc, addUser, deleteUser };
+  /** Records the email only: the dev web app checks passwords itself (see createDevAuth). */
+  const createLogin = async (id: string, email: string) => {
+    await db.query('update auth.users set email = $2 where id = $1', [id, email]);
+  };
+  return { db, rpc, addUser, deleteUser, createLogin };
 }

@@ -45,7 +45,7 @@ describe('web smoke', () => {
     expect(html).toContain('Player name');
     expect(html).toContain('Your best scores');
     expect(html).not.toContain('Delete my account');
-    expect(html).not.toContain('Sign in with Google');
+    expect(html).not.toContain('sign-in-btn');
   });
 
   it('disables the contact form in a build with no server, and keeps the rest of the page', () => {
@@ -76,7 +76,7 @@ describe('web smoke', () => {
         <SiteHeader route={{ page: 'home' }} />
       </PlatformProvider>,
     );
-    expect(html).not.toContain('google-btn');
+    expect(html).not.toContain('sign-in-btn');
     expect(html).toContain('player-name');
   });
 

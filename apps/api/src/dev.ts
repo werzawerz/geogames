@@ -5,21 +5,22 @@ import { createApp, parseDailyLimit } from './app.ts';
 import { createLocalDb } from './local-db.ts';
 
 const PORT = Number(process.env.API_PORT) || 5321;
-// dev-<uuid> is an anonymous player, dev-google-<uuid> the same player after a
-// pretend "Sign in with Google" (see createDevAuth in the web app).
-const DEV_TOKEN = /^dev-(google-)?([0-9a-f-]{36})$/i;
+// dev-<uuid> is an anonymous player, dev-account-<uuid> the same player once it
+// has an email and password (see createDevAuth in the web app).
+const DEV_TOKEN = /^dev-(account-)?([0-9a-f-]{36})$/i;
 
-const { rpc, addUser, deleteUser } = await createLocalDb();
+const { rpc, addUser, deleteUser, createLogin } = await createLocalDb();
 
 const app = createApp({
   rpc,
   verifyToken: async (token) => {
-    const [, google, id] = DEV_TOKEN.exec(token) ?? [];
+    const [, account, id] = DEV_TOKEN.exec(token) ?? [];
     if (!id) return null;
     await addUser(id);
-    return { id, anonymous: !google };
+    return { id, anonymous: !account };
   },
   deleteUser,
+  createLogin,
   freePlaysPerDay: parseDailyLimit(process.env.FREE_PLAYS_PER_DAY),
   dailySecret: process.env.DAILY_SECRET ?? '',
   allowedOrigins: '*',

@@ -7,6 +7,7 @@ export type Route =
   | { page: 'daily'; gameId: string }
   | { page: 'scores'; gameId: string; variant?: string }
   | { page: 'profile' }
+  | { page: 'sign-in' }
   | { page: 'about' }
   | { page: 'privacy' }
   | { page: 'terms' }
@@ -23,6 +24,7 @@ export function parseRoute(hash: string): Route {
   if (page === 'daily' && arg) return { page: 'daily', gameId: arg };
   if (page === 'scores' && arg) return { page: 'scores', gameId: arg, variant };
   if (page === 'profile') return { page: 'profile' };
+  if (page === 'sign-in') return { page: 'sign-in' };
   if ((INFO_PAGES as readonly string[]).includes(page ?? '')) return { page: page as (typeof INFO_PAGES)[number] };
   return { page: 'home' };
 }
@@ -34,6 +36,7 @@ export function href(route: Route): string {
     case 'dailies':
       return '#/daily';
     case 'profile':
+    case 'sign-in':
     case 'about':
     case 'privacy':
     case 'terms':

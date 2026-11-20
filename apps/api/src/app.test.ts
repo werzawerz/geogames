@@ -20,7 +20,7 @@ const BOB = '00000000-0000-4000-8000-00000000000b';
 const ANON = '00000000-0000-4000-8000-0000000000a0';
 const ANON2 = '00000000-0000-4000-8000-0000000000a2';
 
-/** alice and bob signed in with Google; anon and anon2 anonymous; alice-before is Alice before she linked Google. */
+/** alice and bob have accounts; anon and anon2 are anonymous; alice-before is Alice before she made her account. */
 const TOKENS: Record<string, Caller> = {
   alice: { id: ALICE, anonymous: false },
   bob: { id: BOB, anonymous: false },
@@ -32,6 +32,7 @@ const TOKENS: Record<string, Caller> = {
 let local: Awaited<ReturnType<typeof createLocalDb>>;
 let app: ReturnType<typeof createApp>;
 let deleted: string[] = [];
+let logins: { id: string; email: string; password: string }[] = [];
 
 const makeApp = (options: { freePlaysPerDay?: number | null; limits?: Partial<Limits> } = {}) =>
   createApp({
@@ -40,6 +41,10 @@ const makeApp = (options: { freePlaysPerDay?: number | null; limits?: Partial<Li
     deleteUser: async (id) => {
       deleted.push(id);
       await local.deleteUser(id);
+    },
+    createLogin: async (id, email, password) => {
+      logins.push({ id, email, password });
+      await local.createLogin(id, email);
     },
     dailySecret: 'test-secret',
     allowedOrigins: '*',
@@ -54,6 +59,7 @@ beforeEach(async () => {
   await local.db.exec('delete from public.feedback; delete from public.game_sessions; delete from public.players; delete from auth.users;');
   for (const { id } of Object.values(TOKENS)) await local.addUser(id);
   deleted = [];
+  logins = [];
   app = makeApp();
 });
 
@@ -372,11 +378,38 @@ describe('accounts', () => {
     expect((await call('GET', '/me', 'anon')).json.bests).toEqual({ 'city-circle-arcade': { world: anonScore } });
   });
 
-  it('puts a player on the boards, with their earlier games, once they link Google; an old anonymous token never takes them off', async () => {
+  it('gives an anonymous player an email and password, keeping the same player', async () => {
+    const res = await call('POST', '/me/account', 'alice-before', { email: ' alice@example.com ', password: 'correct horse' });
+    expect(res).toEqual({ status: 200, json: { created: true } });
+    expect(logins).toEqual([{ id: ALICE, email: 'alice@example.com', password: 'correct horse' }]);
+  });
+
+  it('refuses an email another account has, in any case, and bad input', async () => {
+    await call('POST', '/me/account', 'alice-before', { email: 'alice@example.com', password: 'correct horse' });
+    expect(await call('POST', '/me/account', 'anon', { email: 'Alice@Example.com', password: 'another one' })).toEqual({
+      status: 409,
+      json: { error: 'email-taken' },
+    });
+    for (const input of [
+      { email: 'not an email', password: 'long enough' },
+      { email: 'a@b.co', password: 'short' },
+      { email: 'a@b.co', password: 'x'.repeat(73) },
+      { email: 'a@b.co' },
+      { password: 'long enough' },
+    ]) {
+      expect((await call('POST', '/me/account', 'anon', input)).status, JSON.stringify(input)).toBe(400);
+    }
+    // Only an anonymous player, and only with a token.
+    expect((await call('POST', '/me/account', 'bob', { email: 'bob@example.com', password: 'long enough' })).status).toBe(403);
+    expect((await call('POST', '/me/account', undefined, { email: 'c@example.com', password: 'long enough' })).status).toBe(401);
+    expect(logins).toHaveLength(1);
+  });
+
+  it('puts a player on the boards, with their earlier games, once they have an account; an old anonymous token never takes them off', async () => {
     await call('PATCH', '/me', 'alice-before', { name: 'Alice' });
     await finishGame('alice-before');
     expect(await board()).toEqual([]);
-    // After linking, Supabase issues tokens without is_anonymous for the same user id.
+    // Once it has a confirmed email, Supabase issues tokens without is_anonymous for the same user id.
     await call('GET', '/me', 'alice');
     expect(await board()).toEqual(['Alice']);
     await call('GET', '/me', 'alice-before');

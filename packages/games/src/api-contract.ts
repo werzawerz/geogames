@@ -23,6 +23,25 @@ export interface DeleteAccountResponse {
   deleted: true;
 }
 
+/** Passwords for email accounts: at least this long. */
+export const MIN_PASSWORD_LENGTH = 8;
+/** And at most this long (the most bcrypt reads). */
+export const MAX_PASSWORD_LENGTH = 72;
+
+/**
+ * POST /me/account, by an anonymous player: gives the player an email and password
+ * to sign in with, keeping their games. Afterwards the browser signs in with them.
+ * An email another account has is refused with `email-taken`.
+ */
+export interface CreateAccountRequest {
+  email: string;
+  password: string;
+}
+
+export interface CreateAccountResponse {
+  created: true;
+}
+
 /**
  * POST /me/merge, called with the token of the account just signed in to:
  * moves the games of the anonymous player this browser had before into it.
@@ -108,6 +127,8 @@ export type ApiErrorCode =
   | 'rate-limited'
   /** PATCH /me with a name the server won't show. */
   | 'name-not-allowed'
+  /** POST /me/account with an email another account already has. */
+  | 'email-taken'
   /** The client's game data differs from the server's: it should reload. */
   | 'update-required'
   /** The moves don't play the game to its end. */

@@ -8,6 +8,7 @@ import { DailiesPage } from './pages/DailiesPage.tsx';
 import { GamePage } from './pages/GamePage.tsx';
 import { ScoresPage } from './pages/ScoresPage.tsx';
 import { ProfilePage } from './pages/ProfilePage.tsx';
+import { SignInPage } from './pages/SignInPage.tsx';
 import { AboutPage, ContactPage, PrivacyPage, TermsPage } from './pages/InfoPages.tsx';
 
 const SITE = 'GeoGames';
@@ -23,6 +24,8 @@ export function routeTitle(route: Route): string {
       return `Terms of use · ${SITE}`;
     case 'profile':
       return `Profile · ${SITE}`;
+    case 'sign-in':
+      return `Sign in · ${SITE}`;
     case 'dailies':
       return `Daily challenges · ${SITE}`;
     case 'contact':
@@ -66,6 +69,7 @@ function Page({ route }: { route: Route }) {
   if (route.page === 'terms') return <TermsPage />;
   if (route.page === 'contact') return <ContactPage />;
   if (route.page === 'profile') return <ProfilePage />;
+  if (route.page === 'sign-in') return <SignInPage />;
   if (route.page === 'home') return <Home />;
   if (route.page === 'dailies') return <DailiesPage />;
   const game = getGame(route.gameId);

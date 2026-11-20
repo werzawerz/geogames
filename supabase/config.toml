@@ -12,7 +12,7 @@ enable_anonymous_sign_ins = true
 enable_manual_linking = true
 
 [auth.external.google]
-enabled = true
+enabled = false
 # From the environment, never the repository.
 client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
 secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"

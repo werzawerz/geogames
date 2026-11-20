@@ -537,26 +537,31 @@ test('daily challenge: one try, resumes after a reload, and the result can be sh
   await expect(page.locator('.route-status')).toContainText('Level 2 of 20', { timeout: 15_000 });
   await expect(page.locator('.guess')).toHaveCount(1);
 
-  // Run out of guesses.
-  while (state.status === 'playing') {
+  // Run out of guesses. On days when every bordering country finishes the route,
+  // solve it and run out on a later level.
+  while (state.status !== 'over') {
+    if (state.status === 'round-over') {
+      await page.getByRole('button', { name: 'Next level' }).click();
+      state = engine.nextRound(state);
+    }
     const puzzleNow = engine.current(state).puzzle;
     const next = [...engine.frontier(engine.current(state))].sort(
       (a, b) => Number(engine.classify(puzzleNow, a) === 'far') - Number(engine.classify(puzzleNow, b) === 'far'),
     );
-    const wrong = next.reverse().find((id) => {
-      const after = engine.guess(state, id).state;
-      return engine.current(after).status !== 'solved';
-    });
-    if (!wrong) throw new Error('no way to avoid solving this route');
-    await input.fill(nameById.get(wrong)!);
+    const guess = next.reverse().find((id) => engine.current(engine.guess(state, id).state).status !== 'solved') ?? next[0]!;
+    await input.fill(nameById.get(guess)!);
     await input.press('Enter');
-    state = engine.guess(state, wrong).state;
+    state = engine.guess(state, guess).state;
   }
   await page.getByRole('button', { name: 'See final score' }).click();
   const score = String(state.score);
+  // As the result screen marks levels: 🟩 no extra guesses, 🟧 solved with some, 🟥 failed.
+  const marks = state.rounds
+    .map((r) => (r.status !== 'solved' ? '🟥' : r.guesses.length + r.misses.length === r.puzzle.minimal ? '🟩' : '🟧'))
+    .join('');
   await expect(page.locator('.big-score')).toHaveText(score);
-  await expect(page.getByText('You reached level 2 of 20.')).toBeVisible();
-  await expect(page.locator('.daily-share-line')).toHaveText('🟩🟥');
+  await expect(page.getByText(`You reached level ${state.rounds.length} of 20.`)).toBeVisible();
+  await expect(page.locator('.daily-share-line')).toHaveText(marks);
 
   // A shareable result, without naming a single country.
   await page.getByRole('button', { name: 'Copy result' }).click();
@@ -564,7 +569,7 @@ test('daily challenge: one try, resumes after a reload, and the result can be sh
   const shared = await page.evaluate(() => navigator.clipboard.readText());
   expect(shared).toContain(`GeoGames daily ${dailyDate()}`);
   expect(shared).toContain(`Border Route: ${score} points`);
-  expect(shared).toContain('🟩🟥');
+  expect(shared).toContain(marks);
   expect(shared).not.toContain(nameById.get(puzzle.start)!);
 
   // One try: coming back shows the result, and the home page says so.

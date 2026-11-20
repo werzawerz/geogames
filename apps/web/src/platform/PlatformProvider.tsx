@@ -21,7 +21,7 @@ export type { FeedbackInput, FinishResult, FinishStatus, RenameResult } from './
 
 interface Platform {
   player: Player;
-  /** 'local': a build without a server (no sign-in); 'anonymous': playing without an account; 'signed-in': with Google. */
+  /** 'local': a build without a server (no sign-in); 'anonymous': playing without an account; 'signed-in': with an email account. */
   account: Account;
   /** 'rejected': the server refused the name (offensive), and the old one stays; 'offline': kept here, sent next time. */
   renamePlayer(name: string): Promise<RenameResult>;
@@ -29,8 +29,10 @@ interface Platform {
   startDaily(game: GameDefinition): Promise<DailyStart>;
   /** `status` says whether the score reached the server ('saved') or stayed in this browser. */
   finishPlay(play: Play, game: FinishedGame): Promise<FinishResult>;
-  /** Starts "Sign in with Google" (leaves the page and comes back to the same route). Keeps this player's games. */
-  signIn(): Promise<void>;
+  /** Signs in to an account; this player's games move into it. Rejects with a SignInError. */
+  logIn(email: string, password: string): Promise<void>;
+  /** Gives this player an email and password to sign in with, keeping its games. Rejects with a SignInError. */
+  createAccount(email: string, password: string): Promise<void>;
   /** Signs out in this browser; play continues as a fresh anonymous player. */
   signOut(): Promise<void>;
   /** Deletes the player's games, feedback and account on the server, then starts over as a fresh anonymous player. */
@@ -90,17 +92,15 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     [backend, player],
   );
 
-  const signIn = useCallback(async () => {
-    await backend.signIn();
-    // Usually the page has left for Google by now; a sign-in that needs no redirect shows at once.
-    const loaded = await backend.load();
-    if (loaded) setAccount(loaded.account);
-  }, [backend]);
-
   const startOver = useCallback((next: { player: Player; account: Account }) => {
     setPlayer(next.player);
     setAccount(next.account);
   }, []);
+  const logIn = useCallback(async (email: string, password: string) => startOver(await backend.logIn(email, password)), [backend, startOver]);
+  const createAccount = useCallback(
+    async (email: string, password: string) => startOver(await backend.createAccount(email, password)),
+    [backend, startOver],
+  );
   const signOut = useCallback(async () => startOver(await backend.signOut()), [backend, startOver]);
   const deleteAccount = useCallback(async () => startOver(await backend.deleteAccount()), [backend, startOver]);
 
@@ -114,13 +114,14 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       startPlay,
       startDaily,
       finishPlay,
-      signIn,
+      logIn,
+      createAccount,
       signOut,
       deleteAccount,
       sendFeedback,
       scores: backend.scores,
     }),
-    [player, account, renamePlayer, startPlay, startDaily, finishPlay, signIn, signOut, deleteAccount, sendFeedback, backend],
+    [player, account, renamePlayer, startPlay, startDaily, finishPlay, logIn, createAccount, signOut, deleteAccount, sendFeedback, backend],
   );
   return <PlatformContext.Provider value={value}>{children}</PlatformContext.Provider>;
 }

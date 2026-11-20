@@ -46,7 +46,7 @@ export function DailiesPage() {
           <li>Everyone in the world plays the same run, with the default settings, so scores compare fairly.</li>
           <li>One try per challenge per day. Leaving halfway keeps your place; you carry on where you left off.</li>
           <li>New challenges start at midnight UTC. Each day has its own leaderboard.</li>
-          <li>Sign in with Google to appear on the leaderboards.</li>
+          <li>Create an account to appear on the leaderboards.</li>
         </ul>
       </section>
     </div>

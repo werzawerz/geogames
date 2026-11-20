@@ -134,5 +134,5 @@ export function ScoresPage({ game, variant = 'world' }: { game: GameDefinition; 
 
 /** Global leaderboards list signed-in players only. */
 export function AnonymousNote() {
-  return <p className="muted small center">Global leaderboards show players who signed in with Google. Your scores are kept either way.</p>;
+  return <p className="muted small center">Global leaderboards show players with an account. Your scores are kept either way.</p>;
 }
