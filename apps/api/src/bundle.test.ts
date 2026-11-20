@@ -16,6 +16,7 @@ import {
   createHalfway,
   createRiverRun,
   createOnTheGrid,
+  createRegionRun,
   createNativeTongue,
   createSupplyChain,
   riverChoices,
@@ -37,6 +38,7 @@ import {
 import { queryCountries } from '@geogames/geodata';
 import { loadRivers } from '@geogames/geodata/rivers';
 import { loadLandGrid } from '@geogames/geodata/land-grid';
+import { loadRegions } from '@geogames/geodata/regions';
 import { loadNativeNames } from '@geogames/geodata/native-names';
 import { loadSupplyChain } from '@geogames/geodata/supply-chain';
 import { bundle } from '../scripts/bundle.ts';
@@ -288,6 +290,31 @@ describe('the server bundle', () => {
     expect(full).toEqual({ score: state.score, finished: true });
     expect(full.score).toBeGreaterThan(0);
     expect(await server.replayGame(definition, settings, 41, state.moves)).toEqual(full);
+  });
+
+  it('scores Region Run the same without the names and shapes: misses, skips, divisions of another country', async () => {
+    const definition = GAMES.find((g) => g.kind === 'region-run')!;
+    const settings = normalizeSettings({}, definition);
+    const { countries } = await loadRegions();
+    const engine = createRegionRun({ countries });
+    const wrongFor = (st: ReturnType<typeof engine.start>) => engine.countries.get(st.level.country)!.divisions.find((d) => d.id !== st.level.division && !st.level.guesses.includes(d.id))!.id;
+    const elsewhere = (st: ReturnType<typeof engine.start>) => countries.find((c) => c.id !== st.level.country)!.divisions[0]!.id;
+    let state = engine.start(52);
+    // 45 levels, into the last band: a division of another country first on every fifth (free), a miss on every third, a skip on every seventh.
+    for (let i = 1; i <= 45; i++) {
+      if (i % 7 === 0) state = engine.skip(state);
+      else {
+        if (i % 5 === 0) state = engine.guess(state, elsewhere(state)).state;
+        if (i % 3 === 0) state = engine.guess(state, wrongFor(state)).state;
+        state = engine.guess(state, state.level.division).state;
+      }
+      if (state.status === 'level-over') state = engine.nextLevel(state);
+    }
+    while (state.status !== 'over') state = engine.skip(state.status === 'level-over' ? engine.nextLevel(state) : state);
+    const full = await replayGame(definition, settings, 52, state.moves);
+    expect(full).toEqual({ score: state.score, finished: true });
+    expect(full.score).toBeGreaterThan(0);
+    expect(await server.replayGame(definition, settings, 52, state.moves)).toEqual(full);
   });
 
   it('replays hard Border Route with its fixed guesses', async () => {

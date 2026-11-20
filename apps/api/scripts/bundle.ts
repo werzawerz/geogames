@@ -61,6 +61,17 @@ function slim(file: string, data: any): unknown {
       commodities: data.commodities.map(({ id, kind, tier, producers }: Record<string, any>) => ({ id, kind, tier, producers: producers.map(({ id, value, share }: Record<string, unknown>) => ({ id, value, share })) })),
     };
   }
+  // Region Run scores by which divisions are targets and how well known each is: ids, tier, fame; never names or shapes.
+  if (/regions.json$/.test(file)) {
+    return {
+      generatedAt: data.generatedAt,
+      countries: data.countries.map(({ id, tier, divisions }: Record<string, any>) => ({
+        id,
+        tier,
+        divisions: divisions.map(({ id, fame, target }: Record<string, unknown>) => ({ id, fame, target })),
+      })),
+    };
+  }
   // Blank Atlas replays need only what each feature is, where, and what it's part of; never names or outlines.
   if (/blank-atlas\.json$/.test(file)) {
     return {
