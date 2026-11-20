@@ -3201,11 +3201,23 @@ summary:focus-visible {
 }
 
 .duel-name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
   width: min(20rem, 100%);
   text-align: left;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .duel-name input {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  min-height: 44px;
   width: 100%;
 }
 
@@ -3351,6 +3363,13 @@ summary:focus-visible {
   }
 
   .duel-level-cities li {
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1rem;
+  }
+
+  .duel-level-cities li span:first-child {
+    flex: 1 1 100%;
+    font-weight: 600;
   }
 }

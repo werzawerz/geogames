@@ -439,3 +439,12 @@ Cases:
 **Later:**
 - More games: any engine whose next puzzle doesn't depend on the moves (Border Route? Pin Drop?).
 - A live race mode over Realtime Broadcast, with cosmetic progress messages only. The result still comes from replay.
+
+## 9. As built (deviations from the design)
+
+- The duel DTO also carries `seed` once the duel is finished (with the moves), because the level table replays both runs and the challenger's seed was otherwise hidden after play. A finished duel's seed gives nothing away.
+- The challenger's level is worked out in the browser from their moves, so the DTO's `level` stays null for them.
+- `cleared` in `arcadeRunSummary` is the engine's own count of cleared levels; a level finished by skipping counts.
+- Asking `POST /duels` again for a run that already has a duel returns its code before the 24 h check, so a reload days later still works.
+- The sign-in page opens on "Log in" for `#/sign-in/log-in` (the duel gate's two buttons).
+- Step 10 (a "your turn" header badge) was not built.
