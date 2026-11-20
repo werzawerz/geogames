@@ -496,3 +496,42 @@ A game can be duelled when, for one seed and its settings, both players face the
   - The level table works for every game with levels and has a key for its marks. Streaks and quizzes compare scores only.
   - The duels list names each duel's game.
 - Higher or Lower, Flags and Capitals, Great Circle and City Circle now resume a run after a reload, like the others, so a challenger who reloads keeps their place.
+
+## 11. Rework after the user tried it (2026-11-20)
+
+The user: "the user has to know the names to pick the game. It should have a similar design like the home page or daily. Games which have a duel version should, at the end of playing, give an option to challenge somebody. If a game has a daily challenge, at the beginning the user should be able to select whether to play random or the daily game (daily games must be allowed to play once per day)." This section replaces what §3 and §10 say about the picker and the game-over button.
+
+### The new-duel page
+- `#/duels/new` is a card grid, grouped like the home page, with the same `game-card` cards and card pictures (`GameCardArt`). Each card has a **Duel** button; games with a daily also say "Random or today's daily". Anyone can browse it; the account gate comes on the next step.
+- `#/duels/new/<game-id>` is the start step: the game's picture, then, for a game with a daily, two choices (radio buttons, ticked, not colour alone): **Random** ("A new run, just for this duel. Doesn't touch your daily.") or **Today's daily** ("Uses your one daily try, and counts on today's leaderboard", or "You've played it: your N points are the score to beat"). The Play button says what it does: "Play", "Play today's daily" or "Challenge with my daily".
+- A daily run started here is the player's one daily run (`startDaily`), keeps its moves where the daily page does, so either page resumes it, and counts on the day's board. If today's daily is already played, no run is played: that result becomes the duel.
+
+### "Challenge a friend" at the end of every run
+- **Why the user didn't see it.** Three reasons. On `main` the button existed for City Circle Arcade only (the other games came with this branch). It was shown only once the result had come back as `saved`: never in a run whose result wasn't stored online (offline, refused), and not until the save returned. And daily runs never had it.
+- Now `components/ChallengeFriend.tsx` sits under the score on the game page **and the daily result**, for every game `canDuel` allows, in every build with the server (a build without one has no duels, so no dead button):
+  - a saved run: "⚔️ Challenge a friend to these circles" (on a daily, "to today's circles"). It makes a duel of **that exact run**, already played: the friend has to beat this score. It is greyed out for the moment the result is on its way;
+  - without an account the same button goes to `#/sign-in` (with the note "Duels need a free account. Your run is kept while you make one."), and sign-in comes back to `#/duels/new/<session-id>`, which makes the duel from that run. Creating an account keeps the player id; logging in to another account moves the run with the merge. (If the account already had today's daily, the anonymous daily run is dropped by the merge and the page says the run can't become a duel.)
+  - a run the server doesn't have can't be checked, so the button becomes "⚔️ Challenge a friend at <game>", starting a fresh duel of the game, with "This run isn't saved online, so the duel starts with a new run."
+
+### Daily duels
+A duel made from a daily run is a **daily duel** for that day (`duels.daily_date`). Both players' runs are their one daily run of that day.
+
+- **Making one.** `POST /duels` now accepts a finished daily run (of a game with a daily). The 24 h rule and everything else are as before.
+- **Taking one** (`daily_duel_run` in SQL), for a duel of day D, today T (UTC):
+  - the taker finished their daily of D already → that result answers the duel at once (the button says "See who wins");
+  - they started it → they carry on with it (on old data and D = T, it starts over, as `start_daily_session` does);
+  - they haven't, and D = T → their daily run of D is opened now: accepting **is** their daily play, on the day's leaderboard;
+  - **opened on a later day** (D < T) with no usable run of D → a `duel` run on D's seed: it counts for the duel only, on no board. The invitation says "That day is over, so your run counts for this duel only."
+- **One daily run can answer several daily duels** of the same day, so `challenger_session` is unique only for random duels (`duels_one_challenger_run`, a partial index).
+- **The clock** for the 24 h limit starts when the duel is taken (`accepted_at`), not when the run started, because a daily run may have been opened earlier.
+- **No peeking.** Getting a daily duel's seed always spends the day's daily (or the day is over). A finished daily duel shows its seed and moves (the day's answers) only to a viewer who finished that day's daily, or who has no daily run of a day that's over (they can't start one any more). Anyone with that day's daily still open, or the day still running and unplayed, sees the scores only, with "The level-by-level answers show once you've played this daily, or when its day is over." The creator's score is still the stake everyone sees.
+- **Daily boards.** The runs are ordinary daily sessions, so the one-per-day index, the daily leaderboard and the bests work as before. Duel-only runs (a past day) are variant `duel`, on no board.
+- **Merge.** When an anonymous challenger logs in to an account that also played that daily, the duel is answered with the account's run (the anonymous one is dropped, as one daily a day is kept).
+- **What the friend can still do**: someone who already played today's daily knows their own score and the stake before taking the duel, so they could decline a duel they'd lose. That's fine for friends.
+- A rematch of a daily duel is a random run of the same game (both have used the day's daily).
+
+### What else changed
+- DTO: `daily` (the day, or null), `yourDaily` (the viewer's own run of that day, `{status, score}`), and `session.variant` for the challenger. The pages name the day: "Duel · City Circle Arcade · daily of Fri 20 Nov", the strip "· today's daily", the share text "on today's daily of City Circle Arcade", the list "City Circle Arcade (daily, 20 Nov)".
+- The SQL change is in the not-yet-deployed `20261121000000_duels.sql` itself, not a new migration: new columns `daily_date` and `accepted_at`, helpers `utc_today()`, `daily_variant()` and `daily_duel_run()`, and the changes to `create_duel`, `duel_status`, `duel_view`, `accept_duel` and `merge_players`.
+- A daily played for 0 points counts as played on the start step (it reads the player's own board, not "a score above 0"). The dailies page still shows a 0-point daily as "Not played yet today"; that is older and not changed here.
+- Tests: 7 API tests (`daily duels` in `apps/api/src/app.test.ts`), `daily.test.ts`, router round trips for `#/duels/new/<session-id>`, and e2e tests for the card picker, challenging after signing in, and a daily duel end to end.
