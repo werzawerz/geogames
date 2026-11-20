@@ -181,6 +181,14 @@ const COUNTRIES: Config[] = [
   C('EGY', 'Egypt', 3, {}),
 ];
 
+/** What the country calls its divisions, for the line after an answer ("Bavaria is a state of Germany"). */
+const UNITS: Record<string, string> = {
+  USA: 'state', CAN: 'province or territory', AUS: 'state or territory', DEU: 'state', BRA: 'state', FRA: 'region', ITA: 'region',
+  ESP: 'autonomous community', MEX: 'state', IND: 'state or territory', JPN: 'prefecture', CHN: 'province', ARG: 'province',
+  TUR: 'province', POL: 'voivodeship', IDN: 'province', COL: 'department', PER: 'department', ZAF: 'province', IRN: 'province',
+  KAZ: 'region', SWE: 'county', NLD: 'province', CHE: 'canton', AUT: 'state', KOR: 'province', NGA: 'state', EGY: 'governorate',
+};
+
 // ---- geometry -----------------------------------------------------------------------------------
 
 const polygonsOf = (f: NeFeature): Poly[] => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates as Poly] : (f.geometry.coordinates as Poly[]));
@@ -425,7 +433,7 @@ for (const config of COUNTRIES) {
   const ids = divisions.map((d) => d.id);
   if (new Set(ids).size !== ids.length) throw new Error(`${config.id}: duplicate ids`);
   console.log(`${config.id}: ${divisions.length} divisions, ${divisions.filter((d) => d.target).length} targets, q=${q}`);
-  countries.push({ id: config.id, name: config.name, tier: config.tier, q, divisions });
+  countries.push({ id: config.id, name: config.name, tier: config.tier, unit: UNITS[config.id]!, q, divisions });
 }
 
 const data: RegionData = { generatedAt: new Date().toISOString().slice(0, 10), countries };

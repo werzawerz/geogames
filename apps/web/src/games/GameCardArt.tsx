@@ -234,6 +234,16 @@ const ART: Record<string, () => ReactNode> = {
       <text x={170} y={240} className="art-chain-pct">7%</text>
     </g>
   ),
+  'region-run': () => (
+    <g className="art-region">
+      <path d="M70 70l120-34 96 26 14 74-58 40-96-8-60-52z" />
+      <path d="M286 62l108-22 60 46-22 70-96 20-64-40z" />
+      <path d="M394 40l92 8 82 52-26 82-84 18-44-60z" className="art-lit" />
+      <path d="M110 166l106 8 40 60-66 36-92-24z" />
+      <path d="M256 174l96-8 62 12-30 62-98 6z" />
+      <path d="M440 178l106-12-14 72-80 22-40-30z" />
+    </g>
+  ),
   'on-the-grid': () => (
     <>
       <ellipse className="art-hidden" cx={WIDTH / 2} cy={HEIGHT / 2 - 10} rx={230} ry={105} />

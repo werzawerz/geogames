@@ -12,6 +12,7 @@ const BorderBlitzScreen = lazy(() => import('./border-blitz/BorderBlitzScreen.ts
 const PinDropScreen = lazy(() => import('./pin/PinDropScreen.tsx').then((m) => ({ default: m.PinDropScreen })));
 const HalfwayScreen = lazy(() => import('./halfway/HalfwayScreen.tsx').then((m) => ({ default: m.HalfwayScreen })));
 const ClockworkScreen = lazy(() => import('./clockwork/ClockworkScreen.tsx').then((m) => ({ default: m.ClockworkScreen })));
+const RegionRunScreen = lazy(() => import('./region-run/RegionRunScreen.tsx').then((m) => ({ default: m.RegionRunScreen })));
 const OnTheGridScreen = lazy(() => import('./on-the-grid/OnTheGridScreen.tsx').then((m) => ({ default: m.OnTheGridScreen })));
 const RiverRunScreen = lazy(() => import('./river-run/RiverRunScreen.tsx').then((m) => ({ default: m.RiverRunScreen })));
 const SupplyChainScreen = lazy(() => import('./supply-chain/SupplyChainScreen.tsx').then((m) => ({ default: m.SupplyChainScreen })));
@@ -79,6 +80,12 @@ export function GameScreen(props: GameScreenProps) {
       return (
         <Suspense fallback={<p className="panel center muted">Loading…</p>}>
           <SupplyChainScreen {...props} game={game} />
+        </Suspense>
+      );
+    case 'region-run':
+      return (
+        <Suspense fallback={<p className="panel center muted">Loading…</p>}>
+          <RegionRunScreen {...props} game={game} />
         </Suspense>
       );
     case 'on-the-grid':

@@ -1,14 +1,23 @@
 import { geoAlbersUsa, geoBounds, geoConicEqualArea, geoMercator, type GeoPermissibleObjects, type GeoProjection } from 'd3-geo';
 
-/** The map is drawn on this many units, with this much room round the country. */
-export const REGION_MAP = { width: 960, height: 540, padding: 40 } as const;
+export interface RegionFrame {
+  width: number;
+  height: number;
+  /** Room round the country. */
+  padding: number;
+}
+
+/** The map's units on a wide screen. What the build counts as "big enough to see" is measured on this. */
+export const REGION_MAP: RegionFrame = { width: 960, height: 540, padding: 40 };
+/** On a phone the map is taller than wide, to use the screen under the question. */
+export const REGION_MAP_TALL: RegionFrame = { width: 640, height: 720, padding: 32 };
 
 /**
  * The projection that frames a country in the map. Build and screen both use it,
  * so what the build counts as "big enough to see" is what the player sees.
  */
-export function regionProjection(countryId: string, shape: GeoPermissibleObjects): GeoProjection {
-  const { width, height, padding } = REGION_MAP;
+export function regionProjection(countryId: string, shape: GeoPermissibleObjects, frame: RegionFrame = REGION_MAP): GeoProjection {
+  const { width, height, padding } = frame;
   const extent: [[number, number], [number, number]] = [
     [padding, padding],
     [width - padding, height - padding],

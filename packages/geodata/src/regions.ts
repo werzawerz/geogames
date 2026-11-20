@@ -22,6 +22,8 @@ export interface RegionCountry {
   name: string;
   /** 1: the countries everybody can place a few divisions of. 3: the ones few people know. */
   tier: 1 | 2 | 3;
+  /** What the country calls them: "state", "province", "canton". */
+  unit: string;
   /** Integer steps in `poly` are in 1/q degrees. */
   q: number;
   divisions: RegionDivision[];

@@ -142,18 +142,18 @@ describe('region run', () => {
   });
 
   it('brings in the other tiers by level, over many seeds', () => {
-    const seen = { 2: new Set<string>(), 3: new Set<string>() };
+    const seen: Record<number, Set<string>> = { 2: new Set<string>(), 3: new Set<string>() };
     for (let seed = 1; seed <= SEEDS; seed++) {
       const { levels } = playPerfect(seed, 60);
       levels.forEach((l) => {
         const tier = divisionOf.get(l.division)!.country.tier;
         if (l.number <= 8) expect(tier).toBe(1);
         if (l.number <= 20) expect(tier, `level ${l.number}`).toBeLessThanOrEqual(2);
-        if (tier > 1) seen[tier].add(l.country);
+        if (tier > 1) seen[tier]!.add(l.country);
       });
     }
-    expect(seen[2].size).toBeGreaterThanOrEqual(7);
-    expect(seen[3].size).toBeGreaterThanOrEqual(10);
+    expect(seen[2]!.size).toBeGreaterThanOrEqual(7);
+    expect(seen[3]!.size).toBeGreaterThanOrEqual(10);
   });
 
   it('asks only targets, never repeats a division, and spaces out the countries', () => {
