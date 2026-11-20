@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getGame, normalizeSettings, variantKey, type GameSettings } from '@geogames/games';
 import { DuelGate, DuelsNeedServer } from '../components/DuelGate.tsx';
 import { GameScreen } from '../games/registry.tsx';
@@ -24,6 +24,28 @@ export function NewDuelPage({ rematchOf }: { rematchOf?: string }) {
   const [phase, setPhase] = useState<Phase>({ name: 'intro' });
   const [starting, setStarting] = useState(false);
   const finishing = useRef(false);
+  // A rematch is checked before the run, not after it: nobody should play a whole run for nothing.
+  const [blocked, setBlocked] = useState<{ message: string; code?: string } | null>(null);
+  const signedIn = account.status === 'signed-in';
+  useEffect(() => {
+    if (!rematchOf || !duels || !signedIn) return;
+    let cancelled = false;
+    duels.get(rematchOf).then(
+      (dto) => {
+        if (cancelled) return;
+        if (!dto) setBlocked({ message: "This duel link doesn't work. Check you copied all of it." });
+        else if (dto.you === 'visitor') setBlocked({ message: 'Only the two players of a duel can ask for a rematch.' });
+        else if (dto.state !== 'finished') setBlocked({ message: 'You can ask for a rematch once this duel is finished.', code: dto.code });
+        else if (dto.rematch) setBlocked({ message: 'There is already a rematch of this duel.', code: dto.rematch.code });
+      },
+      () => {
+        // Unreachable now: making the duel at the end will say so.
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [rematchOf, duels, signedIn]);
 
   const shell = (children: React.ReactNode) => (
     <div className="page">
@@ -46,6 +68,8 @@ export function NewDuelPage({ rematchOf }: { rematchOf?: string }) {
     const result = await startPlay(game, settings);
     setStarting(false);
     if (result.status === 'update-required') setPhase({ name: 'update-required' });
+    // Without a server session the run can't become a duel: say so now, not after it.
+    else if (!result.play.sessionId) setPhase({ name: 'failed', retry: start, message: "We couldn't reach the server, so a duel can't start right now." });
     else setPhase({ name: 'playing', play: result.play, settings });
   };
 
@@ -83,7 +107,22 @@ export function NewDuelPage({ rematchOf }: { rematchOf?: string }) {
 
   return shell(
     <>
-      {phase.name === 'intro' && (
+      {phase.name === 'intro' && blocked && (
+        <div className="panel center">
+          <p className="lead">{blocked.message}</p>
+          <div className="row">
+            {blocked.code && (
+              <a className="btn btn-primary" href={href({ page: 'duel', code: blocked.code })}>
+                Open the duel
+              </a>
+            )}
+            <a className="btn" href={href({ page: 'duel-new' })}>
+              Start a new duel
+            </a>
+          </div>
+        </div>
+      )}
+      {phase.name === 'intro' && !blocked && (
         <div className="panel center">
           <p className="lead">Play your run first. Your friend then gets exactly the same circles and has to beat your score.</p>
           <button className="btn btn-primary btn-lg" onClick={start} disabled={starting}>

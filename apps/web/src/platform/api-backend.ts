@@ -241,11 +241,11 @@ export function createApiBackend(baseUrl: string, auth: Auth): Backend {
       }
     },
     async finishPlay(play, game, player): Promise<FinishResult> {
-      const keepLocally = async (status: 'offline' | 'refused', notice: string): Promise<FinishResult> => ({
-        ...(await local.finishPlay(play, game, player)),
-        status,
-        notice,
-      });
+      const keepLocally = async (status: 'offline' | 'refused', notice: string): Promise<FinishResult> =>
+        game.variant === DUEL_VARIANT
+          ? // A duel run only counts on the server; the duel page keeps its moves to send again.
+            { isPersonalBest: false, personalBest: game.score, score: game.score, status, notice }
+          : { ...(await local.finishPlay(play, game, player)), status, notice };
       if (!play.sessionId) {
         return play.unsaved === 'refused' ? keepLocally('refused', NOTICES.busy) : keepLocally('offline', NOTICES.offlineAtStart);
       }

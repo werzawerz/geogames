@@ -108,9 +108,15 @@ const CODE = /^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{8}$/;
 const DUEL_MAX_AGE_MS = 24 * 3_600_000;
 
 function newDuelCode(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(8));
-  // 32 symbols in the alphabet, so a byte modulo 32 is unbiased.
-  return [...bytes].map((b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join('');
+  // 31 symbols, so only bytes below 248 (8 × 31) map evenly; the rest are drawn again.
+  const limit = 256 - (256 % CODE_ALPHABET.length);
+  let code = '';
+  while (code.length < 8) {
+    for (const b of crypto.getRandomValues(new Uint8Array(8))) {
+      if (b < limit && code.length < 8) code += CODE_ALPHABET[b % CODE_ALPHABET.length];
+    }
+  }
+  return code;
 }
 
 /** A code from the URL: pasted lowercase works; anything of the wrong shape is no duel. */
@@ -415,6 +421,8 @@ export function createApp({
         p_open_days: DUEL_OPEN_DAYS,
         p_per_hour: limits.duelsPerHour,
         p_max_open: limits.openDuelsMax,
+        p_dataset_version: DATASET_VERSION,
+        p_play_hours: DUEL_PLAY_HOURS,
       })) as { ok: boolean; code?: string; error?: string };
       if (made.ok) return c.json<CreateDuelResponse>({ code: made.code! }, 201);
       if (made.error === 'rate-limited') return fail(c, 429, 'rate-limited');
@@ -479,6 +487,8 @@ export function createApp({
       if (!caller) return fail(c, 401, 'unauthorized');
       entries = await rpc('leaderboard_personal', { p_player: caller.id, p_game_id: gameId, p_variant: variant, p_limit: limit });
     } else {
+      // Duel runs are played against one friend, not the world.
+      if (variant === DUEL_VARIANT) return fail(c, 404, 'not-found');
       entries = await rpc('leaderboard_global', { p_game_id: gameId, p_variant: variant, p_limit: limit });
     }
     return c.json<LeaderboardResponse>({ entries: entries as LeaderboardEntryDto[] });

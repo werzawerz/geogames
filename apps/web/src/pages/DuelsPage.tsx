@@ -45,7 +45,8 @@ export function DuelsPage() {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!duels || account.status !== 'signed-in') return;
+    // Anonymous players load theirs too: a friend's duel they took, or a rematch for them.
+    if (!duels || account.status === 'local') return;
     let cancelled = false;
     setLoaded({ status: 'loading' });
     duels.list().then(
@@ -85,7 +86,8 @@ export function DuelsPage() {
       </div>
     );
   }
-  if (account.status === 'anonymous') {
+  const none = loaded.status === 'ok' && list.length === 0;
+  if (account.status === 'anonymous' && (none || loaded.status === 'offline')) {
     return (
       <div className="page">
         {header}
@@ -93,8 +95,6 @@ export function DuelsPage() {
       </div>
     );
   }
-
-  const none = loaded.status === 'ok' && list.length === 0;
 
   return (
     <div className="page duels-page">

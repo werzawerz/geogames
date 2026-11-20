@@ -47,61 +47,6 @@ language sql stable as $$
   from public.game_sessions s where s.id = p_session and s.player_id = p_player
 $$;
 
--- Makes a duel from the caller's finished run. Asking again for the same run gives
--- the same duel. Refuses when the player made too many duels in the last hour or has
--- too many open ones; the code is chosen by the API (a clash asks for another).
-create function public.create_duel(
-  p_player uuid,
-  p_code text,
-  p_session uuid,
-  p_level integer,
-  p_rematch_of text,
-  p_open_days integer,
-  p_per_hour integer,
-  p_max_open integer
-) returns jsonb
-language plpgsql as $$
-declare
-  s public.game_sessions;
-  previous public.duels;
-  existing text;
-  other uuid;
-begin
-  perform 1 from public.players where id = p_player for update;
-  select d.code into existing from public.duels d where d.creator_session = p_session and d.creator_id = p_player;
-  if found then
-    return jsonb_build_object('ok', true, 'code', existing);
-  end if;
-  select * into s from public.game_sessions where id = p_session and player_id = p_player and status = 'finished';
-  if not found then
-    return jsonb_build_object('ok', false, 'error', 'not-found');
-  end if;
-  if (select count(*) from public.duels d where d.creator_id = p_player and d.created_at > now() - interval '1 hour') >= p_per_hour
-    or (select count(*) from public.duels d
-        where d.creator_id = p_player and d.challenger_id is null and d.expires_at > now()) >= p_max_open
-  then
-    return jsonb_build_object('ok', false, 'error', 'rate-limited');
-  end if;
-  if p_rematch_of is not null then
-    select * into previous from public.duels where code = p_rematch_of;
-    if not found or previous.challenger_id is null or p_player not in (previous.creator_id, previous.challenger_id) then
-      return jsonb_build_object('ok', false, 'error', 'forbidden');
-    end if;
-    other := case when previous.creator_id = p_player then previous.challenger_id else previous.creator_id end;
-  end if;
-  if exists (select 1 from public.duels where code = p_code) then
-    return jsonb_build_object('ok', false, 'error', 'code-taken');
-  end if;
-  insert into public.duels (code, game_id, settings, seed, dataset_version, creator_id, creator_session,
-                            creator_level, reserved_for, rematch_of, expires_at)
-  values (p_code, s.game_id, s.settings, s.seed, s.dataset_version, p_player, s.id,
-          p_level, other, p_rematch_of, now() + make_interval(days => p_open_days));
-  return jsonb_build_object('ok', true, 'code', p_code);
-exception when unique_violation then
-  return jsonb_build_object('ok', false, 'error', 'code-taken');
-end
-$$;
-
 -- Where a duel stands, worked out when read: {state, reason, forfeit}.
 create function public.duel_status(d public.duels, p_dataset_version text, p_play_hours integer) returns jsonb
 language plpgsql stable as $$
@@ -123,13 +68,81 @@ begin
   if ch.status = 'finished' and ch.finished_at <= deadline then
     return jsonb_build_object('state', 'finished', 'forfeit', false);
   end if;
-  if now() > deadline then
-    return jsonb_build_object('state', 'finished', 'forfeit', true);
-  end if;
+  -- Before the forfeit: a run on old data can't be sent any more, so a challenger
+  -- caught by an update mustn't lose for not finishing it. The duel is void.
   if d.dataset_version <> p_dataset_version then
     return jsonb_build_object('state', 'expired', 'reason', 'outdated');
   end if;
+  -- Out of time, whether the run was never sent or sent too late.
+  if now() > deadline then
+    return jsonb_build_object('state', 'finished', 'forfeit', true);
+  end if;
   return jsonb_build_object('state', 'playing');
+end
+$$;
+
+-- Makes a duel from the caller's finished run. Asking again for the same run gives
+-- the same duel. Refuses when the player made too many duels in the last hour or has
+-- too many open ones; the code is chosen by the API (a clash asks for another). A
+-- rematch follows a finished duel the caller played in, and only the other player
+-- of that duel may take it.
+create function public.create_duel(
+  p_player uuid,
+  p_code text,
+  p_session uuid,
+  p_level integer,
+  p_rematch_of text,
+  p_open_days integer,
+  p_per_hour integer,
+  p_max_open integer,
+  p_dataset_version text,
+  p_play_hours integer
+) returns jsonb
+language plpgsql as $$
+declare
+  s public.game_sessions;
+  previous public.duels;
+  existing text;
+  other uuid;
+begin
+  -- One player's requests queue here, so two clicks can't make two duels or overrun the limits.
+  perform 1 from public.players where id = p_player for update;
+  select d.code into existing from public.duels d where d.creator_session = p_session and d.creator_id = p_player;
+  if found then
+    return jsonb_build_object('ok', true, 'code', existing);
+  end if;
+  select * into s from public.game_sessions where id = p_session and player_id = p_player and status = 'finished';
+  if not found then
+    return jsonb_build_object('ok', false, 'error', 'not-found');
+  end if;
+  if (select count(*) from public.duels d where d.creator_id = p_player and d.created_at > now() - interval '1 hour') >= p_per_hour
+    or (select count(*) from public.duels d
+        where d.creator_id = p_player and d.challenger_id is null and d.expires_at > now()) >= p_max_open
+  then
+    return jsonb_build_object('ok', false, 'error', 'rate-limited');
+  end if;
+  if p_rematch_of is not null then
+    select * into previous from public.duels where code = p_rematch_of;
+    if not found or previous.challenger_id is null or p_player not in (previous.creator_id, previous.challenger_id)
+      or public.duel_status(previous, p_dataset_version, p_play_hours) ->> 'state' <> 'finished'
+    then
+      return jsonb_build_object('ok', false, 'error', 'forbidden');
+    end if;
+    other := case when previous.creator_id = p_player then previous.challenger_id else previous.creator_id end;
+  end if;
+  if exists (select 1 from public.duels where code = p_code) then
+    return jsonb_build_object('ok', false, 'error', 'code-taken');
+  end if;
+  insert into public.duels (code, game_id, settings, seed, dataset_version, creator_id, creator_session,
+                            creator_level, reserved_for, rematch_of, expires_at)
+  values (p_code, s.game_id, s.settings, s.seed, s.dataset_version, p_player, s.id,
+          p_level, other, p_rematch_of, now() + make_interval(days => p_open_days));
+  return jsonb_build_object('ok', true, 'code', p_code);
+exception when unique_violation then
+  -- A code made at the same moment by someone else: the API tries another. (The
+  -- other unique column, creator_session, can't clash: the player lock and the
+  -- check above see an earlier duel of the same run first.)
+  return jsonb_build_object('ok', false, 'error', 'code-taken');
 end
 $$;
 

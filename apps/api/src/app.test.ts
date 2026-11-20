@@ -786,4 +786,87 @@ describe('duels', () => {
     const next = await finishedRun('bob');
     expect((await call('POST', '/duels', 'bob', { sessionId: next.sessionId })).status).toBe(429);
   });
+
+  it('lets only one of two simultaneous players take a duel', async () => {
+    const { code } = await makeDuel('alice');
+    const results = await Promise.all([accept('bob', code), accept('anon', code), accept('anon2', code)]);
+    expect(results.filter((r) => r.status === 200)).toHaveLength(1);
+    expect(results.filter((r) => r.status === 409)).toHaveLength(2);
+  });
+
+  it('refuses a rematch of a duel that is not finished', async () => {
+    const { code } = await makeDuel('alice');
+    await accept('bob', code);
+    // Bob is still playing: neither of them can ask for a rematch yet.
+    const bobs = await finishedRun('bob');
+    expect((await call('POST', '/duels', 'bob', { sessionId: bobs.sessionId, rematchOf: code })).status).toBe(403);
+    const alices = await finishedRun('alice');
+    expect((await call('POST', '/duels', 'alice', { sessionId: alices.sessionId, rematchOf: code })).status).toBe(403);
+    // Void (the game was updated while Bob played): no rematch either.
+    await local.db.exec(`update public.duels set dataset_version = 'old' where code = '${code}'`);
+    expect((await call('POST', '/duels', 'alice', { sessionId: alices.sessionId, rematchOf: code })).status).toBe(403);
+  });
+
+  it('counts a result sent after the deadline as a forfeit', async () => {
+    const { code } = await makeDuel('alice', 1);
+    const taken = await accept('bob', code);
+    await local.db.exec(`update public.game_sessions set started_at = now() - interval '25 hours' where variant = 'duel'`);
+    const played = await playArcade(taken.json.seed, 3);
+    await call('POST', `/sessions/${taken.json.sessionId}/finish`, 'bob', { moves: played.moves });
+    const { json } = await call('GET', `/duels/${code}`, 'alice');
+    expect(json).toMatchObject({ state: 'finished', outcome: 'creator', challenger: { status: 'forfeit', score: null } });
+    expect(json.challenger.moves).toBeUndefined();
+  });
+
+  it('voids a duel whose data changed while the challenger played, even after the deadline', async () => {
+    const { code } = await makeDuel('alice');
+    await accept('bob', code);
+    await local.db.exec(`update public.duels set dataset_version = 'old' where code = '${code}'`);
+    await local.db.exec(`update public.game_sessions set started_at = now() - interval '25 hours' where variant = 'duel'`);
+    const { json } = await call('GET', `/duels/${code}`, 'bob');
+    expect(json).toMatchObject({ state: 'expired', expiredReason: 'outdated', outcome: null });
+    expect(json.session).toBeUndefined();
+    expect(json.seed).toBeUndefined();
+  });
+
+  it('keeps duel runs off the world leaderboard endpoint', async () => {
+    const { code } = await makeDuel('alice');
+    await play('bob', code, 1);
+    expect((await call('GET', '/leaderboards/city-circle-arcade/duel')).status).toBe(404);
+    expect((await call('GET', '/leaderboards/city-circle-arcade/duel?scope=personal', 'bob')).json.entries).toHaveLength(1);
+  });
+
+  it("moves a rematch reserved for an anonymous player into the account they log in to", async () => {
+    const first = await makeDuel('alice');
+    await play('anon', first.code, 1);
+    const run = await finishedRun('alice');
+    const rematch = (await call('POST', '/duels', 'alice', { sessionId: run.sessionId, rematchOf: first.code })).json.code;
+    await call('POST', '/me/merge', 'bob', { anonymousToken: 'anon' });
+    expect((await call('GET', `/duels/${rematch}`, 'bob')).json).toMatchObject({ reservedForYou: true, state: 'open' });
+    expect((await call('GET', `/duels/${first.code}`, 'bob')).json).toMatchObject({ you: 'challenger', rematch: { forYou: true } });
+    expect((await accept('bob', rematch)).status).toBe(200);
+  });
+
+  it('drops a rematch reserved for the account the creator merges with', async () => {
+    const first = await makeDuel('bob');
+    await play('anon', first.code, 1);
+    const run = await finishedRun('bob');
+    const rematch = (await call('POST', '/duels', 'bob', { sessionId: run.sessionId, rematchOf: first.code })).json.code;
+    await call('POST', '/me/merge', 'bob', { anonymousToken: 'anon' });
+    expect((await call('GET', `/duels/${first.code}`, 'bob')).status).toBe(404);
+    expect((await call('GET', `/duels/${rematch}`, 'bob')).status).toBe(404);
+    // The rest of the merge still happens: Bob keeps his own runs and gains anon's.
+    expect((await call('GET', '/me', 'bob')).json.bests['city-circle-arcade']).toBeDefined();
+  });
+
+  it("hides the challenger's result in the list while they play", async () => {
+    const { code } = await makeDuel('alice');
+    await accept('bob', code);
+    const listed = (await call('GET', '/duels', 'alice')).json.duels[0];
+    expect(listed).toMatchObject({ state: 'playing', challenger: { score: null, durationSec: null } });
+    expect(listed.session).toBeUndefined();
+    expect(listed.seed).toBeUndefined();
+    const bobsList = (await call('GET', '/duels', 'bob')).json.duels[0];
+    expect(bobsList.creator.moves).toBeUndefined();
+  });
 });
