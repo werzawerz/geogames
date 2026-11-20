@@ -57,8 +57,8 @@ test('a game runs on a server seed, and its verified score reaches the global le
   // What the page shows is what the server computed by replaying.
   expect(finishes[0]!.score).toBe(shown);
   await expect(page.locator('.score-notice')).toHaveCount(0);
-  // Capitals can be duelled too: without an account the button leads to the new-duel page for this game.
-  await expect(page.getByRole('link', { name: '⚔️ Challenge a friend to these questions' })).toHaveAttribute('href', '#/duels/new/capitals');
+  // Capitals can be duelled too: the button shows without an account (it asks for one when pressed).
+  await expect(page.getByRole('button', { name: '⚔️ Challenge a friend to these questions' })).toBeEnabled();
 
   // Rename, then find the score on the public leaderboard.
   await page.getByRole('link', { name: 'Leaderboard' }).click();
@@ -328,6 +328,10 @@ test('a duel: an account holder challenges, an anonymous friend plays the same c
   await createAccount(alice);
   const started = alice.waitForResponse((r) => r.url().endsWith('/sessions') && r.status() === 201);
   await alice.goto('/#/duels/new');
+  await alice.getByRole('link', { name: 'Duel at City Circle Arcade' }).click();
+  await expect(alice.getByRole('heading', { name: 'New duel: City Circle Arcade' })).toBeVisible();
+  // A game with a daily offers both; a random run is the default.
+  await expect(alice.getByRole('radio', { name: /Random/ })).toHaveAttribute('aria-checked', 'true');
   await expect(alice.getByText('Play your run first')).toBeVisible();
   await alice.getByRole('button', { name: 'Play', exact: true }).click();
   const { seed } = (await (await started).json()) as { seed: number };
@@ -445,9 +449,13 @@ test('a Blank Atlas duel: picked on the new-duel page, the friend gets the same 
   await alice.goto('/#/');
   await createAccount(alice);
   await alice.goto('/#/duels/new');
-  await expect(alice.getByRole('heading', { name: 'New duel: City Circle Arcade' })).toBeVisible();
-  await alice.getByRole('combobox', { name: 'Game' }).selectOption('blank-atlas');
+  // The games are cards, grouped like the home page.
+  await expect(alice.getByRole('heading', { name: 'Duel a friend' })).toBeVisible();
+  await expect(alice.locator('.duel-game-card')).toHaveCount(20);
+  await alice.getByRole('link', { name: 'Duel at Blank Atlas' }).click();
   await expect(alice.getByRole('heading', { name: 'New duel: Blank Atlas' })).toBeVisible();
+  // No daily for Blank Atlas, so no choice to make.
+  await expect(alice.getByRole('radio')).toHaveCount(0);
   await expect(alice.getByText('gets exactly the same places')).toBeVisible();
   const started = alice.waitForResponse((r) => r.url().endsWith('/sessions') && r.status() === 201);
   await alice.getByRole('button', { name: 'Play', exact: true }).click();
@@ -495,18 +503,95 @@ test('a Blank Atlas duel: picked on the new-duel page, the friend gets the same 
 });
 
 test('duels need an account: an anonymous player gets the gate, and comes back to it after creating one', async ({ page }) => {
+  // Anyone can look at the games; starting one asks for an account.
   await page.goto('/#/duels/new');
+  await page.getByRole('link', { name: 'Duel at Pin Drop' }).click();
   await expect(page.getByText('Duels need an account')).toBeVisible();
   await page.getByRole('link', { name: 'Create account' }).click();
   await page.getByLabel('Email').fill(newEmail());
   await page.getByLabel('Password').fill('correct horse');
   await page.getByRole('button', { name: 'Create account', exact: true }).last().click();
-  await expect(page).toHaveURL(/#\/duels\/new$/);
+  await expect(page).toHaveURL(/#\/duels\/new\/pin-drop$/);
   await expect(page.getByText('Play your run first')).toBeVisible();
   // With an account, the Duels page has none yet.
   await page.getByRole('banner').getByRole('link', { name: 'Duels' }).click();
   await expect(page.getByRole('heading', { name: 'Duels' })).toBeVisible();
   await expect(page.getByText('No duels yet.')).toBeVisible();
+});
+
+test('challenging from the end of a run without an account: sign in, and that very run becomes the duel', async ({ page }) => {
+  test.slow();
+  await page.goto('/#/');
+  const shown = await playCapitals(page);
+  await page.getByRole('button', { name: '⚔️ Challenge a friend to these questions' }).click();
+  await expect(page).toHaveURL(/#\/sign-in$/);
+  await page.getByLabel('Email').fill(newEmail());
+  await page.getByLabel('Password').fill('correct horse');
+  await page.getByRole('button', { name: 'Create account', exact: true }).last().click();
+  await expect(page).toHaveURL(/#\/duel\/[2-9A-HJKMNP-Z]{8}$/, { timeout: 15_000 });
+  await expect(page.locator('.eyebrow')).toHaveText('Duel · Capitals');
+  await expect(page.locator('.big-score')).toHaveText(String(shown));
+});
+
+test("a daily duel: today's daily for both, one try each, on the day's leaderboard", async ({ browser }) => {
+  test.slow();
+  const engine = await duelEngine();
+
+  // Alice picks today's daily on the start step and plays it: it is her one daily run.
+  const alice = await (await browser.newContext()).newPage();
+  await alice.goto('/#/');
+  await createAccount(alice);
+  await alice.goto('/#/duels/new/city-circle-arcade');
+  await alice.getByRole('radio', { name: /Today's daily/ }).click();
+  await expect(alice.getByText('Uses your one daily try')).toBeVisible();
+  const opened = alice.waitForResponse((r) => r.url().endsWith('/daily/city-circle-arcade/start') && r.status() === 200);
+  await alice.getByRole('button', { name: "Play today's daily" }).click();
+  const { seed } = (await (await opened).json()) as { seed: number };
+  await expect(alice.getByRole('combobox')).toBeVisible({ timeout: 20_000 });
+  let a = engine.start(seed);
+  a = await skipOut(alice, engine, a);
+  await alice.getByRole('button', { name: 'See final score' }).click();
+  await expect(alice).toHaveURL(/#\/duel\/[2-9A-HJKMNP-Z]{8}$/, { timeout: 15_000 });
+  const link = alice.url();
+  await expect(alice.locator('.eyebrow')).toContainText('Duel · City Circle Arcade · daily of');
+  // Her daily is played: the daily page shows the result, with the challenge button under it.
+  await alice.goto(link.split('#')[0] + '#/daily/city-circle-arcade');
+  await expect(alice.getByText("Today's result")).toBeVisible();
+  await expect(alice.getByRole('button', { name: "⚔️ Challenge a friend to today's circles" })).toBeVisible();
+  // Starting another daily duel reuses that result rather than playing again.
+  await alice.goto(link.split('#')[0] + '#/duels/new/city-circle-arcade');
+  await alice.getByRole('radio', { name: /Today's daily/ }).click();
+  await expect(alice.getByText(`your ${a.score} points are the score to beat`)).toBeVisible();
+
+  // Bob (no account) is told the duel spends his daily, plays it, and it counts as his daily.
+  const bob = await (await browser.newContext()).newPage();
+  await bob.goto(link);
+  await expect(bob.getByText("This is today's daily challenge: playing it here uses your one daily try")).toBeVisible();
+  const accepted = bob.waitForResponse((r) => r.url().endsWith('/accept') && r.status() === 200);
+  await bob.getByRole('button', { name: 'Play the duel' }).click();
+  expect(((await (await accepted).json()) as { seed: number }).seed).toBe(seed);
+  await expect(bob.locator('.duel-strip')).toContainText("today's daily");
+  await expect(bob.getByRole('combobox')).toBeVisible({ timeout: 20_000 });
+  let b = engine.start(seed);
+  const first = engine.top(b.level)[0]!;
+  await pickCity(bob, engine, first);
+  b = engine.guess(b, first).state;
+  b = await skipOut(bob, engine, b);
+  await bob.getByRole('button', { name: 'See final score' }).click();
+  await expect(bob.locator('.duel-headline')).toContainText('You win!', { timeout: 15_000 });
+  // Both played the daily, so both see the answers level by level: Bob's one city, then a skip.
+  await expect(bob.locator('.duel-levels tbody tr').first()).toContainText('10 ↷');
+  // Bob's one daily is used up: the daily page shows his duel score.
+  await bob.goto(link.split('#')[0] + '#/daily/city-circle-arcade');
+  await expect(bob.getByText("Today's result")).toBeVisible();
+  await expect(bob.locator('.big-score')).toHaveText(String(b.score));
+
+  // Carol hasn't played today's daily: she sees the scores but not the answers.
+  const carol = await (await browser.newContext()).newPage();
+  await carol.goto(link);
+  await expect(carol.locator('.duel-headline')).toContainText(`${a.score}`);
+  await expect(carol.getByText("The level-by-level answers show once you've played this daily")).toBeVisible();
+  await expect(carol.locator('.duel-levels')).toHaveCount(0);
 });
 
 // Without the error-checking fixture: the 404 is logged by the browser.

@@ -201,13 +201,16 @@ function StartDuel({ game: picked, rematchOf }: { game?: GameDefinition; rematch
   const [blocked, setBlocked] = useState<{ message: string; code?: string } | null>(null);
   const [checked, setChecked] = useState(!rematchOf);
   // What the player scored in today's daily, if they've played it: a daily duel then uses that result.
-  const [todayScore, setTodayScore] = useState<number | undefined>(undefined);
+  // Read from their own board, not as "a score above 0": a daily played for 0 points is played.
+  const [todayScore, setTodayScore] = useState<number | null>(null);
   const signedIn = account.status === 'signed-in';
 
   useEffect(() => {
     if (!game || !hasDaily(game) || rematchOf) return;
     let cancelled = false;
-    scores.personalBest(game.id, dailyVariant(dailyDate())).then((s) => !cancelled && setTodayScore(s));
+    scores.top(game.id, dailyVariant(dailyDate()), 'personal', 1).then((entries) => {
+      if (!cancelled) setTodayScore(entries?.[0]?.score ?? null);
+    });
     return () => {
       cancelled = true;
     };
@@ -333,7 +336,7 @@ function StartDuel({ game: picked, rematchOf }: { game?: GameDefinition; rematch
 
   const data = game && settings && usesCityData(game) ? CITY_DATA.find((c) => c.id === settings.cityData) : undefined;
   const note = !game || !settings ? null : data ? `City data: ${data.label.toLowerCase()}` : settingsNote(game, settings);
-  const playedToday = (todayScore ?? 0) > 0;
+  const playedToday = todayScore !== null;
 
   return shell(
     <>
