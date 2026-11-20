@@ -26,6 +26,7 @@ export function NewDuelPage({ rematchOf }: { rematchOf?: string }) {
   const finishing = useRef(false);
   // A rematch is checked before the run, not after it: nobody should play a whole run for nothing.
   const [blocked, setBlocked] = useState<{ message: string; code?: string } | null>(null);
+  const [checked, setChecked] = useState(!rematchOf);
   const signedIn = account.status === 'signed-in';
   useEffect(() => {
     if (!rematchOf || !duels || !signedIn) return;
@@ -33,6 +34,7 @@ export function NewDuelPage({ rematchOf }: { rematchOf?: string }) {
     duels.get(rematchOf).then(
       (dto) => {
         if (cancelled) return;
+        setChecked(true);
         if (!dto) setBlocked({ message: "This duel link doesn't work. Check you copied all of it." });
         else if (dto.you === 'visitor') setBlocked({ message: 'Only the two players of a duel can ask for a rematch.' });
         else if (dto.state !== 'finished') setBlocked({ message: 'You can ask for a rematch once this duel is finished.', code: dto.code });
@@ -40,6 +42,7 @@ export function NewDuelPage({ rematchOf }: { rematchOf?: string }) {
       },
       () => {
         // Unreachable now: making the duel at the end will say so.
+        if (!cancelled) setChecked(true);
       },
     );
     return () => {
@@ -122,7 +125,8 @@ export function NewDuelPage({ rematchOf }: { rematchOf?: string }) {
           </div>
         </div>
       )}
-      {phase.name === 'intro' && !blocked && (
+      {phase.name === 'intro' && !checked && <p className="panel center muted">Checking the duel…</p>}
+      {phase.name === 'intro' && checked && !blocked && (
         <div className="panel center">
           <p className="lead">Play your run first. Your friend then gets exactly the same circles and has to beat your score.</p>
           <button className="btn btn-primary btn-lg" onClick={start} disabled={starting}>

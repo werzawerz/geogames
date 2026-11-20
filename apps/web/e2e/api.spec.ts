@@ -370,6 +370,11 @@ test('a duel: an account holder challenges, an anonymous friend plays the same c
   // And Alice is told Bob is playing.
   await alice.reload();
   await expect(alice.getByText('took your duel and is playing now')).toBeVisible();
+  // No rematch until the duel is over: Alice is told before she plays a run.
+  await alice.goto(link.replace('#/duel/', '#/duels/new/'));
+  await expect(alice.getByText('You can ask for a rematch once this duel is finished.')).toBeVisible();
+  await expect(alice.getByRole('button', { name: 'Play', exact: true })).toHaveCount(0);
+  await alice.goto(link);
 
   // Bob plays the same circles: the first city, then a reload in the middle keeps his place.
   let b = engine.start(seed);
@@ -397,6 +402,9 @@ test('a duel: an account holder challenges, an anonymous friend plays the same c
   expect(two.y).toBeGreaterThanOrEqual(one.y + one.height - 1);
   await expect(bob.locator('.duel-levels tbody tr').first()).toContainText('30 ✓');
   await expect(bob.getByRole('link', { name: 'Rematch' })).toBeVisible();
+  // Bob has no account, and his duels list still has it.
+  await bob.goto(link.replace(/#/duel/.*/, '#/duels'));
+  await expect(bob.locator('.duel-list')).toContainText(`Won ${b.score}–${a.score}`);
 
   // Alice sees the same result from her side, and the duels list.
   await alice.reload();
