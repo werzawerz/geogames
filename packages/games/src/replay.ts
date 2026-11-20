@@ -60,6 +60,20 @@ let blankAtlasEngine: Promise<BlankAtlas> | undefined;
 /** The Blank Atlas engine, on its features (names and places, no outlines). */
 export const blankAtlasGame = () => (blankAtlasEngine ??= loadBlankAtlas().then((d) => createBlankAtlas(d.features)));
 
+export interface ArcadeRunSummary extends ReplayResult {
+  /** The level the run ended on (or has reached). */
+  level: number;
+  /** Levels cleared (named in full, or finished with skips). */
+  cleared: number;
+}
+
+/** What a City Circle Arcade run reached, for showing a duel: the score plus how far it got. */
+export async function arcadeRunSummary(settings: GameSettings, seed: number, moves: readonly string[]): Promise<ArcadeRunSummary> {
+  const state = replayCircleArcade(await arcadeFor(settings), seed, moves);
+  const level = state.level.number;
+  return { score: state.score, finished: state.status === 'over', level, cleared: state.cleared };
+}
+
 /**
  * Plays a game again from its seed and the player's moves, with the same
  * engines the player used. The score comes from this, never from the client.

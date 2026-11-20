@@ -3,7 +3,14 @@ import {
   randomSeed,
   type ApiErrorCode,
   type ApiErrorResponse,
+  type AcceptDuelRequest,
+  type AcceptDuelResponse,
   type CreateAccountRequest,
+  type CreateDuelRequest,
+  type CreateDuelResponse,
+  type DuelDto,
+  type DuelListResponse,
+  DUEL_VARIANT,
   type FeedbackRequest,
   type FinishSessionRequest,
   type FinishSessionResponse,
@@ -17,7 +24,7 @@ import {
   type StartSessionResponse,
 } from '@geogames/games';
 import { SignInError, type Auth } from './auth.ts';
-import { createLocalBackend, type Backend, type FinishResult } from './backend.ts';
+import { createLocalBackend, DuelError, type Backend, type DuelService, type FinishResult } from './backend.ts';
 import { loadPlayer } from './player.ts';
 import { clearAll, load, remove, save } from './storage.ts';
 import type { ScoreService } from './scores.ts';
@@ -98,6 +105,7 @@ export function createApiBackend(baseUrl: string, auth: Auth): Backend {
     bests = null;
     remove('api-player-name');
     clearAll('daily:');
+    clearAll('duel:');
     try {
       return await loadAll();
     } catch {
@@ -128,6 +136,57 @@ export function createApiBackend(baseUrl: string, auth: Auth): Backend {
     },
   };
 
+  const failure = (error: unknown): DuelError => {
+    if (error instanceof ApiError) {
+      if (error.code === 'account-required' || error.code === 'update-required' || error.code === 'rate-limited') return new DuelError(error.code);
+      return new DuelError('unavailable');
+    }
+    return new DuelError('offline');
+  };
+
+  const duels: DuelService = {
+    async create(sessionId, rematchOf) {
+      try {
+        await settle();
+        const { code } = await request<CreateDuelResponse>('POST', '/duels', { sessionId, ...(rematchOf ? { rematchOf } : {}) } satisfies CreateDuelRequest);
+        return code;
+      } catch (error) {
+        throw failure(error);
+      }
+    },
+    async list() {
+      try {
+        await settle();
+        return (await request<DuelListResponse>('GET', '/duels')).duels;
+      } catch (error) {
+        throw failure(error);
+      }
+    },
+    async get(code) {
+      try {
+        await settle();
+        return await request<DuelDto>('GET', `/duels/${encodeURIComponent(code)}`);
+      } catch (error) {
+        if (error instanceof ApiError && error.code === 'not-found') return null;
+        throw failure(error);
+      }
+    },
+    async accept(code) {
+      try {
+        await settle();
+        const { sessionId, seed } = await request<AcceptDuelResponse>('POST', `/duels/${encodeURIComponent(code)}/accept`, {
+          datasetVersion: DATASET_VERSION,
+        } satisfies AcceptDuelRequest);
+        return { status: 'ok', play: { seed, sessionId } };
+      } catch (error) {
+        if (!(error instanceof ApiError)) return { status: 'offline' };
+        if (error.code === 'update-required') return { status: 'update-required' };
+        if (error.code === 'forbidden') return { status: 'forbidden' };
+        return error.code === 'internal' ? { status: 'offline' } : { status: 'unavailable' };
+      }
+    },
+  };
+
   return {
     initial: {
       player: { ...local.initial.player, name: load<string | null>('api-player-name', local.initial.player.name) ?? local.initial.player.name },
@@ -153,6 +212,7 @@ export function createApiBackend(baseUrl: string, auth: Auth): Backend {
       }
     },
     scores,
+    duels,
     async startPlay(game, settings) {
       try {
         await settle();
@@ -181,11 +241,11 @@ export function createApiBackend(baseUrl: string, auth: Auth): Backend {
       }
     },
     async finishPlay(play, game, player): Promise<FinishResult> {
-      const keepLocally = async (status: 'offline' | 'refused', notice: string): Promise<FinishResult> => ({
-        ...(await local.finishPlay(play, game, player)),
-        status,
-        notice,
-      });
+      const keepLocally = async (status: 'offline' | 'refused', notice: string): Promise<FinishResult> =>
+        game.variant === DUEL_VARIANT
+          ? // A duel run only counts on the server; the duel page keeps its moves to send again.
+            { isPersonalBest: false, personalBest: game.score, score: game.score, status, notice }
+          : { ...(await local.finishPlay(play, game, player)), status, notice };
       if (!play.sessionId) {
         return play.unsaved === 'refused' ? keepLocally('refused', NOTICES.busy) : keepLocally('offline', NOTICES.offlineAtStart);
       }
@@ -196,7 +256,8 @@ export function createApiBackend(baseUrl: string, auth: Auth): Backend {
           if (error instanceof ApiError && error.code !== 'internal') throw error;
           return finish(); // Finishing twice is safe: the server keeps the first result.
         });
-        if (bests) {
+        // A duel run is nobody's best.
+        if (bests && game.variant !== DUEL_VARIANT) {
           const forGame = (bests[game.gameId] ??= {});
           forGame[game.variant] = result.personalBest;
         }

@@ -21,4 +21,11 @@ export * from './supply-chain.ts';
 export * from './replay.ts';
 export * from './daily.ts';
 export type * from './api-contract.ts';
-export { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from './api-contract.ts';
+export {
+  DUEL_GAMES,
+  DUEL_OPEN_DAYS,
+  DUEL_PLAY_HOURS,
+  DUEL_VARIANT,
+  MAX_PASSWORD_LENGTH,
+  MIN_PASSWORD_LENGTH,
+} from './api-contract.ts';

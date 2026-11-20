@@ -6,6 +6,9 @@ export type Route =
   | { page: 'play'; gameId: string }
   | { page: 'daily'; gameId: string }
   | { page: 'scores'; gameId: string; variant?: string }
+  | { page: 'duels' }
+  | { page: 'duel-new'; rematchOf?: string }
+  | { page: 'duel'; code: string }
   | { page: 'profile' }
   | { page: 'sign-in' }
   | { page: 'about' }
@@ -23,6 +26,9 @@ export function parseRoute(hash: string): Route {
   if (page === 'daily' && !arg) return { page: 'dailies' };
   if (page === 'daily' && arg) return { page: 'daily', gameId: arg };
   if (page === 'scores' && arg) return { page: 'scores', gameId: arg, variant };
+  if (page === 'duels' && arg === 'new') return { page: 'duel-new', ...(variant ? { rematchOf: variant } : {}) };
+  if (page === 'duels') return { page: 'duels' };
+  if (page === 'duel' && arg) return { page: 'duel', code: arg };
   if (page === 'profile') return { page: 'profile' };
   if (page === 'sign-in') return { page: 'sign-in' };
   if ((INFO_PAGES as readonly string[]).includes(page ?? '')) return { page: page as (typeof INFO_PAGES)[number] };
@@ -35,6 +41,12 @@ export function href(route: Route): string {
       return '#/';
     case 'dailies':
       return '#/daily';
+    case 'duels':
+      return '#/duels';
+    case 'duel-new':
+      return `#/duels/new${route.rematchOf ? `/${route.rematchOf}` : ''}`;
+    case 'duel':
+      return `#/duel/${route.code}`;
     case 'profile':
     case 'sign-in':
     case 'about':

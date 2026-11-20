@@ -8,6 +8,9 @@ import { DailiesPage } from './pages/DailiesPage.tsx';
 import { GamePage } from './pages/GamePage.tsx';
 import { ScoresPage } from './pages/ScoresPage.tsx';
 import { ProfilePage } from './pages/ProfilePage.tsx';
+import { DuelPage } from './pages/DuelPage.tsx';
+import { DuelsPage } from './pages/DuelsPage.tsx';
+import { NewDuelPage } from './pages/NewDuelPage.tsx';
 import { SignInPage } from './pages/SignInPage.tsx';
 import { AboutPage, ContactPage, PrivacyPage, TermsPage } from './pages/InfoPages.tsx';
 
@@ -26,6 +29,12 @@ export function routeTitle(route: Route): string {
       return `Profile · ${SITE}`;
     case 'sign-in':
       return `Sign in · ${SITE}`;
+    case 'duels':
+      return `Duels · ${SITE}`;
+    case 'duel-new':
+      return `New duel · ${SITE}`;
+    case 'duel':
+      return `Duel · ${SITE}`;
     case 'dailies':
       return `Daily challenges · ${SITE}`;
     case 'contact':
@@ -72,6 +81,9 @@ function Page({ route }: { route: Route }) {
   if (route.page === 'sign-in') return <SignInPage />;
   if (route.page === 'home') return <Home />;
   if (route.page === 'dailies') return <DailiesPage />;
+  if (route.page === 'duels') return <DuelsPage />;
+  if (route.page === 'duel-new') return <NewDuelPage key={route.rematchOf ?? 'new'} rematchOf={route.rematchOf} />;
+  if (route.page === 'duel') return <DuelPage key={route.code} code={route.code} />;
   const game = getGame(route.gameId);
   if (!game || game.status !== 'live') return <Home />;
   if (route.page === 'daily') return DAILY_GAMES.includes(game.id) ? <DailyPage key={game.id} game={game} /> : <Home />;

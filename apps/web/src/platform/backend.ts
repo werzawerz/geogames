@@ -1,4 +1,4 @@
-import { dailyDate, dailySeed, dailyVariant, randomSeed, type GameDefinition, type GameSettings } from '@geogames/games';
+import { dailyDate, dailySeed, dailyVariant, randomSeed, type DuelDto, type GameDefinition, type GameSettings } from '@geogames/games';
 import type { Account } from './auth.ts';
 import { loadPlayer, savePlayer, type Player } from './player.ts';
 import { createLocalScores, type ScoreService, type SubmitResult } from './scores.ts';
@@ -48,6 +48,37 @@ export interface FinishResult extends SubmitResult {
   notice?: string;
 }
 
+/** Why a duel call failed, for the page to word. */
+export type DuelFailure = 'account-required' | 'offline' | 'update-required' | 'rate-limited' | 'unavailable';
+
+export class DuelError extends Error {
+  readonly reason: DuelFailure;
+  constructor(reason: DuelFailure) {
+    super(reason);
+    this.reason = reason;
+  }
+}
+
+export type AcceptResult =
+  | { status: 'ok'; play: Play }
+  /** Taken by someone else, expired, or out of date. */
+  | { status: 'unavailable' }
+  /** The caller's own duel, or a rematch reserved for the other player. */
+  | { status: 'forbidden' }
+  | { status: 'update-required' }
+  | { status: 'offline' };
+
+/** Duels live on the server; a build without one has none. */
+export interface DuelService {
+  /** Makes a duel from a finished, saved run and returns its code. Throws a DuelError. */
+  create(sessionId: string, rematchOf?: string): Promise<string>;
+  /** Throws a DuelError. */
+  list(): Promise<DuelDto[]>;
+  /** Null when there's no such duel. Throws a DuelError. */
+  get(code: string): Promise<DuelDto | null>;
+  accept(code: string): Promise<AcceptResult>;
+}
+
 export type RenameResult = 'ok' | 'rejected' | 'offline';
 
 export interface FeedbackInput {
@@ -66,6 +97,8 @@ export interface Backend {
   load(): Promise<{ player: Player; account: Account } | null>;
   rename(player: Player): Promise<RenameResult>;
   scores: ScoreService;
+  /** Undefined in a build without a server. */
+  duels?: DuelService;
   startPlay(game: GameDefinition, settings: GameSettings): Promise<StartResult>;
   /** Opens or reopens today's run of a game. */
   startDaily(game: GameDefinition): Promise<DailyStart>;

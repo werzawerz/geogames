@@ -6,6 +6,7 @@ import {
   createLocalBackend,
   type Backend,
   type DailyStart,
+  type DuelService,
   type FeedbackInput,
   type FinishedGame,
   type FinishResult,
@@ -17,7 +18,8 @@ import type { ScoreService } from './scores.ts';
 import type { Player } from './player.ts';
 
 export type { Account } from './auth.ts';
-export type { FeedbackInput, FinishResult, FinishStatus, RenameResult } from './backend.ts';
+export type { AcceptResult, DuelFailure, DuelService, FeedbackInput, FinishResult, FinishStatus, RenameResult } from './backend.ts';
+export { DuelError } from './backend.ts';
 
 interface Platform {
   player: Player;
@@ -40,6 +42,8 @@ interface Platform {
   /** Rejects with a message for the player when it can't be sent. */
   sendFeedback(input: FeedbackInput): Promise<void>;
   scores: ScoreService;
+  /** Undefined in a build without a server: duels live there. */
+  duels: DuelService | undefined;
 }
 
 const PlatformContext = createContext<Platform | null>(null);
@@ -120,6 +124,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       deleteAccount,
       sendFeedback,
       scores: backend.scores,
+      duels: backend.duels,
     }),
     [player, account, renamePlayer, startPlay, startDaily, finishPlay, logIn, createAccount, signOut, deleteAccount, sendFeedback, backend],
   );
