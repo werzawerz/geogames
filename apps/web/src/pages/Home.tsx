@@ -27,6 +27,17 @@ export function Home() {
           ))}
         </div>
       </section>
+      <section className="daily duel-teaser" aria-labelledby="duel-teaser-title">
+        <h2 className="daily-title" id="duel-teaser-title">
+          Duels
+        </h2>
+        <p className="muted">
+          Duel a friend: same circles, one try each.{' '}
+          <a className="link" href={href({ page: 'duels' })}>
+            Start a duel →
+          </a>
+        </p>
+      </section>
       {gamesByGroup().map((group) => (
         <section key={group.id} className="game-group" aria-labelledby={`group-${group.id}`}>
           <h2 className="group-title" id={`group-${group.id}`}>

@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
+  DUEL_GAMES,
   MIN_POOL_SIZE,
   describeSettings,
   hasSettings,
@@ -32,7 +33,7 @@ import { href } from '../router.ts';
 type Phase =
   | { name: 'setup' }
   | { name: 'playing'; play: Play; settings: GameSettings }
-  | { name: 'over'; score: number; settings: GameSettings; result: FinishResult | null; message?: string; completed?: boolean };
+  | { name: 'over'; score: number; settings: GameSettings; result: FinishResult | null; play: Play | null; message?: string; completed?: boolean };
 
 /** Last-used settings per game, so "Play" starts where the player left off. */
 function useRememberedSettings(game: GameDefinition) {
@@ -51,8 +52,9 @@ function useRememberedSettings(game: GameDefinition) {
 }
 
 export function GamePage({ game }: { game: GameDefinition }) {
-  const { startPlay, finishPlay } = usePlatform();
+  const { startPlay, finishPlay, duels, account } = usePlatform();
   const [phase, setPhase] = useState<Phase>({ name: 'setup' });
+  const [challenge, setChallenge] = useState<'idle' | 'making' | 'failed'>('idle');
   const [settings, setSettings] = useRememberedSettings(game);
   const [starting, setStarting] = useState(false);
   const [updateRequired, setUpdateRequired] = useState(false);
@@ -70,10 +72,11 @@ export function GamePage({ game }: { game: GameDefinition }) {
   const playing = phase.name === 'playing' ? phase.settings : settings;
   const onGameOver = useCallback(
     async ({ score, moves, message, completed }: GameOutcome) => {
-      setPhase({ name: 'over', score, settings: playing, result: null, message, completed });
+      setChallenge('idle');
+      setPhase({ name: 'over', score, settings: playing, result: null, play, message, completed });
       if (!play) return;
       const result = await finishPlay(play, { gameId: game.id, variant: variantKey(playing, game), score, seed: play.seed, moves });
-      setPhase({ name: 'over', score: result.score, settings: playing, result, message, completed });
+      setPhase({ name: 'over', score: result.score, settings: playing, result, play, message, completed });
     },
     [finishPlay, game, play, playing],
   );
@@ -90,6 +93,17 @@ export function GamePage({ game }: { game: GameDefinition }) {
       </div>
     );
   }
+
+  // "Challenge a friend": a saved run of a duel game becomes a duel, for those with an account.
+  const challengeFriend = async (sessionId: string) => {
+    setChallenge('making');
+    try {
+      const code = await duels!.create(sessionId);
+      location.hash = href({ page: 'duel', code });
+    } catch {
+      setChallenge('failed');
+    }
+  };
 
   const isDefault = (s: GameSettings) => variantKey(s, game) === 'world';
 
@@ -125,6 +139,24 @@ export function GamePage({ game }: { game: GameDefinition }) {
             <p className={`muted score-notice score-${phase.result.status}`} role="status">
               {phase.result.notice}
             </p>
+          )}
+          {DUEL_GAMES.includes(game.id) && duels && phase.result?.status === 'saved' && phase.play?.sessionId && (
+            <div className="duel-challenge">
+              {account.status === 'signed-in' ? (
+                <button className="btn" disabled={challenge === 'making'} onClick={() => challengeFriend(phase.play!.sessionId!)}>
+                  ⚔️ Challenge a friend to these circles
+                </button>
+              ) : (
+                <a className="btn" href={href({ page: 'duel-new' })}>
+                  ⚔️ Challenge a friend to these circles
+                </a>
+              )}
+              {challenge === 'failed' && (
+                <p className="muted small" role="alert">
+                  We couldn't make the duel. Please try again.
+                </p>
+              )}
+            </div>
           )}
           <div className="row">
             <button className="btn btn-primary btn-lg" disabled={starting} onClick={() => start(phase.settings)}>

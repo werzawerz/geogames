@@ -177,6 +177,8 @@ export interface DuelDto {
   reservedFor: string | null;
   reservedForYou: boolean;
   outcome: 'creator' | 'challenger' | 'draw' | null;
+  /** Once the duel is finished (and only then): the circles can be replayed from it. */
+  seed?: number;
   /** Only for the challenger, while playing. */
   session?: { sessionId: string; seed: number };
   /** The newest rematch of this duel. */

@@ -312,7 +312,7 @@ describe('duels: one seed, the same circles whatever the player does', () => {
       state = game.skip(state);
     }
     const summary = await arcadeRunSummary(settings, 21, state.moves);
-    expect(summary).toEqual({ score: state.score, finished: true, level: state.level.number, cleared: state.level.number - 1 });
+    expect(summary).toEqual({ score: state.score, finished: true, level: state.level.number, cleared: state.cleared });
     expect((await replayGame(definition, settings, 21, state.moves)).score).toBe(summary.score);
     // A run that hasn't ended says so.
     expect((await arcadeRunSummary(settings, 21, [])).finished).toBe(false);

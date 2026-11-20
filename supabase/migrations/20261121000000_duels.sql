@@ -212,6 +212,9 @@ begin
     'outcome', outcome,
     'rematch', null
   );
+  if with_moves then
+    result := result || jsonb_build_object('seed', d.seed);
+  end if;
   if state = 'expired' then
     result := result || jsonb_build_object('expiredReason', status ->> 'reason');
   end if;

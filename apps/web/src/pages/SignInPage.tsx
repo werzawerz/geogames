@@ -41,7 +41,7 @@ const MESSAGES: Record<SignInFailure, Record<Mode, string>> = {
 /** "Log in" and "Create account", with an email and password. */
 export function SignInPage() {
   const { account, player, logIn, createAccount } = usePlatform();
-  const [mode, setMode] = useState<Mode>('create');
+  const [mode, setMode] = useState<Mode>(() => (location.hash.endsWith('/log-in') ? 'log-in' : 'create'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);

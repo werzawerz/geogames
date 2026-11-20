@@ -63,7 +63,7 @@ export const blankAtlasGame = () => (blankAtlasEngine ??= loadBlankAtlas().then(
 export interface ArcadeRunSummary extends ReplayResult {
   /** The level the run ended on (or has reached). */
   level: number;
-  /** Levels fully cleared before it ended. */
+  /** Levels cleared (named in full, or finished with skips). */
   cleared: number;
 }
 
@@ -71,7 +71,7 @@ export interface ArcadeRunSummary extends ReplayResult {
 export async function arcadeRunSummary(settings: GameSettings, seed: number, moves: readonly string[]): Promise<ArcadeRunSummary> {
   const state = replayCircleArcade(await arcadeFor(settings), seed, moves);
   const level = state.level.number;
-  return { score: state.score, finished: state.status === 'over', level, cleared: state.status === 'over' ? level - 1 : level };
+  return { score: state.score, finished: state.status === 'over', level, cleared: state.cleared };
 }
 
 /**

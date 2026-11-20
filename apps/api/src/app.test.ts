@@ -671,13 +671,14 @@ describe('duels', () => {
   });
 
   it('settles a finished duel and reveals both runs', async () => {
-    const { code, score } = await makeDuel('alice', 1);
+    const { code, score, seed } = await makeDuel('alice', 1);
     const won = await play('anon', code, 3);
     expect(won.score).toBeGreaterThan(score);
     for (const token of ['alice', 'anon', 'bob']) {
       const { json } = await call('GET', `/duels/${code}`, token);
       expect(json).toMatchObject({ state: 'finished', outcome: 'challenger', challenger: { score: won.score, status: 'finished' }, creator: { score } });
       expect(json.challenger.moves).toEqual(won.moves);
+      expect(json.seed).toBe(seed);
       expect(json.creator.moves.length).toBeGreaterThan(0);
     }
   });

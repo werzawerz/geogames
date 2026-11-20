@@ -105,6 +105,7 @@ export function createApiBackend(baseUrl: string, auth: Auth): Backend {
     bests = null;
     remove('api-player-name');
     clearAll('daily:');
+    clearAll('duel:');
     try {
       return await loadAll();
     } catch {
