@@ -27,6 +27,7 @@ import {
   normalizeSettings,
   quizItems,
   replayGame,
+  replayRun,
   routeCountries,
   type BlitzState,
   type ClockState,
@@ -49,12 +50,13 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const dir = await mkdtemp(join(tmpdir(), 'geogames-bundle-'));
 afterAll(() => rm(dir, { recursive: true, force: true }));
 const entry = join(HERE, '__replay-entry.ts');
-await writeFile(entry, `export { DATASET_VERSION, replayGame } from '@geogames/games';\n`);
+await writeFile(entry, `export { DATASET_VERSION, replayGame, replayRun } from '@geogames/games';\n`);
 const bytes = await bundle(entry, join(dir, 'replay.mjs'));
 await rm(entry);
 const server = (await import(/* @vite-ignore */ pathToFileURL(join(dir, 'replay.mjs')).href)) as {
   DATASET_VERSION: string;
   replayGame: typeof replayGame;
+  replayRun: typeof replayRun;
 };
 
 const playArcade = (game: CircleArcade, seed: number) => {
@@ -90,6 +92,8 @@ describe('the server bundle', () => {
       expect(full.finished).toBe(true);
       expect(full.score).toBeGreaterThan(0);
       expect(await server.replayGame(game, settings, 12345, moves)).toEqual(full);
+      // A duel's level comes from the same replay.
+      expect(await server.replayRun(game, settings, 12345, moves)).toEqual(await replayRun(game, settings, 12345, moves));
     }
   });
 

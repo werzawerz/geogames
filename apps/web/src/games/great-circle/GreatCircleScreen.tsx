@@ -6,6 +6,7 @@ import { loadWorldShapes, type WorldShapes } from '@geogames/geodata/shapes';
 import {
   GC_MAX_LIVES,
   createGreatCircle,
+  replayGreatCircle,
   type GreatCircle,
   type GreatCircleDefinition,
   type GreatCircleGuessResult,
@@ -21,7 +22,7 @@ const name = (id: CountryId) => getCountry(id)?.name ?? id;
 const MAP_MAX_ZOOM = 60;
 
 /** Loads map shapes and the lines (both lazily), then plays. */
-export function GreatCircleScreen({ game: definition, seed, onGameOver }: GameScreenProps<GreatCircleDefinition>) {
+export function GreatCircleScreen({ game: definition, seed, initialMoves, onMovesChange, onGameOver }: GameScreenProps<GreatCircleDefinition>) {
   const [loaded, setLoaded] = useState<{ shapes: WorldShapes; game: GreatCircle } | null>(null);
   const [error, setError] = useState(false);
   useEffect(() => {
@@ -38,7 +39,16 @@ export function GreatCircleScreen({ game: definition, seed, onGameOver }: GameSc
 
   if (error) return <p className="panel center">Couldn't load the map. Check your connection and try again.</p>;
   if (!loaded) return <p className="panel center muted">Loading map…</p>;
-  return <GreatCirclePlay {...loaded} rounds={definition.rounds} seed={seed} onGameOver={onGameOver} />;
+  return (
+    <GreatCirclePlay
+      {...loaded}
+      rounds={definition.rounds}
+      seed={seed}
+      initialMoves={initialMoves}
+      onMovesChange={onMovesChange}
+      onGameOver={onGameOver}
+    />
+  );
 }
 
 function messageFor(result: GreatCircleGuessResult, id: CountryId, points: number): string {
@@ -61,15 +71,21 @@ function GreatCirclePlay({
   game,
   rounds,
   seed,
+  initialMoves,
+  onMovesChange,
   onGameOver,
 }: {
   shapes: WorldShapes;
   game: GreatCircle;
   rounds: number;
   seed: number;
+  initialMoves: GameScreenProps['initialMoves'];
+  onMovesChange: GameScreenProps['onMovesChange'];
   onGameOver: GameScreenProps['onGameOver'];
 }) {
-  const [state, setState] = useState<GreatCircleState>(() => game.start(seed));
+  // A run left part-way (a duel, after a reload) picks up where it was.
+  const [state, setState] = useState<GreatCircleState>(() => replayGreatCircle(game, seed, initialMoves ?? []));
+  useEffect(() => onMovesChange?.(state.moves), [state.moves, onMovesChange]);
   const [message, setMessage] = useState<string | null>(null);
   const { puzzle, level } = state;
   const playing = state.status === 'playing';

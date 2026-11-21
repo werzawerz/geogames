@@ -222,12 +222,13 @@ export function createRegionRun({ countries }: { countries: readonly RegionRunCo
 export type RegionRun = ReturnType<typeof createRegionRun>;
 
 /** Replays a move log from a seed; this is what a server uses to verify a score. */
-export function replayRegionRun(game: RegionRun, seed: number, moves: readonly string[]): RegionState {
+export function replayRegionRun(game: RegionRun, seed: number, moves: readonly string[], observe?: (state: RegionState, move: string) => void): RegionState {
   let state = game.start(seed);
   for (const move of moves) {
     if (state.status === 'level-over') state = game.nextLevel(state);
     if (state.status === 'over') break;
     state = move === REGION_SKIP ? game.skip(state) : game.guess(state, move).state;
+    observe?.(state, move);
   }
   return state;
 }

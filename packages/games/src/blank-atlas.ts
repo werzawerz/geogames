@@ -276,12 +276,13 @@ export type BlankAtlas = ReturnType<typeof createBlankAtlas>;
 export const BLANK_ATLAS_SKIP = SKIP;
 
 /** Replays a move log from a seed; this is what a server uses to verify a score. */
-export function replayBlankAtlas(game: BlankAtlas, seed: number, moves: readonly string[]): BlankAtlasState {
+export function replayBlankAtlas(game: BlankAtlas, seed: number, moves: readonly string[], observe?: (state: BlankAtlasState, move: string) => void): BlankAtlasState {
   let state = game.start(seed);
   for (const move of moves) {
     if (state.status === 'level-over') state = game.nextLevel(state);
     if (state.status === 'over') break;
     state = move === SKIP ? game.skip(state) : game.guess(state, move).state;
+    observe?.(state, move);
   }
   return state;
 }

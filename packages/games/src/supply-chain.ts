@@ -394,12 +394,13 @@ export function createSupplyChain({
 export type SupplyChain = ReturnType<typeof createSupplyChain>;
 
 /** Replays a move log from a seed; this is what a server uses to verify a score. */
-export function replaySupplyChain(game: SupplyChain, seed: number, moves: readonly string[]): ChainState {
+export function replaySupplyChain(game: SupplyChain, seed: number, moves: readonly string[], observe?: (state: ChainState, move: string) => void): ChainState {
   let state = game.start(seed);
   for (const move of moves) {
     if (state.status === 'level-over') state = game.nextLevel(state);
     if (state.status === 'over') break;
     state = move === CHAIN_SKIP ? game.skip(state) : game.guess(state, move).state;
+    observe?.(state, move);
   }
   return state;
 }

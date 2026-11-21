@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { METRICS, getCountry } from '@geogames/geodata';
-import { createHigherLowerGame, loadPool, type Guess, type HigherLowerDefinition, type PoolItem } from '@geogames/games';
+import { createHigherLowerGame, loadPool, replayHigherLower, type Guess, type HigherLowerDefinition, type PoolItem } from '@geogames/games';
 import { Flag } from '../../components/Flag.tsx';
 import { CountUp } from '../../components/CountUp.tsx';
 import type { GameOutcome, GameScreenProps } from '../types.ts';
@@ -8,7 +8,7 @@ import type { GameOutcome, GameScreenProps } from '../types.ts';
 const REVEAL_MS = 1600;
 
 /** Loads the game's pool (city data is fetched on demand), then plays. */
-export function HigherLowerScreen({ game, settings, seed, onGameOver }: GameScreenProps<HigherLowerDefinition>) {
+export function HigherLowerScreen({ game, settings, seed, initialMoves, onMovesChange, onGameOver }: GameScreenProps<HigherLowerDefinition>) {
   const [pool, setPool] = useState<readonly PoolItem[] | null>(null);
   const [error, setError] = useState(false);
   useEffect(() => {
@@ -24,23 +24,29 @@ export function HigherLowerScreen({ game, settings, seed, onGameOver }: GameScre
 
   if (error) return <p className="panel center">Couldn't load the game data. Check your connection and try again.</p>;
   if (!pool) return <p className="panel center muted">Loading…</p>;
-  return <HigherLowerRound game={game} pool={pool} seed={seed} onGameOver={onGameOver} />;
+  return <HigherLowerRound game={game} pool={pool} seed={seed} initialMoves={initialMoves} onMovesChange={onMovesChange} onGameOver={onGameOver} />;
 }
 
 export function HigherLowerRound({
   game: definition,
   pool,
   seed,
+  initialMoves,
+  onMovesChange,
   onGameOver,
 }: {
   game: HigherLowerDefinition;
   pool: readonly PoolItem[];
   seed: number;
+  initialMoves?: readonly string[];
+  onMovesChange?(moves: readonly string[]): void;
   onGameOver(outcome: GameOutcome): void;
 }) {
   const metric = METRICS[definition.metric];
   const game = useMemo(() => createHigherLowerGame({ metric: definition.metric, pool }), [definition.metric, pool]);
-  const [state, setState] = useState(() => game.start(seed));
+  // A run left part-way (a duel, after a reload) picks up where it was.
+  const [state, setState] = useState(() => replayHigherLower(game, seed, (initialMoves ?? []) as readonly Guess[]));
+  useEffect(() => onMovesChange?.(state.guesses), [state.guesses, onMovesChange]);
 
   useEffect(() => {
     if (state.status === 'guessing') return;

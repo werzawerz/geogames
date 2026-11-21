@@ -1,18 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getCountry } from '@geogames/geodata';
-import { createChoiceQuiz, quizItems, type QuizDefinition } from '@geogames/games';
+import { createChoiceQuiz, quizItems, replayChoiceQuiz, type QuizDefinition } from '@geogames/games';
 import { Flag } from '../../components/Flag.tsx';
 import type { GameScreenProps } from '../types.ts';
 
 const REVEAL_MS = 1200;
 
 /** Multiple-choice quiz (capitals, flags): four options, a point per right answer, lives for wrong ones. */
-export function QuizScreen({ game, settings, seed, onGameOver }: GameScreenProps<QuizDefinition>) {
+export function QuizScreen({ game, settings, seed, initialMoves, onMovesChange, onGameOver }: GameScreenProps<QuizDefinition>) {
   const quiz = useMemo(
     () => createChoiceQuiz({ items: quizItems(game, settings), lives: game.lives }),
     [game, settings],
   );
-  const [state, setState] = useState(() => quiz.start(seed));
+  // A run left part-way (a duel, after a reload) picks up where it was.
+  const [state, setState] = useState(() => replayChoiceQuiz(quiz, seed, (initialMoves ?? []).map(Number)));
+  useEffect(() => onMovesChange?.(state.moves.map(String)), [state.moves, onMovesChange]);
   const { question, picked } = state;
   const country = getCountry(question.itemId)!;
 

@@ -1,4 +1,4 @@
--- Duels: a player's finished City Circle Arcade run becomes a challenge by link.
+-- Duels: a player's finished run (a random one, or their daily) becomes a challenge by link.
 -- The first person to press Play takes it and plays the same seed once; the higher
 -- verified score wins. Same stance as the rest: row level security with no
 -- policies, and the rules (one taker, what is hidden until the end) live in
@@ -13,8 +13,16 @@ create table public.duels (
   creator_id uuid not null references public.players (id) on delete cascade,
   creator_session uuid not null unique references public.game_sessions (id) on delete cascade,
   creator_level integer not null check (creator_level >= 1),
+  -- A daily duel is a day's daily challenge (null for a random run). Each player's run
+  -- is their one daily run of that day, so it counts on that day's leaderboard.
+  daily_date date,
   challenger_id uuid references public.players (id) on delete cascade,
-  challenger_session uuid unique references public.game_sessions (id) on delete cascade,
+  -- Unique for a random duel (see duels_one_challenger_run). A player's one daily run
+  -- of a day can answer several daily duels of that day.
+  challenger_session uuid references public.game_sessions (id) on delete cascade,
+  -- When the duel was taken. The challenger's time limit runs from here, because a
+  -- daily duel may be answered with a run started, or even finished, before.
+  accepted_at timestamptz,
   -- A rematch can only be taken by the other player of the duel it follows.
   reserved_for uuid references public.players (id) on delete cascade,
   rematch_of text references public.duels (code) on delete set null,
@@ -22,8 +30,23 @@ create table public.duels (
   expires_at timestamptz not null,
   check (challenger_id is null or challenger_id <> creator_id),
   check (reserved_for is null or reserved_for <> creator_id),
-  check ((challenger_id is null) = (challenger_session is null))
+  check ((challenger_id is null) = (challenger_session is null)),
+  check ((challenger_id is null) = (accepted_at is null))
 );
+
+create unique index duels_one_challenger_run on public.duels (challenger_session) where daily_date is null;
+
+-- Today, as the daily challenges count days: they change at midnight UTC.
+create function public.utc_today() returns date
+language sql stable as $$
+  select (now() at time zone 'utc')::date
+$$;
+
+-- The variant of a day's daily runs: 'daily-2026-11-20'.
+create function public.daily_variant(p_date date) returns text
+language sql immutable as $$
+  select 'daily-' || to_char(p_date, 'YYYY-MM-DD')
+$$;
 
 create index duels_creator on public.duels (creator_id, created_at desc);
 create index duels_challenger on public.duels (challenger_id, created_at desc) where challenger_id is not null;
@@ -64,7 +87,7 @@ begin
     return jsonb_build_object('state', 'open');
   end if;
   select * into ch from public.game_sessions where id = d.challenger_session;
-  deadline := ch.started_at + make_interval(hours => p_play_hours);
+  deadline := d.accepted_at + make_interval(hours => p_play_hours);
   if ch.status = 'finished' and ch.finished_at <= deadline then
     return jsonb_build_object('state', 'finished', 'forfeit', false);
   end if;
@@ -134,9 +157,10 @@ begin
     return jsonb_build_object('ok', false, 'error', 'code-taken');
   end if;
   insert into public.duels (code, game_id, settings, seed, dataset_version, creator_id, creator_session,
-                            creator_level, reserved_for, rematch_of, expires_at)
+                            creator_level, daily_date, reserved_for, rematch_of, expires_at)
   values (p_code, s.game_id, s.settings, s.seed, s.dataset_version, p_player, s.id,
-          p_level, other, p_rematch_of, now() + make_interval(days => p_open_days));
+          p_level, case when s.variant like 'daily-%' then substr(s.variant, 7)::date end,
+          other, p_rematch_of, now() + make_interval(days => p_open_days));
   return jsonb_build_object('ok', true, 'code', p_code);
 exception when unique_violation then
   -- A code made at the same moment by someone else: the API tries another. (The
@@ -166,6 +190,7 @@ declare
   with_moves boolean := p_with_moves and state = 'finished';
   cs public.game_sessions;
   ch public.game_sessions;
+  mine public.game_sessions;
   r public.duels;
   you text;
   creator_dto jsonb;
@@ -173,6 +198,15 @@ declare
   outcome text;
   result jsonb;
 begin
+  -- A daily duel's moves are the day's answers. They are shown only to a viewer who
+  -- can't use them any more: one who finished that day's daily, or one without a daily
+  -- run of a day that is over (they can't start one). Someone with the run still open,
+  -- or a day still running, would otherwise read the answers and then play.
+  if d.daily_date is not null then
+    select * into mine from public.game_sessions
+    where player_id = p_player and game_id = d.game_id and variant = public.daily_variant(d.daily_date);
+    with_moves := with_moves and case when mine.id is not null then mine.status = 'finished' else d.daily_date < public.utc_today() end;
+  end if;
   select * into cs from public.game_sessions where id = d.creator_session;
   if d.challenger_session is not null then
     select * into ch from public.game_sessions where id = d.challenger_session;
@@ -214,6 +248,10 @@ begin
     'code', d.code,
     'gameId', d.game_id,
     'settings', d.settings,
+    'daily', to_char(d.daily_date, 'YYYY-MM-DD'),
+    -- The viewer's own daily run of the duel's day, so the page can say what accepting does.
+    'yourDaily', case when mine.id is not null then jsonb_build_object(
+      'status', mine.status, 'score', case when mine.status = 'finished' then mine.score end) end,
     'createdAt', d.created_at,
     'expiresAt', d.expires_at,
     'you', you,
@@ -232,7 +270,7 @@ begin
     result := result || jsonb_build_object('expiredReason', status ->> 'reason');
   end if;
   if you = 'challenger' and state = 'playing' then
-    result := result || jsonb_build_object('session', jsonb_build_object('sessionId', ch.id, 'seed', ch.seed));
+    result := result || jsonb_build_object('session', jsonb_build_object('sessionId', ch.id, 'seed', ch.seed, 'variant', ch.variant));
   end if;
   if you <> 'visitor' then
     select * into r from public.duels where rematch_of = d.code order by created_at desc limit 1;
@@ -268,8 +306,44 @@ language sql stable as $$
   ) latest
 $$;
 
--- The first caller takes the duel: a session on the duel's seed, variant 'duel'. Asking
--- again as the same player gives the same session back, so a reload resumes.
+-- The run a player answers a daily duel with: their one daily run of the duel's day, so
+-- a daily can't be played twice, and getting its seed always spends it.
+-- - Finished already: that result, at once.
+-- - Still open: carried on (if it was on older data and the day is today, it starts
+--   over, as start_daily_session does).
+-- - None yet, and the day is today: their daily run is opened now.
+-- Null when the day is over and there's no run of it that can still count: the caller
+-- then plays a 'duel' run on the day's seed, which counts on no leaderboard. The
+-- day's answers can't help them on a board that is closed to them.
+create function public.daily_duel_run(d public.duels, p_player uuid, p_dataset_version text) returns uuid
+language plpgsql as $$
+declare
+  s public.game_sessions;
+  today boolean := d.daily_date = public.utc_today();
+begin
+  select * into s from public.game_sessions
+  where player_id = p_player and game_id = d.game_id and variant = public.daily_variant(d.daily_date)
+  for update;
+  if s.id is null and today then
+    insert into public.game_sessions (player_id, game_id, variant, settings, seed, dataset_version)
+    values (p_player, d.game_id, public.daily_variant(d.daily_date), d.settings, d.seed, p_dataset_version)
+    on conflict (player_id, game_id, variant) where variant like 'daily-%' do nothing;
+    select * into s from public.game_sessions
+    where player_id = p_player and game_id = d.game_id and variant = public.daily_variant(d.daily_date);
+  elsif s.status = 'playing' and s.dataset_version <> p_dataset_version and today then
+    update public.game_sessions set dataset_version = p_dataset_version, seed = d.seed, started_at = now()
+    where id = s.id returning * into s;
+  end if;
+  if s.id is null or (s.status = 'playing' and s.dataset_version <> p_dataset_version) then
+    return null;
+  end if;
+  return s.id;
+end
+$$;
+
+-- The first caller takes the duel: a session on the duel's seed, variant 'duel' (for a
+-- daily duel, their daily run: see daily_duel_run). Asking again as the same player gives
+-- the same session back, so a reload resumes.
 create function public.accept_duel(
   p_code text,
   p_player uuid,
@@ -314,11 +388,17 @@ begin
   then
     return jsonb_build_object('ok', false, 'error', 'rate-limited');
   end if;
-  insert into public.game_sessions (player_id, game_id, variant, settings, seed, dataset_version)
-  values (p_player, d.game_id, 'duel', d.settings, d.seed, d.dataset_version)
-  returning id into session_id;
-  update public.duels set challenger_id = p_player, challenger_session = session_id where code = d.code;
-  return jsonb_build_object('ok', true, 'sessionId', session_id, 'seed', d.seed);
+  if d.daily_date is not null then
+    session_id := public.daily_duel_run(d, p_player, p_dataset_version);
+  end if;
+  if session_id is null then
+    insert into public.game_sessions (player_id, game_id, variant, settings, seed, dataset_version)
+    values (p_player, d.game_id, 'duel', d.settings, d.seed, d.dataset_version)
+    returning id into session_id;
+  end if;
+  update public.duels set challenger_id = p_player, challenger_session = session_id, accepted_at = now() where code = d.code;
+  select * into s from public.game_sessions where id = session_id;
+  return jsonb_build_object('ok', true, 'sessionId', s.id, 'seed', s.seed);
 end
 $$;
 
@@ -361,6 +441,12 @@ begin
   update public.duels set creator_id = p_into where creator_id = p_from;
   update public.duels set challenger_id = p_into where challenger_id = p_from;
   update public.duels set reserved_for = p_into where reserved_for = p_from;
+  -- A daily duel answered with a daily run the account also has (the anonymous one is
+  -- dropped below, as one daily a day is kept) is answered with the account's run.
+  update public.duels d set challenger_session = mine.id
+  from public.game_sessions g, public.game_sessions mine
+  where d.challenger_session = g.id and g.player_id = p_from and g.variant like 'daily-%'
+    and mine.player_id = p_into and mine.game_id = g.game_id and mine.variant = g.variant;
   update public.game_sessions g set player_id = p_into
   where g.player_id = p_from
     and not (g.variant like 'daily-%' and exists (

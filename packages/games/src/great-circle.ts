@@ -182,12 +182,13 @@ export function createGreatCircle({
 export type GreatCircle = ReturnType<typeof createGreatCircle>;
 
 /** Replays a move log from a seed; this is what a server uses to verify a score. */
-export function replayGreatCircle(game: GreatCircle, seed: number, moves: readonly string[]): GreatCircleState {
+export function replayGreatCircle(game: GreatCircle, seed: number, moves: readonly string[], observe?: (state: GreatCircleState, move: string) => void): GreatCircleState {
   let state = game.start(seed);
   for (const move of moves) {
     if (state.status === 'level-clear') state = game.nextLevel(state);
     if (state.status === 'over') break;
     state = move === SKIP ? game.skip(state) : game.guess(state, move).state;
+    observe?.(state, move);
   }
   return state;
 }

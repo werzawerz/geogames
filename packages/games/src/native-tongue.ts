@@ -222,12 +222,13 @@ export function createNativeTongue({ names, countries }: { names: readonly Nativ
 export type NativeTongue = ReturnType<typeof createNativeTongue>;
 
 /** Replays a move log from a seed; this is what a server uses to verify a score. */
-export function replayNativeTongue(game: NativeTongue, seed: number, moves: readonly string[]): TongueState {
+export function replayNativeTongue(game: NativeTongue, seed: number, moves: readonly string[], observe?: (state: TongueState, move: string) => void): TongueState {
   let state = game.start(seed);
   for (const move of moves) {
     if (state.status === 'level-over') state = game.nextLevel(state);
     if (state.status === 'over') break;
     state = move === TONGUE_SKIP ? game.skip(state) : game.guess(state, move).state;
+    observe?.(state, move);
   }
   return state;
 }

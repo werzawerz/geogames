@@ -17,7 +17,7 @@ import {
 import { distanceKm } from './circle.ts';
 import { arcadePools } from './pools.ts';
 import { getGame } from './catalog.ts';
-import { arcadeRunSummary, replayGame } from './replay.ts';
+import { replayGame, replayRun } from './replay.ts';
 import { DEFAULT_SETTINGS, normalizeSettings, settingsFromVariant, variantKey } from './settings.ts';
 
 const pools = await arcadePools();
@@ -311,10 +311,11 @@ describe('duels: one seed, the same circles whatever the player does', () => {
       if (state.status === 'level-clear') state = game.nextLevel(state);
       state = game.skip(state);
     }
-    const summary = await arcadeRunSummary(settings, 21, state.moves);
-    expect(summary).toEqual({ score: state.score, finished: true, level: state.level.number, cleared: state.cleared });
+    const summary = await replayRun(definition, settings, 21, state.moves);
+    expect(summary).toMatchObject({ score: state.score, finished: true, level: state.level.number });
+    expect(summary.levels.filter((l) => l.outcome === 'perfect' || l.outcome === 'cleared')).toHaveLength(2);
     expect((await replayGame(definition, settings, 21, state.moves)).score).toBe(summary.score);
     // A run that hasn't ended says so.
-    expect((await arcadeRunSummary(settings, 21, [])).finished).toBe(false);
+    expect((await replayRun(definition, settings, 21, [])).finished).toBe(false);
   });
 });

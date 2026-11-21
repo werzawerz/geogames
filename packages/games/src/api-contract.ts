@@ -118,8 +118,35 @@ export interface LeaderboardResponse {
   entries: LeaderboardEntryDto[];
 }
 
-/** Duels: two players, the same circles, one try each (see docs/ideas/duels.md). */
-export const DUEL_GAMES: readonly string[] = ['city-circle-arcade'];
+/**
+ * Duels: two players, the same puzzles, one try each (see docs/ideas/duels.md).
+ * A game is here only once a test shows that one seed gives every player the
+ * same puzzles in the same order, whatever they do (docs/ideas/duels.md, "Which games").
+ * The first is the default.
+ */
+export const DUEL_GAMES: readonly string[] = [
+  'city-circle-arcade',
+  'border-route',
+  'pin-drop',
+  'halfway',
+  'great-circle',
+  'border-blitz',
+  'mystery-country',
+  'river-run',
+  'region-run',
+  'blank-atlas',
+  'on-the-grid',
+  'clockwork',
+  'native-tongue',
+  'supply-chain',
+  'city-circle',
+  'higher-lower-population',
+  'higher-lower-area',
+  'higher-lower-gdp-per-capita',
+  'higher-lower-city-population',
+  'flags',
+  'capitals',
+];
 /** The variant of the challenger's run, which keeps it off every leaderboard. */
 export const DUEL_VARIANT = 'duel';
 /** A duel nobody has taken lasts this many days. */
@@ -127,7 +154,10 @@ export const DUEL_OPEN_DAYS = 7;
 /** Once the challenger starts, they have this many hours to finish. */
 export const DUEL_PLAY_HOURS = 24;
 
-/** POST /duels: makes a duel from the caller's own finished run (at most a day old). */
+/**
+ * POST /duels: makes a duel from the caller's own finished run (at most a day old). A
+ * daily run makes a daily duel: the friend's run is their daily of the same day.
+ */
 export interface CreateDuelRequest {
   sessionId: string;
   /** The duel this one is a rematch of; only the other player can accept it. */
@@ -166,6 +196,13 @@ export interface DuelDto {
   code: string;
   gameId: string;
   settings: GameSettings;
+  /**
+   * The day of a daily duel ("2026-11-20"), whose runs are both players' one daily run of
+   * that day; null for a duel of a random run.
+   */
+  daily: string | null;
+  /** The viewer's own daily run of a daily duel's day, if they have one. */
+  yourDaily: { status: 'playing' | 'finished'; score: number | null } | null;
   createdAt: string;
   expiresAt: string;
   you: 'creator' | 'challenger' | 'visitor';
@@ -177,10 +214,13 @@ export interface DuelDto {
   reservedFor: string | null;
   reservedForYou: boolean;
   outcome: 'creator' | 'challenger' | 'draw' | null;
-  /** Once the duel is finished (and only then): the circles can be replayed from it. */
+  /**
+   * Once the duel is finished (and only then): both runs can be replayed from it. For a
+   * daily duel, only to a viewer who can't use the day's answers any more.
+   */
   seed?: number;
-  /** Only for the challenger, while playing. */
-  session?: { sessionId: string; seed: number };
+  /** Only for the challenger, while playing. `variant` is "daily-…" when it is their daily run. */
+  session?: { sessionId: string; seed: number; variant: string };
   /** The newest rematch of this duel. */
   rematch: { code: string; forYou: boolean; byYou: boolean; state: DuelState } | null;
 }

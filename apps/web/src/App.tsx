@@ -82,7 +82,7 @@ function Page({ route }: { route: Route }) {
   if (route.page === 'home') return <Home />;
   if (route.page === 'dailies') return <DailiesPage />;
   if (route.page === 'duels') return <DuelsPage />;
-  if (route.page === 'duel-new') return <NewDuelPage key={route.rematchOf ?? 'new'} rematchOf={route.rematchOf} />;
+  if (route.page === 'duel-new') return <NewDuelPage key={route.rematchOf ?? route.sessionId ?? route.gameId ?? 'new'} rematchOf={route.rematchOf} gameId={route.gameId} sessionId={route.sessionId} />;
   if (route.page === 'duel') return <DuelPage key={route.code} code={route.code} />;
   const game = getGame(route.gameId);
   if (!game || game.status !== 'live') return <Home />;

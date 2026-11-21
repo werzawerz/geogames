@@ -300,7 +300,7 @@ export const RIVER_RUN_SKIP = SKIP;
 export const RIVER_RUN_TIMEOUT = TIMEOUT;
 
 /** Replays a move log from a seed; this is what a server uses to verify a score. */
-export function replayRiverRun(game: RiverRun, seed: number, moves: readonly string[]): RiverRunState {
+export function replayRiverRun(game: RiverRun, seed: number, moves: readonly string[], observe?: (state: RiverRunState, move: string) => void): RiverRunState {
   let state = game.start(seed);
   for (const move of moves) {
     if (state.status === 'level-over') state = game.nextLevel(state);
@@ -311,6 +311,7 @@ export function replayRiverRun(game: RiverRun, seed: number, moves: readonly str
       const [id = '', permille = '', pick] = move.split(AT);
       state = game.guess(state, id, Number(permille) / 1000 || 0, `${AT}${pick}` === PICK).state;
     }
+    observe?.(state, move);
   }
   return state;
 }

@@ -259,7 +259,7 @@ export function createCircleGame({ cities, centers, rounds, target, misses, radi
 export type CircleGame = ReturnType<typeof createCircleGame>;
 
 /** Replays a move log from a seed; this is what a server uses to verify a score. */
-export function replayCircle(game: CircleGame, seed: number, moves: readonly string[]): CircleGameState {
+export function replayCircle(game: CircleGame, seed: number, moves: readonly string[], observe?: (state: CircleGameState, move: string) => void): CircleGameState {
   let state = game.start(seed);
   for (const move of moves) {
     if (state.status === 'round-over') state = game.nextRound(state);
@@ -272,6 +272,7 @@ export function replayCircle(game: CircleGame, seed: number, moves: readonly str
     } else {
       state = game.guess(state, move).state;
     }
+    observe?.(state, move);
   }
   return state;
 }

@@ -142,13 +142,14 @@ export function createPinDrop({ cities, famous }: { cities: readonly CircleCity[
 export type PinDrop = ReturnType<typeof createPinDrop>;
 
 /** Replays pins from a seed; this is what a server uses to verify a score. */
-export function replayPinDrop(game: PinDrop, seed: number, moves: readonly string[]): PinState {
+export function replayPinDrop(game: PinDrop, seed: number, moves: readonly string[], observe?: (state: PinState, move: string) => void): PinState {
   let state = game.start(seed);
   for (const move of moves) {
     if (state.status === 'revealed') state = game.next(state);
     if (state.status === 'over') break;
     const [lat, lng] = move.split(',').map(Number) as [number, number];
     state = game.place(state, lat, lng);
+    observe?.(state, move);
   }
   return state;
 }

@@ -20,6 +20,7 @@ export * from './region-run.ts';
 export * from './native-tongue.ts';
 export * from './supply-chain.ts';
 export * from './replay.ts';
+export * from './duel.ts';
 export * from './daily.ts';
 export type * from './api-contract.ts';
 export {

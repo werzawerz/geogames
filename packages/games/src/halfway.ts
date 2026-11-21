@@ -411,12 +411,13 @@ export type Halfway = ReturnType<typeof createHalfway>;
 export const HALFWAY_SKIP = SKIP;
 
 /** Replays a move log from a seed; this is what a server uses to verify a score. */
-export function replayHalfway(game: Halfway, seed: number, moves: readonly string[]): HalfwayState {
+export function replayHalfway(game: Halfway, seed: number, moves: readonly string[], observe?: (state: HalfwayState, move: string) => void): HalfwayState {
   let state = game.start(seed);
   for (const move of moves) {
     if (state.status === 'level-over') state = game.nextLevel(state);
     if (state.status === 'over') break;
     state = move === SKIP ? game.skip(state) : game.guess(state, move).state;
+    observe?.(state, move);
   }
   return state;
 }

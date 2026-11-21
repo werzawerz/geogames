@@ -4,13 +4,14 @@ import { cors } from 'hono/cors';
 import {
   DAILY_GAMES,
   DATASET_VERSION,
-  DUEL_GAMES,
   DUEL_OPEN_DAYS,
   DUEL_PLAY_HOURS,
   DUEL_VARIANT,
-  arcadeRunSummary,
+  canDuel,
   dailyDate,
+  dailyDateOf,
   dailySeed,
+  hasDaily,
   dailySettings,
   dailyVariant,
   MAX_PASSWORD_LENGTH,
@@ -19,6 +20,7 @@ import {
   normalizeSettings,
   randomSeed,
   replayGame,
+  replayRun,
   variantKey,
   type ApiErrorCode,
   type AcceptDuelResponse,
@@ -380,6 +382,12 @@ export function createApp({
     return finish(score);
   });
 
+  const duelArgs = (c: Context<Env>) => ({
+    p_player: c.get('caller').id,
+    p_dataset_version: DATASET_VERSION,
+    p_play_hours: DUEL_PLAY_HOURS,
+  });
+
   // A duel is made from the caller's own finished run, so it needs an account:
   // the friend should know who they're playing, and the duel follows the player.
   app.post('/duels', signedIn, async (c) => {
@@ -403,14 +411,28 @@ export function createApp({
       duelCode: string | null;
     } | null;
     if (!source) return fail(c, 404, 'not-found');
-    if (!DUEL_GAMES.includes(source.gameId) || source.variant === DUEL_VARIANT || source.variant.startsWith('daily-')) {
+    const game = getGame(source.gameId);
+    // Only runs whose seed gives a friend the very same puzzles (see canDuel), and not
+    // duel runs. A daily run makes a daily duel: the friend answers with their daily.
+    const daily = source.variant.startsWith('daily-');
+    if (
+      !game ||
+      !canDuel(game, source.settings) ||
+      source.variant === DUEL_VARIANT ||
+      (daily && (!hasDaily(game) || !dailyDateOf(source.variant)))
+    ) {
       return fail(c, 400, 'bad-request');
     }
     if (source.status !== 'finished') return fail(c, 422, 'unfinished-game');
     if (source.duelCode) return c.json<CreateDuelResponse>({ code: source.duelCode });
     if (Date.now() - new Date(source.finishedAt!).getTime() > DUEL_MAX_AGE_MS) return fail(c, 400, 'bad-request');
     if (source.datasetVersion !== DATASET_VERSION) return fail(c, 409, 'update-required');
-    const { level } = await arcadeRunSummary(source.settings, Number(source.seed), source.moves ?? []);
+    if (rematchOf) {
+      // A rematch is the same game again.
+      const original = (await rpc('get_duel', { p_code: rematchOf, ...duelArgs(c) })) as DuelDto | null;
+      if (original && original.gameId !== source.gameId) return fail(c, 400, 'bad-request');
+    }
+    const { level } = await replayRun(game, source.settings, Number(source.seed), source.moves ?? []);
     for (let attempt = 0; attempt < 3; attempt++) {
       const made = (await rpc('create_duel', {
         p_player: player,
@@ -430,12 +452,6 @@ export function createApp({
       if (made.error !== 'code-taken') return fail(c, 404, 'not-found');
     }
     return fail(c, 500, 'internal');
-  });
-
-  const duelArgs = (c: Context<Env>) => ({
-    p_player: c.get('caller').id,
-    p_dataset_version: DATASET_VERSION,
-    p_play_hours: DUEL_PLAY_HOURS,
   });
 
   app.get('/duels', signedIn, async (c) => {

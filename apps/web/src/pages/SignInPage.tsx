@@ -15,6 +15,16 @@ export function rememberReturn() {
   }
 }
 
+/** Sends the player to sign in, and afterwards to `target` (a hash) rather than back to this page. */
+export function signInThenGoTo(target: string) {
+  try {
+    sessionStorage.setItem(RETURN_KEY, target);
+  } catch {
+    // Without storage the player lands on their profile.
+  }
+  location.hash = href({ page: 'sign-in' });
+}
+
 function goBack() {
   let target: string | null = null;
   try {
